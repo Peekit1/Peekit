@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRight, ChevronRight, Activity, Search, Bell, LayoutGrid, CheckCircle2, MoreHorizontal, Star, Smartphone, Lock } from 'lucide-react';
 import { Button } from './Button';
@@ -38,7 +37,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     
                     <Reveal delay={200}>
                         <p className="text-base sm:text-lg text-gray-500 mb-6 md:mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed font-normal">
-                            Fini les emails de relance. Offrez à vos clients un lien de suivi premium en temps réel. <span className="text-gray-900 font-medium">
+                            Fini les emails de relance. Offrez à vos clients un lien de suivi premium en temps réel. <span className="text-gray-900 font-medium">Dès aujourd'hui.</span>
                         </p>
                     </Reveal>
                     
@@ -177,7 +176,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white rounded-full shadow-lg border border-gray-100 text-[8px] font-bold whitespace-nowrap">
                                  Vue Client Mobile
                              </div>
-                         </div>
+                          </div>
                     </div>
 
                 </div>
