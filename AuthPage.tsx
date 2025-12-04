@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Lock, Activity, Loader2, AlertCircle, User, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Button } from './Button';
-import { AuthPageProps } from '../types';
-import { supabase } from '../supabaseClient';
+import { AuthPageProps } from './types';
+import { supabase } from './supabaseClient';
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView = 'login' }) => {
   const [isLogin, setIsLogin] = useState(initialView === 'login');
