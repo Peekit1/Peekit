@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="https://lucide.dev/icons/activity.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peekit | Studio OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>Peekit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,6 +78,18 @@
 }
 </script>
 <style>
+  :root {
+    /* Mobile: Default scale (16px) */
+    font-size: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      /* Desktop: Reduced scale (14px) for a sharper, denser SaaS look */
+      font-size: 87.5%;
+    }
+  }
+
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -105,10 +117,8 @@
     background: #A1A1AA;
   }
 </style>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-white text-gray-900 font-sans selection:bg-gray-900 selection:text-white">
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>
