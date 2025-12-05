@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './Hero';
@@ -105,6 +106,8 @@ function App() {
       } else {
           // Only alert if we are definitely not on a valid route
           console.warn("Projet introuvable ou lien expiré.");
+          // REDIRECTION DE SÉCURITÉ : Si le projet n'existe pas, retour à l'accueil
+          setCurrentPage('home');
       }
   };
 
@@ -232,13 +235,16 @@ function App() {
         if (hash.startsWith('#/v/')) {
             const projectId = hash.split('#/v/')[1];
             if (projectId) fetchPublicProject(projectId);
+        } else {
+            // If hash is removed or invalid and user not logged in, go home
+            if (!session) setCurrentPage('home');
         }
     };
     
     // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [session]); // Add session as dependency
 
   // --- NAVIGATION HANDLER ---
   const handleAuthNavigation = (mode: 'login' | 'signup' = 'login') => {
