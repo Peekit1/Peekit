@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="https://lucide.dev/icons/activity.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Peekit | Studio OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,10 +78,30 @@
 }
 </script>
 <style>
+  * {
+    box-sizing: border-box;
+  }
+  
+  html {
+    font-size: 16px;
+    overflow-x: hidden;
+  }
+  
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100vw;
+    min-height: 100vh;
+  }
+  
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
   
   /* Subtle Dot Pattern */
@@ -89,7 +109,7 @@
     background-image: radial-gradient(#E4E4E7 1px, transparent 1px);
     background-size: 24px 24px;
   }
-
+  
   /* Scrollbar minimaliste */
   ::-webkit-scrollbar {
     width: 6px;
@@ -103,6 +123,13 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #A1A1AA;
+  }
+  
+  /* Corrections pour éviter le zoom */
+  @media screen and (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
   }
 </style>
 <link rel="stylesheet" href="/index.css">
