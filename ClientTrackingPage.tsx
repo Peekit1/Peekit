@@ -53,11 +53,11 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
           
-          {/* TOP HERO SECTION */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              
-              {/* Project Main Card (Black Style like Skillset) */}
-              <div className="md:col-span-2 bg-gray-900 rounded-xl p-6 md:p-8 text-white shadow-xl shadow-gray-200 flex flex-col justify-between relative overflow-hidden group min-h-[200px]">
+          {/* TOP HERO SECTION (UNIFIED) */}
+          <div className="mb-8">
+              <div className="w-full bg-gray-900 rounded-xl p-6 md:p-8 text-white shadow-xl shadow-gray-200 relative overflow-hidden group">
+                  
+                  {/* Top Content: Project Info */}
                   <div className="relative z-10">
                       <div className="flex items-center gap-3 mb-4">
                           <span className="px-2 py-1 rounded bg-white/10 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
@@ -70,39 +70,39 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           <span className="flex items-center gap-1.5"><MapPin size={14} className="text-rose-400"/> {project.location}</span>
                       </div>
                   </div>
-                  
-                  {/* Decorative Elements with colors */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-indigo-500/20 transition-colors duration-700"></div>
-                  <div className="absolute bottom-0 right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-colors duration-700"></div>
-              </div>
 
-              {/* Stats Cards Column */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 md:grid-rows-2 gap-4 md:gap-6">
-                  {/* Status Card */}
-                  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center relative overflow-hidden group hover:border-indigo-100 transition-colors">
-                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Statut Actuel</h3>
-                      <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'} animate-pulse shadow-sm`}></div>
-                          <span className="text-xl font-bold text-gray-900 truncate">{currentStageConfig.label}</span>
+                  {/* Bottom Footer: Status & Progress (Merged) */}
+                  <div className="relative z-10 mt-8 pt-6 border-t border-white/10">
+                      <div className="flex flex-col sm:flex-row justify-between items-end gap-4 mb-3">
+                          <div className="flex items-start gap-4">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-600'} shadow-lg`}>
+                                  {isCompleted ? <Check size={20} /> : <Activity size={20} />}
+                              </div>
+                              <div>
+                                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Statut Actuel</div>
+                                  <div className="font-bold text-lg text-white">{currentStageConfig.label}</div>
+                                  <div className="text-xs text-gray-400 font-medium">{currentStageConfig.message}</div>
+                              </div>
+                          </div>
+                          
+                          <div className="text-right">
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Avancement Global</div>
+                              <div className="text-2xl font-bold text-white tracking-tight">{getProgress()}%</div>
+                          </div>
                       </div>
-                      <div className="mt-2 text-xs text-gray-500 font-medium line-clamp-1 group-hover:text-indigo-600 transition-colors">
-                          {currentStageConfig.message}
-                      </div>
-                  </div>
 
-                  {/* Progress Card */}
-                  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center hover:border-emerald-100 transition-colors">
-                      <div className="flex justify-between items-end mb-2">
-                          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Avancement</h3>
-                          <span className="text-2xl font-bold text-gray-900">{getProgress()}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                      {/* Progress Bar */}
+                      <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-gray-900 to-indigo-900'}`} 
+                            className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`} 
                             style={{ width: `${getProgress()}%` }}
                           ></div>
                       </div>
                   </div>
+                  
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-indigo-500/20 transition-colors duration-700"></div>
+                  <div className="absolute bottom-0 left-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-colors duration-700"></div>
               </div>
           </div>
 
