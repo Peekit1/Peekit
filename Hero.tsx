@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowRight, ChevronRight, Activity, Search, Bell, LayoutGrid, CheckCircle2, MoreHorizontal, Star, Smartphone, Lock } from 'lucide-react';
 import { Button } from './Button';
@@ -37,7 +38,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     
                     <Reveal delay={200}>
                         <p className="text-base sm:text-lg text-gray-500 mb-6 md:mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed font-normal">
-                            Fini les emails de relance. Offrez à vos clients un lien de suivi premium en temps réel. <span className="text-gray-900 font-medium">Dès aujourd'hui.</span>
+                            Fini les emails de relance. Offrez à vos clients un lien de suivi premium en temps réel. <span className="text-gray-900 font-medium"></span>
                         </p>
                     </Reveal>
                     
@@ -73,7 +74,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                 </div>
 
                 {/* RIGHT COLUMN: LAYERED VISUAL */}
-                <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center lg:justify-end mt-8 lg:mt-0">
+                <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center lg:justify-end mt-8 lg:mt-0 max-w-[calc(100vw-2rem)] mx-auto lg:mx-0">
                     
                     {/* Background Blur Blob */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-gray-100/50 via-white to-indigo-50/30 rounded-full blur-3xl -z-10"></div>
@@ -145,7 +146,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     </div>
 
                     {/* FLOATING LAYER 1: MOBILE VIEW (Right) */}
-                    <div className="absolute -right-4 bottom-8 w-40 sm:w-48 bg-gray-900 rounded-[2rem] p-2 shadow-2xl z-30 transform rotate-[-6deg] hover:rotate-0 transition-transform duration-500 hidden sm:block">
+                    <div className="absolute -right-4 bottom-8 w-40 sm:w-48 bg-gray-900 rounded-[2rem] p-2 shadow-2xl z-30 transform rotate-[-6deg] hover:rotate-0 transition-transform duration-500 hidden md:block">
                          <div className="bg-gray-50 rounded-[1.5rem] overflow-hidden h-64 sm:h-80 relative">
                              {/* Mobile Header */}
                              <div className="bg-white p-3 border-b border-gray-100 flex items-center justify-between">
@@ -176,7 +177,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white rounded-full shadow-lg border border-gray-100 text-[8px] font-bold whitespace-nowrap">
                                  Vue Client Mobile
                              </div>
-                          </div>
+                         </div>
                     </div>
 
                 </div>
