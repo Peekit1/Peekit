@@ -28,16 +28,16 @@ export const Problem: React.FC = () => {
             
             {/* BOX 1: THE NOTIFICATION FLOOD (Large Left) */}
             <Reveal delay={100} className="md:col-span-4 h-full">
-                <div className="bg-gray-50 rounded-3xl p-8 border border-gray-200 h-full relative overflow-hidden group">
-                    <div className="relative z-10">
+                <div className="bg-gray-50 rounded-3xl p-8 border border-gray-200 h-full relative overflow-hidden group flex flex-col md:block">
+                    <div className="relative z-10 mb-8 md:mb-0">
                         <h3 className="text-xl font-bold text-gray-900 mb-2">Harcèlement constant</h3>
                         <p className="text-gray-500 text-sm max-w-xs">WhatsApp, Emails, SMS... La pression monte quand le client n'a pas de visibilité.</p>
                     </div>
 
                     {/* Visual: Notification Stack */}
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 md:translate-x-0 w-[300px] space-y-3 opacity-90">
+                    <div className="relative md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 md:translate-x-0 w-full md:w-[300px] space-y-3 opacity-90">
                         {/* Notif 1 */}
-                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform group-hover:-translate-x-2 transition-transform duration-500">
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform md:group-hover:-translate-x-2 transition-transform duration-500">
                             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shrink-0 text-white">
                                 <MessageSquare size={14} fill="currentColor"/>
                             </div>
@@ -48,7 +48,7 @@ export const Problem: React.FC = () => {
                             <span className="text-[9px] text-gray-400 ml-auto">10:42</span>
                         </div>
                         {/* Notif 2 */}
-                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform translate-x-4 group-hover:translate-x-2 transition-transform duration-500 delay-75">
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform md:translate-x-4 md:group-hover:translate-x-2 transition-transform duration-500 delay-75">
                             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0 text-white">
                                 <Mail size={14}/>
                             </div>
@@ -59,7 +59,7 @@ export const Problem: React.FC = () => {
                             <span className="text-[9px] text-gray-400 ml-auto">10:45</span>
                         </div>
                         {/* Notif 3 */}
-                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform translate-x-8 group-hover:translate-x-6 transition-transform duration-500 delay-150">
+                        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-start gap-3 transform md:translate-x-8 md:group-hover:translate-x-6 transition-transform duration-500 delay-150">
                             <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center shrink-0 text-white">
                                 <Bell size={14}/>
                             </div>
