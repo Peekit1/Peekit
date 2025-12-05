@@ -73,14 +73,14 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     </Reveal>
                 </div>
 
-                {/* RIGHT COLUMN: LAYERED VISUAL */}
-                <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center lg:justify-end mt-8 lg:mt-0 max-w-[calc(100vw-2rem)] mx-auto lg:mx-0">
+                {/* RIGHT COLUMN: LAYERED VISUAL (Hidden on Mobile/Tablet) */}
+                <div className="hidden lg:flex relative h-[600px] items-center justify-end mt-0 max-w-[calc(100vw-2rem)] mx-auto lg:mx-0">
                     
                     {/* Background Blur Blob */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-gray-100/50 via-white to-indigo-50/30 rounded-full blur-3xl -z-10"></div>
 
                     {/* MAIN LAYER: DESKTOP DASHBOARD */}
-                    <div className="relative w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-2xl shadow-gray-200/50 overflow-hidden z-10 animate-slide-up scale-90 sm:scale-100 origin-center lg:origin-top-right">
+                    <div className="relative w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-2xl shadow-gray-200/50 overflow-hidden z-10 animate-slide-up scale-100 origin-top-right">
                         {/* Fake Window Header */}
                         <div className="h-8 bg-white border-b border-gray-100 flex items-center px-3 gap-1.5">
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-200"></div>
@@ -88,11 +88,11 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-200"></div>
                         </div>
                         {/* Fake Content */}
-                        <div className="p-4 sm:p-6">
+                        <div className="p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <div className="text-base sm:text-lg font-bold text-gray-900 tracking-tight">Projets Actifs</div>
-                                    <div className="text-[10px] sm:text-xs text-gray-400">Vue d'ensemble du studio</div>
+                                    <div className="text-lg font-bold text-gray-900 tracking-tight">Projets Actifs</div>
+                                    <div className="text-xs text-gray-400">Vue d'ensemble du studio</div>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">SL</div>
                             </div>
@@ -101,12 +101,12 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                                 {/* Project Item 1 */}
                                 <div className="p-3 rounded-lg border border-gray-100 bg-white flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-gray-100 overflow-hidden">
+                                        <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden">
                                             <img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover"/>
                                         </div>
                                         <div>
-                                            <div className="text-xs sm:text-sm font-bold text-gray-900">Nike Campaign</div>
-                                            <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit mt-0.5">Vidéo</div>
+                                            <div className="text-sm font-bold text-gray-900">Nike Campaign</div>
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit mt-0.5">Vidéo</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -117,12 +117,12 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                                 {/* Project Item 2 */}
                                 <div className="p-3 rounded-lg border border-gray-100 bg-white flex items-center justify-between shadow-sm opacity-60">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-gray-100 overflow-hidden">
+                                        <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden">
                                             <img src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover"/>
                                         </div>
                                         <div>
-                                            <div className="text-xs sm:text-sm font-bold text-gray-900">Mariage Julia</div>
-                                            <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded w-fit mt-0.5">Photo</div>
+                                            <div className="text-sm font-bold text-gray-900">Mariage Julia</div>
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded w-fit mt-0.5">Photo</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
@@ -133,11 +133,11 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                                 {/* Project Item 3 */}
                                 <div className="p-3 rounded-lg border border-gray-100 bg-gray-50/50 flex items-center justify-between shadow-sm border-dashed">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded bg-white border border-gray-200 flex items-center justify-center text-gray-300">
+                                        <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center text-gray-300">
                                             <LayoutGrid size={16}/>
                                         </div>
                                         <div>
-                                            <div className="text-xs sm:text-sm font-bold text-gray-400">Nouveau projet</div>
+                                            <div className="text-sm font-bold text-gray-400">Nouveau projet</div>
                                         </div>
                                     </div>
                                 </div>
@@ -146,8 +146,8 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     </div>
 
                     {/* FLOATING LAYER 1: MOBILE VIEW (Right) */}
-                    <div className="absolute -right-4 bottom-8 w-40 sm:w-48 bg-gray-900 rounded-[2rem] p-2 shadow-2xl z-30 transform rotate-[-6deg] hover:rotate-0 transition-transform duration-500 hidden md:block">
-                         <div className="bg-gray-50 rounded-[1.5rem] overflow-hidden h-64 sm:h-80 relative">
+                    <div className="absolute -right-4 bottom-8 w-48 bg-gray-900 rounded-[2rem] p-2 shadow-2xl z-30 transform rotate-[-6deg] hover:rotate-0 transition-transform duration-500">
+                         <div className="bg-gray-50 rounded-[1.5rem] overflow-hidden h-80 relative">
                              {/* Mobile Header */}
                              <div className="bg-white p-3 border-b border-gray-100 flex items-center justify-between">
                                  <div className="font-bold text-[10px]">Nike...</div>
