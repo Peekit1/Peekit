@@ -135,6 +135,12 @@
     overflow-x: hidden !important;
   }
   
+  /* Force tous les enfants de root à respecter la largeur viewport */
+  #root > * {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
   /* Corrections pour éviter le zoom */
   @media screen and (max-width: 768px) {
     html {
