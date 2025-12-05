@@ -1,21 +1,20 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Hero } from './Hero';
-import { Problem } from './Problem';
-import { Solution } from './Solution';
-import { Benefits } from './Benefits';
-import { Pricing } from './Pricing';
-import { Footer } from './Footer';
-import { StickyHeader } from './StickyHeader';
-import { AuthPage } from './AuthPage';
-import { Dashboard } from './Dashboard';
-import { ProductShowcase } from './ProductShowcase';
-import { CheckoutPage } from './CheckoutPage';
-import { ClientTrackingPage } from './ClientTrackingPage';
-import { ClientAccessGate } from './ClientAccessGate';
-import { OnboardingWizard } from './OnboardingWizard';
-import { ProjectDetails } from './ProjectDetails';
+import { Hero } from './components/Hero';
+import { Problem } from './components/Problem';
+import { Solution } from './components/Solution';
+import { Benefits } from './components/Benefits';
+import { Pricing } from './components/Pricing';
+import { Footer } from './components/Footer';
+import { StickyHeader } from './components/StickyHeader';
+import { AuthPage } from './components/AuthPage';
+import { Dashboard } from './components/Dashboard';
+import { ProductShowcase } from './components/ProductShowcase';
+import { CheckoutPage } from './components/CheckoutPage';
+import { ClientTrackingPage } from './components/ClientTrackingPage';
+import { ClientAccessGate } from './components/ClientAccessGate';
+import { OnboardingWizard } from './components/OnboardingWizard';
+import { ProjectDetails } from './components/ProjectDetails';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser } from './types';
 import { supabase } from './supabaseClient';
 
@@ -224,6 +223,21 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // --- HASH LISTENER FOR CLIENT LINKS ---
+  useEffect(() => {
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/v/')) {
+            const projectId = hash.split('#/v/')[1];
+            if (projectId) fetchPublicProject(projectId);
+        }
+    };
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // --- NAVIGATION HANDLER ---
