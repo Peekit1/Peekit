@@ -125,6 +125,16 @@
     background: #A1A1AA;
   }
   
+  /* Force responsive behavior */
+  * {
+    max-width: 100%;
+  }
+  
+  /* Prevent horizontal overflow */
+  body, #root {
+    overflow-x: hidden !important;
+  }
+  
   /* Corrections pour éviter le zoom */
   @media screen and (max-width: 768px) {
     html {
