@@ -5,7 +5,7 @@ import {
   Check, Loader2, Link as LinkIcon, Lock, 
   Upload, Trash2, Camera, Pencil, Plus, Clock,
   MoreHorizontal, FileImage, Film, LayoutGrid, Settings,
-  AlertCircle, RefreshCcw
+  AlertCircle, RefreshCcw, Activity
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep } from '../types';
 import { Button } from './Button';
@@ -65,7 +65,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   const handleCopyLink = () => {
-      // Use window.location.origin to get the base URL
       const baseUrl = window.location.origin;
       const link = `${baseUrl}/#/v/${project.id}`;
       navigator.clipboard.writeText(link);
@@ -191,161 +190,204 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                   </div>
               </div>
 
-              {/* TILE 3: TIMELINE (Main Left, Spans 2) */}
-              <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-h-[500px]">
-                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                      <h3 className="font-bold text-gray-900 text-sm">Parcours du projet</h3>
-                      {!isEditingWorkflow ? (
-                          <button 
-                            onClick={() => setIsEditingWorkflow(true)} 
-                            className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-indigo-50"
-                          >
-                              <Pencil size={12}/> Modifier les étapes
-                          </button>
-                      ) : (
-                          <div className="flex gap-2">
-                              <button onClick={handleResetToDefault} className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors" title="Réinitialiser par défaut">
-                                  <RefreshCcw size={14}/>
-                              </button>
-                              <Button size="sm" variant="ghost" onClick={() => setIsEditingWorkflow(false)}>Annuler</Button>
-                              <Button size="sm" variant="black" onClick={saveWorkflow}>Enregistrer</Button>
-                          </div>
-                      )}
-                  </div>
-                  
-                  <div className="p-4 md:p-6">
-                      
-                      {/* WORKFLOW EDIT MODE */}
-                      {isEditingWorkflow ? (
-                          <div className="space-y-4 animate-fade-in">
-                              {userPlan === 'freelance' && (
-                                  <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg flex items-center gap-3 mb-4">
-                                      <Settings className="text-indigo-600" size={18} />
-                                      <p className="text-xs text-indigo-800">
-                                          <span className="font-bold">Mode Édition :</span> Personnalisez les étapes pour tous vos futurs projets.
-                                      </p>
-                                  </div>
-                              )}
-                              
-                              {localWorkflow.map((step, index) => (
-                                  <div key={step.id} className="flex gap-3 items-start p-3 bg-gray-50 rounded-xl border border-gray-200 group">
-                                      <div className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center shrink-0 mt-2 text-xs font-bold text-gray-500">
-                                          {index + 1}
-                                      </div>
-                                      <div className="flex-1 space-y-2">
-                                          <input 
-                                              value={step.label} 
-                                              onChange={(e) => handleStepChange(index, 'label', e.target.value)}
-                                              className="w-full bg-white border border-gray-200 rounded px-3 py-1.5 text-sm font-bold focus:border-indigo-500 outline-none"
-                                              placeholder="Nom de l'étape"
-                                          />
-                                          <input 
-                                              value={step.message} 
-                                              onChange={(e) => handleStepChange(index, 'message', e.target.value)}
-                                              className="w-full bg-white border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-600 focus:border-indigo-500 outline-none"
-                                              placeholder="Description client"
-                                          />
-                                      </div>
-                                      <button 
-                                          onClick={() => handleRemoveStep(index)}
-                                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors"
-                                      >
-                                          <Trash2 size={16}/>
-                                      </button>
-                                  </div>
-                              ))}
-                              
+              {/* TILE 3: WORKFLOW BENTO GRID (Main Left, Spans 2) */}
+              <div className="lg:col-span-2">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
+                      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                          <h3 className="font-bold text-gray-900 text-sm">Parcours du projet</h3>
+                          {!isEditingWorkflow ? (
                               <button 
-                                  onClick={handleAddStep}
-                                  className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-bold text-gray-400 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                                onClick={() => setIsEditingWorkflow(true)} 
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-indigo-50"
                               >
-                                  <Plus size={16}/> Ajouter une étape
+                                  <Pencil size={12}/> Modifier
                               </button>
-                          </div>
-                      ) : (
-                          /* WORKFLOW READ MODE */
-                          <div className="relative pl-4 space-y-4">
-                              {/* Vertical Line aligned with icons */}
-                              <div className="absolute left-[35px] top-4 bottom-4 w-px bg-gray-100"></div>
-
-                              {stageConfig.map((step, index) => {
-                                  const isCompleted = index < currentStageIndex;
-                                  const isCurrent = index === currentStageIndex;
-                                  const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
-
-                                  return (
-                                      <div 
-                                          key={step.id} 
-                                          onClick={() => handleStageClick(step.id)}
-                                          className={`relative z-10 flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group
-                                              ${isCurrent 
-                                                  ? 'bg-white border-indigo-600 shadow-sm ring-1 ring-indigo-600/10' // Active
-                                                  : 'bg-transparent border-transparent hover:bg-gray-50' // Inactive
-                                              }
-                                          `}
-                                      >
-                                          {/* Icon */}
-                                          <div className={`
-                                              w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 border-2
-                                              ${isCompleted ? 'bg-emerald-500 text-white border-emerald-500' : 
-                                                isCurrent ? 'bg-white border-indigo-600 text-indigo-600' : 
-                                                'bg-white border-gray-200 text-gray-300'}
-                                          `}>
-                                              {isLoading ? (
-                                                  <Loader2 size={14} className="animate-spin text-indigo-600" />
-                                              ) : isCompleted ? (
-                                                  <Check size={14} strokeWidth={4} />
-                                              ) : isCurrent ? (
-                                                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-600"></div>
-                                              ) : (
-                                                  <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                                              )}
+                          ) : (
+                              <div className="flex gap-2">
+                                  <button onClick={handleResetToDefault} className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors" title="Réinitialiser par défaut">
+                                      <RefreshCcw size={14}/>
+                                  </button>
+                                  <Button size="sm" variant="ghost" onClick={() => setIsEditingWorkflow(false)}>Annuler</Button>
+                                  <Button size="sm" variant="black" onClick={saveWorkflow}>Enregistrer</Button>
+                              </div>
+                          )}
+                      </div>
+                      
+                      <div className="p-6 flex-1 bg-gray-50/30">
+                          
+                          {/* WORKFLOW EDIT MODE */}
+                          {isEditingWorkflow ? (
+                              <div className="space-y-4 animate-fade-in">
+                                  {userPlan === 'freelance' && (
+                                      <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg flex items-center gap-3 mb-4">
+                                          <Settings className="text-indigo-600" size={18} />
+                                          <p className="text-xs text-indigo-800">
+                                              <span className="font-bold">Mode Édition :</span> Personnalisez les étapes pour tous vos futurs projets.
+                                          </p>
+                                      </div>
+                                  )}
+                                  
+                                  {localWorkflow.map((step, index) => (
+                                      <div key={step.id} className="flex gap-3 items-start p-3 bg-white rounded-xl border border-gray-200 shadow-sm group">
+                                          <div className="w-6 h-6 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center shrink-0 mt-2 text-xs font-bold text-gray-500">
+                                              {index + 1}
                                           </div>
-                                          
-                                          {/* Content */}
-                                          <div className="flex-1 flex justify-between items-center">
-                                              <div>
-                                                  <h4 className={`text-sm font-bold transition-colors ${isCurrent ? 'text-indigo-900' : isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
+                                          <div className="flex-1 space-y-2">
+                                              <input 
+                                                  value={step.label} 
+                                                  onChange={(e) => handleStepChange(index, 'label', e.target.value)}
+                                                  className="w-full bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-sm font-bold focus:border-indigo-500 outline-none"
+                                                  placeholder="Nom de l'étape"
+                                              />
+                                              <input 
+                                                  value={step.message} 
+                                                  onChange={(e) => handleStepChange(index, 'message', e.target.value)}
+                                                  className="w-full bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-600 focus:border-indigo-500 outline-none"
+                                                  placeholder="Description client"
+                                              />
+                                          </div>
+                                          <button 
+                                              onClick={() => handleRemoveStep(index)}
+                                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                          >
+                                              <Trash2 size={16}/>
+                                          </button>
+                                      </div>
+                                  ))}
+                                  
+                                  <button 
+                                      onClick={handleAddStep}
+                                      className="w-full py-3 border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl text-sm font-bold text-gray-400 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                                  >
+                                      <Plus size={16}/> Ajouter une étape
+                                  </button>
+                              </div>
+                          ) : (
+                              /* WORKFLOW READ MODE - RESPONSIVE VERTICAL STEP CARDS */
+                              <div className="space-y-4">
+                                  {stageConfig.map((step, index) => {
+                                      const isCompleted = index < currentStageIndex;
+                                      const isCurrent = index === currentStageIndex;
+                                      const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
+                                      const isLastStep = index === stageConfig.length - 1;
+
+                                      return (
+                                          <div 
+                                              key={step.id} 
+                                              onClick={() => handleStageClick(step.id)}
+                                              className={`relative flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group
+                                                  ${isCurrent 
+                                                      ? 'bg-white border-indigo-600 shadow-md ring-1 ring-indigo-50 z-10 scale-[1.01]' // Active Card Pop
+                                                      : isCompleted 
+                                                          ? 'bg-white border-gray-200 opacity-90 hover:opacity-100 hover:shadow-sm' // Completed
+                                                          : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600' // Future
+                                                  }
+                                              `}
+                                          >
+                                              <div className="w-full sm:w-auto flex justify-between items-center sm:justify-start gap-4 shrink-0">
+                                                  <div className="flex items-center gap-4">
+                                                      <span className={`text-[10px] font-bold w-6 h-6 flex items-center justify-center rounded-md border
+                                                          ${isCurrent ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 
+                                                            isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}
+                                                      `}>
+                                                          {(index + 1).toString().padStart(2, '0')}
+                                                      </span>
+
+                                                      <div className={`
+                                                          w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border
+                                                          ${isCompleted ? 'bg-emerald-500 text-white border-emerald-600' : 
+                                                            isCurrent ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm' : 
+                                                            'bg-gray-50 text-gray-300 border-gray-100'}
+                                                      `}>
+                                                          {isLoading ? (
+                                                              <Loader2 size={16} className="animate-spin" />
+                                                          ) : isCompleted ? (
+                                                              <Check size={16} strokeWidth={3} />
+                                                          ) : isCurrent ? (
+                                                              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></div>
+                                                          ) : (
+                                                              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                                                          )}
+                                                      </div>
+                                                  </div>
+
+                                                  {/* Mobile Badge - Visible only on small screens */}
+                                                  <div className="sm:hidden">
+                                                      {isCurrent && (
+                                                          isLastStep ? (
+                                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-200">
+                                                                  <Check size={12} strokeWidth={3}/> Terminé
+                                                              </span>
+                                                          ) : (
+                                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-200 shadow-sm">
+                                                                  <Activity size={12} strokeWidth={3}/> En cours
+                                                              </span>
+                                                          )
+                                                      )}
+                                                      {isCompleted && !isCurrent && (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-200">
+                                                              Terminé
+                                                          </span>
+                                                      )}
+                                                  </div>
+                                              </div>
+
+                                              {/* Middle: Content */}
+                                              <div className="flex-1 min-w-0 w-full sm:w-auto mt-2 sm:mt-0">
+                                                  <h4 className={`text-sm font-bold mb-0.5 truncate ${isCurrent ? 'text-gray-900' : isCompleted ? 'text-gray-700' : 'text-current'}`}>
                                                       {step.label}
                                                   </h4>
-                                                  <p className="text-xs text-gray-500 font-medium mt-0.5">
+                                                  <p className="text-xs text-gray-500 font-medium truncate">
                                                       {step.message}
                                                   </p>
                                               </div>
 
-                                              {/* Badges Right Aligned */}
-                                              <div className="ml-auto flex items-center">
+                                              {/* Right: Badge - Visible only on Desktop */}
+                                              <div className="shrink-0 pl-2 hidden sm:block">
                                                   {isCurrent && (
-                                                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded border border-indigo-200">
-                                                          En cours
+                                                      isLastStep ? (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-200">
+                                                              <Check size={12} strokeWidth={3}/> Terminé
+                                                          </span>
+                                                      ) : (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-200 shadow-sm">
+                                                              <Activity size={12} strokeWidth={3}/> En cours
+                                                          </span>
+                                                      )
+                                                  )}
+                                                  {isCompleted && !isCurrent && (
+                                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-200">
+                                                          Terminé
                                                       </span>
                                                   )}
-                                                  {isCompleted && (
-                                                      <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded border border-emerald-100">
-                                                          Terminé
+                                                  {!isCurrent && !isCompleted && (
+                                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-100">
+                                                          À venir
                                                       </span>
                                                   )}
                                               </div>
                                           </div>
-                                      </div>
-                                  );
-                              })}
-                          </div>
-                      )}
+                                      );
+                                  })}
+                              </div>
+                          )}
+                      </div>
                   </div>
               </div>
 
-              {/* TILE 4: ADMIN TOOLS (Right Column, Spans 1, Vertical Stack) */}
+              {/* TILE 4: ADMIN TOOLS (Right Sidebar) */}
               <div className="lg:col-span-1 flex flex-col gap-6">
                   
                   {/* COVER IMAGE WIDGET */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group relative flex-1 min-h-[160px]">
-                      <img src={project.coverImage} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <button onClick={() => coverInputRef.current?.click()} className="bg-white/90 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg backdrop-blur-sm transform translate-y-2 group-hover:translate-y-0 transition-all">
-                              <Camera size={14}/> Changer
-                          </button>
-                          <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} />
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group">
+                      <div className="h-32 bg-gray-100 relative overflow-hidden">
+                          <img src={project.coverImage} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button onClick={() => coverInputRef.current?.click()} className="bg-white/90 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg backdrop-blur-sm transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                  <Camera size={14}/> Changer
+                              </button>
+                              <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} />
+                          </div>
                       </div>
                   </div>
 
@@ -416,7 +458,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                           />
                       </div>
 
-                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                           {project.teasers && project.teasers.map(t => (
                               <div key={t.id} className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-100 rounded-lg group hover:bg-white hover:shadow-sm transition-all">
                                   <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
