@@ -33,7 +33,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [newProjectLoading, setNewProjectLoading] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState({
-      clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage'
+      clientName: '', 
+      clientEmail: '', 
+      date: '', 
+      estimatedDeliveryDate: '',
+      location: '', 
+      type: 'Mariage'
   });
   const [coverFile, setCoverFile] = useState<File | undefined>(undefined);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -61,14 +66,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           else await onCreateProject(newProject, coverFile);
           setIsNewProjectModalOpen(false);
           setEditingProjectId(null);
-          setNewProject({ clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage' });
+          setNewProject({ clientName: '', clientEmail: '', date: '', estimatedDeliveryDate: '', location: '', type: 'Mariage' });
       } finally { setNewProjectLoading(false); }
   };
 
   const openEdit = (p: Project, e: React.MouseEvent) => {
       e.stopPropagation();
       setEditingProjectId(p.id);
-      setNewProject({ ...p, type: p.type || 'Mariage' });
+      setNewProject({ ...p, estimatedDeliveryDate: p.estimatedDeliveryDate || '', type: p.type || 'Mariage' });
       setIsNewProjectModalOpen(true);
   };
 
@@ -421,24 +426,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Date</label>
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Date du projet</label>
                                 <input type="date" required className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-gray-900 font-medium" value={newProject.date} onChange={e => setNewProject({...newProject, date: e.target.value})} />
                             </div>
-                            <div className="space-y-1.5">
+                             <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Livraison estimée</label>
+                                <input type="date" className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-gray-900 font-medium" value={newProject.estimatedDeliveryDate} onChange={e => setNewProject({...newProject, estimatedDeliveryDate: e.target.value})} />
+                            </div>
+                       </div>
+                       
+                        <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Type</label>
                                 <select className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none appearance-none font-medium cursor-pointer" value={newProject.type} onChange={e => setNewProject({...newProject, type: e.target.value})}>
                                     {['Mariage', 'Corporate', 'Mode', 'Autre'].map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                             </div>
-                       </div>
-                       
-                       <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Lieu</label>
-                          <div className="relative">
-                              <MapPin size={16} className="absolute left-3 top-2.5 text-gray-400"/>
-                              <input type="text" className="w-full pl-9 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" placeholder="Ville, Pays" value={newProject.location} onChange={e => setNewProject({...newProject, location: e.target.value})} />
-                          </div>
-                       </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Lieu</label>
+                                <div className="relative">
+                                    <MapPin size={16} className="absolute left-3 top-2.5 text-gray-400"/>
+                                    <input type="text" className="w-full pl-9 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" placeholder="Ville, Pays" value={newProject.location} onChange={e => setNewProject({...newProject, location: e.target.value})} />
+                                </div>
+                            </div>
+                        </div>
                        
                         {/* Cover Image Upload in Modal */}
                        <div className="space-y-1.5">
