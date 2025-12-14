@@ -1,7 +1,7 @@
 import React from 'react';
 import { Activity, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { Reveal } from './Reveal';
-import { AuthNavigationProps } from '../types';
+import { AuthNavigationProps } from './types';
 
 export const Footer: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
