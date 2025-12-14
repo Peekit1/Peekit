@@ -4,7 +4,7 @@ import {
   ArrowLeft, Activity, Clock, Package, Loader2, Video, 
   ArrowDownToLine, CheckCircle2, MapPin, Calendar, LayoutGrid, Check
 } from 'lucide-react';
-import { ClientTrackingPageProps } from '../types';
+import { ClientTrackingPageProps } from './types';
 
 export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
