@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Lock, ShieldCheck, CreditCard, Check, Sparkles, Building2, Zap, LayoutGrid } from 'lucide-react';
 import { Button } from './Button';
-import { CheckoutPageProps } from '../types';
+import { CheckoutPageProps } from './types';
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ plan, onBack, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
