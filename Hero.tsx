@@ -3,7 +3,7 @@ import React from 'react';
 import { ArrowRight, ChevronRight, Activity, Search, Bell, LayoutGrid, CheckCircle2, MoreHorizontal, Star, Smartphone, Lock } from 'lucide-react';
 import { Button } from './Button';
 import { Reveal } from './Reveal';
-import { AuthNavigationProps } from '../types';
+import { AuthNavigationProps } from './types';
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
