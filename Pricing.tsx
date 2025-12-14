@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, Zap, Sparkles, Building2 } from 'lucide-react';
 import { Button } from './Button';
 import { Reveal } from './Reveal';
-import { PricingProps, SelectedPlan } from '../types';
+import { PricingProps, SelectedPlan } from './types';
 
 interface PricingTier {
   name: string;
