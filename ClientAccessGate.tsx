@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, ArrowRight, Activity, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from './Button';
-import { ClientAccessGateProps } from '../types';
+import { ClientAccessGateProps } from './types';
 
 export const ClientAccessGate: React.FC<ClientAccessGateProps> = ({ project, onAccessGranted }) => {
   const [password, setPassword] = useState('');
