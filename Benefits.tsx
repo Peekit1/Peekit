@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Diamond, Sparkles } from 'lucide-react';
-import { BenefitProps } from '../types';
+import { BenefitProps } from './types';
 import { Reveal } from './Reveal';
 
 const BenefitCard: React.FC<BenefitProps> = ({ icon, title, description }) => (
