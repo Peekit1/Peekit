@@ -1,492 +1,509 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Plus, LogOut, Search, 
-  LayoutGrid, Activity, 
-  Clock, CheckCircle2, Package, Trash2, X, Pencil, 
-  Calendar, MapPin,
-  CreditCard, Sparkles, Building2, Zap, Check,
-  Camera, Video, Aperture, Heart, Menu, ArrowRight
+  ArrowLeft, Calendar, MapPin, ExternalLink, 
+  Check, Loader2, Link as LinkIcon, Lock, 
+  Upload, Trash2, Camera, Pencil, Plus, Clock,
+  MoreHorizontal, FileImage, Film, LayoutGrid, Settings,
+  AlertCircle, RefreshCcw, Activity, Flag
 } from 'lucide-react';
-import { DashboardProps, Project } from '../types';
+import { ProjectDetailsProps, WorkflowStep } from '../types';
 import { Button } from './Button';
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  userPlan,
-  studioName,
-  onLogout, 
-  onOpenProject, 
-  projects, 
+export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
+  project, 
   stageConfig,
-  onCreateProject,
-  onDeleteProject,
-  onEditProject,
-  onUpgradeClick
+  defaultConfig,
+  userPlan,
+  onBack, 
+  onUpdateStage,
+  onUpdateStageConfig,
+  onViewClientVersion,
+  onUpdatePassword,
+  onUploadTeasers,
+  onDeleteTeaser,
+  onUpdateCoverImage
 }) => {
-  const [currentView, setCurrentView] = useState<'projects' | 'subscription'>('projects');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
+  const [password, setPassword] = useState(project.accessPassword || '');
+  const [isEditingWorkflow, setIsEditingWorkflow] = useState(false);
+  const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  // Initialize with a deep copy to avoid reference issues
+  const [localWorkflow, setLocalWorkflow] = useState<WorkflowStep[]>(stageConfig.map(s => ({ ...s })));
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync when props change, but break reference
+  useEffect(() => { 
+      setLocalWorkflow(stageConfig.map(s => ({ ...s }))); 
+  }, [stageConfig]);
+
+  const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
-  // MODALS
-  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  const [newProjectLoading, setNewProjectLoading] = useState(false);
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [newProject, setNewProject] = useState({
-      clientName: '', 
-      clientEmail: '', 
-      date: '', 
-      estimatedDeliveryDate: '',
-      location: '', 
-      type: 'Mariage'
-  });
-  const [coverFile, setCoverFile] = useState<File | undefined>(undefined);
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-
-  const getStageInfo = (stageId: string) => {
-      if (!stageConfig || stageConfig.length === 0) return { label: 'Inconnu', progress: 0 };
-      const index = stageConfig.findIndex(s => s.id === stageId);
-      if (index === -1) return { label: stageConfig[0]?.label || 'Start', progress: 0 };
-      return { label: stageConfig[index].label, progress: Math.round(((index + 1) / stageConfig.length) * 100) };
+  const handleStageClick = async (id: string) => {
+      setLoadingStageId(id);
+      await onUpdateStage(id);
+      setLoadingStageId(null);
   };
 
-  const filteredProjects = projects.filter(project => {
-      const matchSearch = project.clientName.toLowerCase().includes(searchQuery.toLowerCase());
-      const lastStepId = stageConfig[stageConfig.length - 1]?.id;
-      const isCompleted = project.currentStage === lastStepId;
-      const matchStatus = statusFilter === 'all' ? true : statusFilter === 'completed' ? isCompleted : !isCompleted;
-      return matchSearch && matchStatus;
-  });
-
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setNewProjectLoading(true);
-      try {
-          if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
-          else await onCreateProject(newProject, coverFile);
-          setIsNewProjectModalOpen(false);
-          setEditingProjectId(null);
-          setNewProject({ clientName: '', clientEmail: '', date: '', estimatedDeliveryDate: '', location: '', type: 'Mariage' });
-      } finally { setNewProjectLoading(false); }
+  const getProgress = () => {
+    if (stageConfig.length === 0) return 0;
+    return Math.round(((currentStageIndex + 1) / stageConfig.length) * 100);
   };
 
-  const openEdit = (p: Project, e: React.MouseEvent) => {
-      e.stopPropagation();
-      setEditingProjectId(p.id);
-      setNewProject({ ...p, estimatedDeliveryDate: p.estimatedDeliveryDate || '', type: p.type || 'Mariage' });
-      setIsNewProjectModalOpen(true);
-  };
-
-  const openDelete = (id: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      setProjectToDelete(id);
-  };
-
-  // Helper for Project Type Styles (Sober Colors)
-  const getProjectStyle = (type: string) => {
-      const normalized = type.toLowerCase();
-      if (normalized.includes('mariage')) return { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', icon: <Heart size={12}/> };
-      if (normalized.includes('mode')) return { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100', icon: <Aperture size={12}/> };
-      if (normalized.includes('vidéo')) return { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100', icon: <Video size={12}/> };
-      if (normalized.includes('corporate')) return { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-100', icon: <Building2 size={12}/> };
-      return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-100', icon: <Package size={12}/> };
-  };
-
-  // Plan Details Helper
-  const getPlanDetails = () => {
-      switch(userPlan) {
-          case 'pro': return { name: 'Pro', price: '19€/mois', icon: <Sparkles size={18}/>, features: ['Projets illimités', 'Vidéo Teasers', 'Logo personnalisé'] };
-          case 'agency': return { name: 'Agency', price: '49€/mois', icon: <Building2 size={18}/>, features: ['Multi-comptes', 'API Access', 'Domaine perso'] };
-          default: return { name: 'Freelance', price: 'Gratuit', icon: <Zap size={18}/>, features: ['5 Projets actifs', 'Images Teasers', 'Email support'] };
+  const handleResetToDefault = async () => {
+      if (confirm("Attention : cela va remplacer votre workflow actuel par le modèle par défaut et sauvegarder immédiatement. Continuer ?")) {
+          // IMPORTANT: Deep copy of default config
+          const freshConfig = defaultConfig.map(s => ({ ...s }));
+          // 1. Mise à jour visuelle
+          setLocalWorkflow(freshConfig); 
+          // 2. Sauvegarde immédiate en BDD
+          await onUpdateStageConfig(freshConfig); 
+          // 3. Fermeture de l'éditeur pour voir le résultat
+          setIsEditingWorkflow(false); 
       }
   };
-  const currentPlan = getPlanDetails();
 
-  // Calculate global stats
-  const activeProjectsCount = projects.filter(p => p.currentStage !== stageConfig[stageConfig.length - 1]?.id).length;
-  const completedProjectsCount = projects.length - activeProjectsCount;
+  const handleCopyLink = () => {
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/#/v/${project.id}`;
+      navigator.clipboard.writeText(link);
+      setShowCopyFeedback(true);
+      setTimeout(() => setShowCopyFeedback(false), 2000);
+  };
+
+  const handleOpenLink = () => {
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/#/v/${project.id}`;
+      window.open(link, '_blank');
+  };
+
+  // --- WORKFLOW EDITOR HANDLERS ---
+  const handleStepChange = (index: number, field: keyof WorkflowStep, value: string | number) => {
+      const updated = [...localWorkflow];
+      updated[index] = { ...updated[index], [field]: value };
+      setLocalWorkflow(updated);
+  };
+
+  const handleAddStep = () => {
+      const newStep: WorkflowStep = {
+          id: `step_${Date.now()}`,
+          label: 'Nouvelle étape',
+          message: 'Description...',
+          minDays: 0,
+          maxDays: 1
+      };
+      setLocalWorkflow([...localWorkflow, newStep]);
+  };
+
+  const handleRemoveStep = (index: number) => {
+      if (localWorkflow.length <= 1) return;
+      const updated = localWorkflow.filter((_, i) => i !== index);
+      setLocalWorkflow(updated);
+  };
+
+  const saveWorkflow = async () => {
+      await onUpdateStageConfig(localWorkflow);
+      setIsEditingWorkflow(false);
+  };
+
+  const formatDate = (dateString?: string) => {
+      if (!dateString) return 'Non définie';
+      return new Date(dateString).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   return (
-    <div className="flex h-screen bg-[#F3F4F6] font-sans text-gray-900 overflow-hidden">
+    <div className="min-h-screen bg-[#F3F4F6] font-sans text-gray-900 pb-20">
       
-      {/* MOBILE OVERLAY */}
-      {isMobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-      )}
+      {/* HEADER */}
+      <header className="bg-white border-b border-gray-200 min-h-16 sticky top-0 z-30 px-4 md:px-8 py-3 md:py-0 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm gap-3 md:gap-0">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+              <button 
+                onClick={onBack} 
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors shrink-0"
+              >
+                  <ArrowLeft size={18}/>
+              </button>
+              <h1 className="text-base font-bold text-gray-900 leading-tight truncate">{project.clientName}</h1>
+          </div>
 
-      {/* SIDEBAR - Responsive Drawer */}
-      <aside className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col shrink-0 border-r border-gray-200 py-6 px-4
-          transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        {/* Logo */}
-        <div className="flex items-center justify-between px-2 mb-10 text-gray-900">
-            <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
-                    <Activity size={16} strokeWidth={2.5}/>
-                </div>
-                <span className="font-bold text-xl tracking-tight">Peekit</span>
-            </div>
-            {/* Close button for mobile */}
-            <button className="md:hidden text-gray-400 hover:text-gray-900" onClick={() => setIsMobileMenuOpen(false)}>
-                <X size={20} />
-            </button>
-        </div>
+          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+               <span className="flex items-center gap-2 text-xs font-medium text-gray-500 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100 whitespace-nowrap">
+                    <Clock size={12}/> <span className="hidden sm:inline">Dernière MAJ:</span> {project.lastUpdate}
+               </span>
+               <Button variant="black" size="sm" onClick={onViewClientVersion} className="gap-2 text-xs hover:shadow-lg hover:shadow-indigo-500/20 transition-all shrink-0">
+                   <span className="hidden sm:inline">Vue Client</span> <span className="sm:hidden">Client</span> <ExternalLink size={12}/>
+               </Button>
+          </div>
+      </header>
 
-        {/* Menu */}
-        <nav className="space-y-1 flex-1">
-            <button 
-                onClick={() => { setCurrentView('projects'); setIsMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group ${
-                    currentView === 'projects' 
-                    ? 'bg-gray-100 text-gray-900' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-            >
-                <LayoutGrid size={18} strokeWidth={2} className={`transition-colors ${currentView === 'projects' ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`}/> 
-                <span>Projets</span>
-            </button>
-            
-            <button 
-                onClick={() => { setCurrentView('subscription'); setIsMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all group ${
-                    currentView === 'subscription' 
-                    ? 'bg-gray-100 text-gray-900' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-            >
-                <CreditCard size={18} strokeWidth={2} className={`transition-colors ${currentView === 'subscription' ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`}/> 
-                <span>Mon abonnement</span>
-            </button>
-        </nav>
-        
-        <button onClick={onLogout} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-auto">
-            <LogOut size={18}/> <span>Déconnexion</span>
-        </button>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        
-        {/* HEADER */}
-        <header className="bg-white border-b border-gray-200 h-16 shrink-0 sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between shadow-sm">
-             <div className="flex items-center gap-3">
-                <button 
-                    className="md:hidden p-2 text-gray-500 hover:text-gray-900 bg-white rounded-lg border border-gray-200"
-                    onClick={() => setIsMobileMenuOpen(true)}
-                >
-                    <Menu size={20} />
-                </button>
-                <h1 className="text-lg md:text-xl font-bold text-gray-900 tracking-tight hidden sm:block">
-                    {currentView === 'projects' ? 'Dashboard' : 'Abonnement'}
-                </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg">
-                    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-gray-900 font-bold text-[10px] border border-gray-200 uppercase tracking-wider shadow-sm">
-                        {studioName.substring(0, 2)}
-                    </div>
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide truncate max-w-[100px]">{studioName}</span>
-                </div>
-            </div>
-        </header>
-
-        {/* SCROLLABLE AREA */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-            
-            {currentView === 'projects' && (
-                <div className="max-w-7xl mx-auto space-y-6">
-                    
-                    {/* TOP STATS & ACTIONS ROW */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Stats Card */}
-                        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm flex flex-col justify-center relative overflow-hidden h-full">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Projets Actifs</h3>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                                <span className="text-2xl font-bold text-gray-900">{activeProjectsCount}</span>
-                            </div>
-                            <div className="mt-1 text-[10px] text-gray-500 font-medium">
-                                {completedProjectsCount} projets terminés
-                            </div>
-                        </div>
-
-                        {/* Create Button Card */}
-                        <button 
-                            onClick={() => { setEditingProjectId(null); setIsNewProjectModalOpen(true); }}
-                            className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm flex flex-col justify-center items-start hover:border-indigo-200 hover:shadow-md transition-all group text-left h-full"
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                <Plus size={18} />
-                            </div>
-                            <h3 className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">Nouveau Projet</h3>
-                        </button>
-                    </div>
-
-                    {/* FILTERS & SEARCH */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                         <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm w-full sm:w-auto">
-                            <button 
-                                onClick={() => setStatusFilter('all')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${statusFilter === 'all' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                Tous
-                            </button>
-                            <button 
-                                onClick={() => setStatusFilter('active')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${statusFilter === 'active' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                En cours
-                            </button>
-                            <button 
-                                onClick={() => setStatusFilter('completed')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${statusFilter === 'completed' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                Terminés
-                            </button>
-                        </div>
-
-                        <div className="relative group w-full sm:w-64">
-                            <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"/>
-                            <input 
-                                type="text" 
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Rechercher..." 
-                                className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 w-full transition-all shadow-sm"
-                            />
-                        </div>
-                    </div>
-
-                    {/* PROJECTS GRID (Card Style) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredProjects.map((project) => {
-                            const { label, progress } = getStageInfo(project.currentStage);
-                            const isCompleted = progress === 100;
-                            const typeStyle = getProjectStyle(project.type);
-                            
-                            return (
-                                <div 
-                                    key={project.id} 
-                                    onClick={() => onOpenProject(project)}
-                                    className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg hover:shadow-gray-200/50 hover:border-indigo-100 transition-all cursor-pointer group relative flex flex-col justify-between h-full"
-                                >
-                                    {/* Top Section */}
-                                    <div>
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0">
-                                                    <img src={project.coverImage} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-gray-900 text-sm line-clamp-1 group-hover:text-indigo-600 transition-colors">{project.clientName}</h3>
-                                                    <span className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${typeStyle.bg} ${typeStyle.text} ${typeStyle.border}`}>
-                                                        {typeStyle.icon} {project.type}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            
-                                            {/* Action Menu on Hover */}
-                                            <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                                                <button onClick={(e) => openEdit(project, e)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Pencil size={12}/></button>
-                                                <button onClick={(e) => openDelete(project.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={12}/></button>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4 mb-6">
-                                            <div>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Date</p>
-                                                <p className="text-xs font-bold text-gray-900 flex items-center gap-1"><Calendar size={10} className="text-gray-400"/> {project.date}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Lieu</p>
-                                                <p className="text-xs font-bold text-gray-900 flex items-center gap-1"><MapPin size={10} className="text-gray-400"/> {project.location}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Bottom Section: Progress */}
-                                    <div className="pt-4 border-t border-gray-50">
-                                        <div className="flex justify-between items-end mb-2">
-                                            <span className={`
-                                                inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wide truncate max-w-[150px]
-                                                ${isCompleted 
-                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                                                    : 'bg-indigo-50 text-indigo-700 border-indigo-100'}
-                                            `}>
-                                                {isCompleted ? 'Livré' : label}
-                                            </span>
-                                            <span className="text-xs font-bold text-gray-900">{progress}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-gray-900 to-indigo-600'}`}
-                                                style={{ width: `${progress}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        
-                        {/* Empty State Card */}
-                        {filteredProjects.length === 0 && (
-                            <div className="col-span-full py-16 text-center bg-white rounded-xl border border-gray-200 border-dashed">
-                                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
-                                    <Package size={20}/>
-                                </div>
-                                <h3 className="text-gray-900 font-bold text-sm">Aucun projet trouvé</h3>
-                                <p className="text-xs text-gray-500 mt-1 mb-4">Créez votre premier dossier pour commencer.</p>
-                                <Button size="sm" variant="black" onClick={() => { setEditingProjectId(null); setIsNewProjectModalOpen(true); }}>
-                                    Nouveau Projet
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-            )}
-
-            {currentView === 'subscription' && (
-                <div className="max-w-3xl mx-auto">
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-8 shadow-sm">
-                        <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col md:flex-row items-start justify-between gap-6">
-                             <div>
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-600">
-                                        {currentPlan.icon}
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Plan {currentPlan.name}</h2>
-                                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded border border-emerald-100">Actif</span>
-                                </div>
-                                <p className="text-gray-500 text-sm">Votre abonnement est actif et se renouvellera automatiquement.</p>
-                             </div>
-                             <div className="text-left md:text-right">
-                                 <div className="text-3xl font-bold text-gray-900 font-mono tracking-tight">{currentPlan.price}</div>
-                                 <div className="text-xs text-gray-400 font-medium mt-1">Facturation mensuelle</div>
-                             </div>
-                        </div>
-                        
-                        <div className="p-6 md:p-8 bg-gray-50/50">
-                            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-4">Fonctionnalités incluses</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                                {currentPlan.features.map((feat, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                                        <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                                            <Check size={12} strokeWidth={3}/>
-                                        </div>
-                                        {feat}
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Button variant="black" onClick={onUpgradeClick}>Changer d'offre</Button>
-                                <Button variant="outline">Gérer la facturation</Button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="text-center text-xs text-gray-400">
-                        Besoin d'aide avec votre abonnement ? <a href="#" className="underline hover:text-gray-900">Contacter le support</a>
-                    </div>
-                </div>
-            )}
-
-        </div>
-      </main>
-
-      {/* CREATE/EDIT MODAL */}
-      {isNewProjectModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/20 backdrop-blur-sm p-4 animate-fade-in">
-              <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8 animate-slide-up relative overflow-hidden flex flex-col max-h-full">
-                  <div className="flex justify-between items-center mb-6 relative z-10 shrink-0">
-                      <div>
-                          <h2 className="text-xl font-bold tracking-tight text-gray-900">{editingProjectId ? 'Modifier' : 'Nouveau Projet'}</h2>
-                          <p className="text-sm text-gray-500 mt-1">Saisissez les détails du dossier.</p>
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+          
+          {/* MASTER BENTO GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* TILE 1: INFO CARD (Top Left, Spans 2) */}
+              <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center h-full min-h-[140px]">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center text-blue-600 shrink-0">
+                              <LayoutGrid size={20} strokeWidth={1.5}/>
+                          </div>
+                          <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Projet</div>
+                              <div className="font-bold text-gray-900 text-sm truncate">{project.type}</div>
+                          </div>
                       </div>
-                      <button onClick={() => setIsNewProjectModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-md transition-colors"><X size={20} className="text-gray-500"/></button>
+                      
+                      <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-center text-purple-600 shrink-0">
+                              <Calendar size={20} strokeWidth={1.5}/>
+                          </div>
+                          <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Date</div>
+                              <div className="font-bold text-gray-900 text-sm">{formatDate(project.date)}</div>
+                          </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-pink-50 border border-pink-100 rounded-lg flex items-center justify-center text-pink-600 shrink-0">
+                              <MapPin size={20} strokeWidth={1.5}/>
+                          </div>
+                          <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Lieu</div>
+                              <div className="font-bold text-gray-900 text-sm truncate max-w-[120px]">{project.location}</div>
+                          </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-center text-amber-600 shrink-0">
+                              <Flag size={20} strokeWidth={1.5}/>
+                          </div>
+                          <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Livraison</div>
+                              <div className="font-bold text-gray-900 text-sm">{formatDate(project.estimatedDeliveryDate)}</div>
+                          </div>
+                      </div>
                   </div>
-                  
-                  <form onSubmit={handleCreateSubmit} className="space-y-4 relative z-10 overflow-y-auto pr-2">
-                       <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Client</label>
-                          <input required autoFocus className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" placeholder="Nom du client" value={newProject.clientName} onChange={e => setNewProject({...newProject, clientName: e.target.value})} />
-                       </div>
-                       
-                       <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Email</label>
-                          <input type="email" className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" placeholder="contact@client.com" value={newProject.clientEmail} onChange={e => setNewProject({...newProject, clientEmail: e.target.value})} />
-                       </div>
-
-                       <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Date du projet</label>
-                                <input type="date" required className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-gray-900 font-medium" value={newProject.date} onChange={e => setNewProject({...newProject, date: e.target.value})} />
-                            </div>
-                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Livraison estimée</label>
-                                <input type="date" className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-gray-900 font-medium" value={newProject.estimatedDeliveryDate} onChange={e => setNewProject({...newProject, estimatedDeliveryDate: e.target.value})} />
-                            </div>
-                       </div>
-                       
-                        <div className="grid grid-cols-2 gap-4">
-                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Type</label>
-                                <select className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none appearance-none font-medium cursor-pointer" value={newProject.type} onChange={e => setNewProject({...newProject, type: e.target.value})}>
-                                    {['Mariage', 'Corporate', 'Mode', 'Autre'].map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Lieu</label>
-                                <div className="relative">
-                                    <MapPin size={16} className="absolute left-3 top-2.5 text-gray-400"/>
-                                    <input type="text" className="w-full pl-9 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-300 font-medium" placeholder="Ville, Pays" value={newProject.location} onChange={e => setNewProject({...newProject, location: e.target.value})} />
-                                </div>
-                            </div>
-                        </div>
-                       
-                        {/* Cover Image Upload in Modal */}
-                       <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Couverture (Optionnel)</label>
-                          <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={(e) => e.target.files && setCoverFile(e.target.files[0])}
-                            className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-                          />
-                       </div>
-
-                      <div className="pt-4 flex gap-3 shrink-0">
-                          <button type="button" onClick={() => setIsNewProjectModalOpen(false)} className="flex-1 py-3 rounded-lg font-bold text-sm text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
-                          <Button type="submit" isLoading={newProjectLoading} variant="black" className="flex-1">
-                                {editingProjectId ? 'Enregistrer' : 'Créer le projet'}
-                          </Button>
-                      </div>
-                  </form>
               </div>
-          </div>
-      )}
-      
-      {/* DELETE CONFIRM */}
-      {projectToDelete && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/20 backdrop-blur-sm p-4">
-               <div className="w-full max-w-sm bg-white p-6 rounded-xl shadow-xl border border-gray-100 text-center animate-slide-up">
-                   <h3 className="font-bold text-gray-900 mb-2">Supprimer le projet ?</h3>
-                   <p className="text-sm text-gray-500 mb-6">Cette action est irréversible.</p>
-                   <div className="flex gap-2">
-                       <Button variant="outline" size="sm" fullWidth onClick={() => setProjectToDelete(null)} className="rounded-lg border-gray-200 bg-white">Non</Button>
-                       <Button variant="danger" size="sm" fullWidth onClick={async () => { await onDeleteProject(projectToDelete); setProjectToDelete(null); }} className="rounded-lg">Supprimer</Button>
-                   </div>
-               </div>
-          </div>
-      )}
 
+              {/* TILE 2: PROGRESS CARD (Top Right, Spans 1) */}
+              <div className="lg:col-span-1 bg-gray-900 rounded-xl p-6 border border-gray-900 shadow-sm text-white flex flex-col justify-center relative overflow-hidden group h-full min-h-[140px]">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-indigo-500/30 transition-colors"></div>
+                  
+                  <div className="relative z-10">
+                      <div className="flex justify-between items-end mb-3">
+                          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Avancement</div>
+                          <div className="text-3xl font-bold tracking-tight">{getProgress()}%</div>
+                      </div>
+                      <div className="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000" 
+                            style={{ width: `${getProgress()}%` }}
+                          ></div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* TILE 3: WORKFLOW BENTO GRID (Main Left, Spans 2) */}
+              <div className="lg:col-span-2">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
+                      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                          <h3 className="font-bold text-gray-900 text-sm">Parcours du projet</h3>
+                          {!isEditingWorkflow ? (
+                              <button 
+                                onClick={() => setIsEditingWorkflow(true)} 
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-indigo-50"
+                              >
+                                  <Pencil size={12}/> Modifier
+                              </button>
+                          ) : (
+                              <div className="flex gap-2">
+                                  <button onClick={handleResetToDefault} className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors" title="Réinitialiser par défaut">
+                                      <RefreshCcw size={14}/>
+                                  </button>
+                                  <Button size="sm" variant="ghost" onClick={() => setIsEditingWorkflow(false)}>Annuler</Button>
+                                  <Button size="sm" variant="black" onClick={saveWorkflow}>Enregistrer</Button>
+                              </div>
+                          )}
+                      </div>
+                      
+                      <div className="p-6 flex-1 bg-gray-50/30">
+                          
+                          {/* WORKFLOW EDIT MODE */}
+                          {isEditingWorkflow ? (
+                              <div className="space-y-4 animate-fade-in">
+                                  {userPlan === 'freelance' && (
+                                      <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg flex items-center gap-3 mb-4">
+                                          <Settings className="text-indigo-600" size={18} />
+                                          <p className="text-xs text-indigo-800">
+                                              <span className="font-bold">Mode Édition :</span> Personnalisez les étapes pour tous vos futurs projets.
+                                          </p>
+                                      </div>
+                                  )}
+                                  
+                                  {localWorkflow.map((step, index) => (
+                                      <div key={step.id} className="flex gap-3 items-start p-3 bg-white rounded-xl border border-gray-200 shadow-sm group">
+                                          <div className="w-6 h-6 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center shrink-0 mt-2 text-xs font-bold text-gray-500">
+                                              {index + 1}
+                                          </div>
+                                          <div className="flex-1 space-y-2">
+                                              <input 
+                                                  value={step.label} 
+                                                  onChange={(e) => handleStepChange(index, 'label', e.target.value)}
+                                                  className="w-full bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-sm font-bold focus:border-indigo-500 outline-none"
+                                                  placeholder="Nom de l'étape"
+                                              />
+                                              <input 
+                                                  value={step.message} 
+                                                  onChange={(e) => handleStepChange(index, 'message', e.target.value)}
+                                                  className="w-full bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs text-gray-600 focus:border-indigo-500 outline-none"
+                                                  placeholder="Description client"
+                                              />
+                                          </div>
+                                          <button 
+                                              onClick={() => handleRemoveStep(index)}
+                                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                          >
+                                              <Trash2 size={16}/>
+                                          </button>
+                                      </div>
+                                  ))}
+                                  
+                                  <button 
+                                      onClick={handleAddStep}
+                                      className="w-full py-3 border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl text-sm font-bold text-gray-400 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                                  >
+                                      <Plus size={16}/> Ajouter une étape
+                                  </button>
+                              </div>
+                          ) : (
+                              /* WORKFLOW READ MODE - RESPONSIVE VERTICAL STEP CARDS */
+                              <div className="space-y-4">
+                                  {stageConfig.map((step, index) => {
+                                      const isCompleted = index < currentStageIndex;
+                                      const isCurrent = index === currentStageIndex;
+                                      const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
+                                      const isLastStep = index === stageConfig.length - 1;
+
+                                      return (
+                                          <div 
+                                              key={step.id} 
+                                              onClick={() => handleStageClick(step.id)}
+                                              className={`relative flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group
+                                                  ${isCurrent 
+                                                      ? 'bg-white border-indigo-600 shadow-md ring-1 ring-indigo-50 z-10 scale-[1.01]' // Active Card Pop
+                                                      : isCompleted 
+                                                          ? 'bg-white border-gray-200 opacity-90 hover:opacity-100 hover:shadow-sm' // Completed
+                                                          : 'bg-white border-gray-100 text-gray-400 hover:border-gray-200 hover:text-gray-600' // Future
+                                                  }
+                                              `}
+                                          >
+                                              <div className="w-full sm:w-auto flex justify-between items-center sm:justify-start gap-4 shrink-0">
+                                                  <div className="flex items-center gap-4">
+                                                      <span className={`text-[10px] font-bold w-6 h-6 flex items-center justify-center rounded-md border
+                                                          ${isCurrent ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 
+                                                            isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}
+                                                      `}>
+                                                          {(index + 1).toString().padStart(2, '0')}
+                                                      </span>
+
+                                                      <div className={`
+                                                          w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border
+                                                          ${isCompleted ? 'bg-emerald-500 text-white border-emerald-600' : 
+                                                            isCurrent ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm' : 
+                                                            'bg-gray-50 text-gray-300 border-gray-100'}
+                                                      `}>
+                                                          {isLoading ? (
+                                                              <Loader2 size={16} className="animate-spin" />
+                                                          ) : isCompleted ? (
+                                                              <Check size={16} strokeWidth={3} />
+                                                          ) : isCurrent ? (
+                                                              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></div>
+                                                          ) : (
+                                                              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                                                          )}
+                                                      </div>
+                                                  </div>
+
+                                                  {/* Mobile Badge - Visible only on small screens */}
+                                                  <div className="sm:hidden">
+                                                      {isCurrent && (
+                                                          isLastStep ? (
+                                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-200">
+                                                                  <Check size={12} strokeWidth={3}/> Terminé
+                                                              </span>
+                                                          ) : (
+                                                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-200 shadow-sm">
+                                                                  <Activity size={12} strokeWidth={3}/> En cours
+                                                              </span>
+                                                          )
+                                                      )}
+                                                      {isCompleted && !isCurrent && (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-200">
+                                                              Terminé
+                                                          </span>
+                                                      )}
+                                                  </div>
+                                              </div>
+
+                                              {/* Middle: Content */}
+                                              <div className="flex-1 min-w-0 w-full sm:w-auto mt-2 sm:mt-0">
+                                                  <h4 className={`text-sm font-bold mb-0.5 truncate ${isCurrent ? 'text-gray-900' : isCompleted ? 'text-gray-700' : 'text-current'}`}>
+                                                      {step.label}
+                                                  </h4>
+                                                  <p className="text-xs text-gray-500 font-medium truncate">
+                                                      {step.message}
+                                                  </p>
+                                              </div>
+
+                                              {/* Right: Badge - Visible only on Desktop */}
+                                              <div className="shrink-0 pl-2 hidden sm:block">
+                                                  {isCurrent && (
+                                                      isLastStep ? (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-200">
+                                                              <Check size={12} strokeWidth={3}/> Terminé
+                                                          </span>
+                                                      ) : (
+                                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-200 shadow-sm">
+                                                              <Activity size={12} strokeWidth={3}/> En cours
+                                                          </span>
+                                                      )
+                                                  )}
+                                                  {isCompleted && !isCurrent && (
+                                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-200">
+                                                          Terminé
+                                                      </span>
+                                                  )}
+                                                  {!isCurrent && !isCompleted && (
+                                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-gray-100">
+                                                          À venir
+                                                      </span>
+                                                  )}
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
+
+              {/* TILE 4: ADMIN TOOLS (Right Sidebar) */}
+              <div className="lg:col-span-1 flex flex-col gap-6">
+                  
+                  {/* COVER IMAGE WIDGET */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden group">
+                      <div className="h-32 bg-gray-100 relative overflow-hidden">
+                          <img src={project.coverImage} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <button onClick={() => coverInputRef.current?.click()} className="bg-white/90 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg backdrop-blur-sm transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                  <Camera size={14}/> Changer
+                              </button>
+                              <input type="file" ref={coverInputRef} className="hidden" accept="image/*" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} />
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* CLIENT ACCESS WIDGET */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                      <h3 className="font-bold text-gray-900 text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <Lock size={12} className="text-gray-400"/> Accès Client
+                      </h3>
+                      
+                      <div className="space-y-4">
+                          <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                              <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Lien unique</div>
+                              <div className="flex gap-2">
+                                  <div className="flex-1 bg-white border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-600 truncate font-mono select-all">
+                                      {`${window.location.origin}/#/v/${project.id}`}
+                                  </div>
+                                  <button onClick={handleCopyLink} className="p-1.5 hover:bg-gray-200 rounded text-gray-500 transition-colors relative" title="Copier">
+                                      {showCopyFeedback ? <Check size={14} className="text-emerald-500"/> : <LinkIcon size={14}/>}
+                                  </button>
+                                  <button onClick={handleOpenLink} className="p-1.5 hover:bg-gray-200 rounded text-gray-500 transition-colors" title="Ouvrir">
+                                      <ExternalLink size={14}/>
+                                  </button>
+                              </div>
+                          </div>
+
+                          <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">Mot de passe</div>
+                              <div className="flex gap-2">
+                                  <input 
+                                      type="text" 
+                                      value={password}
+                                      onChange={(e) => setPassword(e.target.value)}
+                                      className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:border-indigo-500 outline-none transition-colors"
+                                      placeholder="Définir un mot de passe"
+                                  />
+                                  <Button 
+                                      size="sm" 
+                                      variant="black" 
+                                      onClick={() => onUpdatePassword(password)}
+                                      disabled={password === project.accessPassword}
+                                  >
+                                      OK
+                                  </Button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* TEASERS / FILES WIDGET */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex-1">
+                      <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-bold text-gray-900 text-xs uppercase tracking-widest flex items-center gap-2">
+                              <Film size={12} className="text-gray-400"/> Galerie ({project.teasers?.length || 0})
+                          </h3>
+                          <button 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors flex items-center gap-1"
+                          >
+                              <Plus size={12}/> Ajouter
+                          </button>
+                          <input 
+                              type="file" 
+                              multiple 
+                              ref={fileInputRef} 
+                              className="hidden" 
+                              accept="image/*,video/*"
+                              onChange={(e) => e.target.files && onUploadTeasers(Array.from(e.target.files))}
+                          />
+                      </div>
+
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                          {project.teasers && project.teasers.map(t => (
+                              <div key={t.id} className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-100 rounded-lg group hover:bg-white hover:shadow-sm transition-all">
+                                  <div className="w-10 h-10 rounded bg-gray-200 overflow-hidden flex items-center justify-center shrink-0">
+                                      {t.type === 'video' ? <Film size={16} className="text-gray-500"/> : <img src={t.url} className="w-full h-full object-cover"/>}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                      <div className="text-xs font-bold text-gray-900 truncate">{t.title || 'Média'}</div>
+                                      <div className="text-[10px] text-gray-400 font-mono">{t.date}</div>
+                                  </div>
+                                  <button 
+                                      onClick={() => onDeleteTeaser(t.id)}
+                                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                  >
+                                      <Trash2 size={14}/>
+                                  </button>
+                              </div>
+                          ))}
+                          {(!project.teasers || project.teasers.length === 0) && (
+                              <div className="text-center py-6 border border-dashed border-gray-200 rounded-lg">
+                                  <p className="text-xs text-gray-400 font-medium">Aucun fichier partagé</p>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+
+              </div>
+
+          </div>
+
+      </div>
     </div>
   );
 };
