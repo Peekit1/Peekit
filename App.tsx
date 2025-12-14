@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './Hero';
@@ -241,10 +240,24 @@ function App() {
       }
   };
 
+  // --- CORRECTION DU BUG DE SUPPRESSION ---
   const handleDeleteProject = async (projectId: string) => {
-      const { error } = await supabase.from('projects').delete().eq('id', projectId);
-      if (error) console.error("Error deleting:", error);
-      else await fetchProjects();
+      // 1. Mise à jour INSTANTANÉE de l'interface (Optimistic UI)
+      setProjects(currentProjects => currentProjects.filter(p => p.id !== projectId));
+
+      // 2. Suppression en arrière-plan dans Supabase
+      const { error } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', projectId);
+
+      // 3. Gestion d'erreur
+      if (error) {
+          console.error("Erreur critique lors de la suppression :", error.message);
+          alert("Impossible de supprimer le projet. Vérifiez vos droits Supabase.");
+          // Si ça a échoué, on recharge la liste pour réafficher le projet
+          await fetchProjects(); 
+      }
   };
 
   const handleEditProject = async (projectId: string, data: Partial<Project>) => {
