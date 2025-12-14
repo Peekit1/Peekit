@@ -42,7 +42,8 @@ export interface Project {
   id: string;
   clientName: string;
   clientEmail: string; 
-  date: string;
+  date: string; // Start date
+  estimatedDeliveryDate?: string; // New field
   location: string;
   type: string;
   coverImage: string;
