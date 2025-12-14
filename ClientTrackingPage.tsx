@@ -13,9 +13,47 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  const handleDownload = async (url: string, id: string) => {
+  const handleDownload = async (url: string, id: string, filename: string) => {
     setDownloadingId(id);
-    setTimeout(() => { window.open(url, '_blank'); setDownloadingId(null); }, 1000);
+    
+    try {
+      // 1. Fetch the file as a blob
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network error');
+      const blob = await response.blob();
+      
+      // 2. Create an object URL for the blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // 3. Determine safe filename with extension if missing
+      let finalFilename = filename || 'download';
+      const mimeType = blob.type;
+      
+      // Simple extension detection
+      if (!finalFilename.includes('.')) {
+          if (mimeType.includes('jpeg') || mimeType.includes('jpg')) finalFilename += '.jpg';
+          else if (mimeType.includes('png')) finalFilename += '.png';
+          else if (mimeType.includes('pdf')) finalFilename += '.pdf';
+          else if (mimeType.includes('mp4')) finalFilename += '.mp4';
+      }
+
+      // 4. Create hidden link and click it
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', finalFilename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // 5. Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed", error);
+      // Fallback: Try opening in new tab if fetch fails (e.g. CORS)
+      window.open(url, '_blank');
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const getProgress = () => {
@@ -202,7 +240,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                           </div>
                                           
                                           <button 
-                                              onClick={() => handleDownload(t.url, t.id)}
+                                              onClick={() => handleDownload(t.url, t.id, t.title || 'fichier-peekit')}
                                               disabled={downloadingId === t.id}
                                               className="w-full py-2 bg-gray-50 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2"
                                           >
