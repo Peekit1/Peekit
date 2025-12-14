@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Menu, X } from 'lucide-react';
 import { Button } from './Button';
-import { AuthNavigationProps } from '../types';
+import { AuthNavigationProps } from './types';
 
 export const StickyHeader: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
