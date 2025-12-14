@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Activity, Building2, User, Sparkles, Loader2, MapPin, Calendar, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
-import { OnboardingWizardProps, Project } from '../types';
+import { OnboardingWizardProps, Project } from './types';
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
