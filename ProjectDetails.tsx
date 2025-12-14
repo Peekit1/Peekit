@@ -7,7 +7,7 @@ import {
   MoreHorizontal, FileImage, Film, LayoutGrid, Settings,
   AlertCircle, RefreshCcw, Activity
 } from 'lucide-react';
-import { ProjectDetailsProps, WorkflowStep } from '../types';
+import { ProjectDetailsProps, WorkflowStep } from './types';
 import { Button } from './Button';
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
