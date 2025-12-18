@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './components/Hero';
@@ -18,7 +17,8 @@ import { OnboardingWizard } from './components/OnboardingWizard';
 import { ProjectDetails } from './components/ProjectDetails';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser, WorkflowStep, NotificationType } from './types';
 import { supabase } from './supabaseClient';
-import { GoogleGenAI, Type } from "@google/genai";
+// Correction de l'import ici
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
   { id: 'secured', label: "Sécurisation des fichiers", minDays: 0, maxDays: 1, message: "Projet commencé" },
@@ -158,9 +158,6 @@ function App() {
     const targetUser = userId || session?.user?.id;
     if (!targetUser) return;
     try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', targetUser).single();
-      const studio = data?.studio_name || '';
-      
       const { data: projData, error: projError } = await supabase.from('projects').select('*, teasers ( id, type, url, created_at, title )').eq('user_id', targetUser).order('created_at', { ascending: false });
       if (projError) throw projError;
       if (projData) {
@@ -205,46 +202,41 @@ function App() {
     } finally { setIsAuthChecking(false); }
   };
 
+  // FONCTION IA CORRIGÉE
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const genAI = new GoogleGenerativeAI(import.meta.env.VITE_API_KEY || '');
         
         let contextInstruction = "";
         if (type === 'status') {
-            contextInstruction = `Le projet avance. Nous avons atteint l'étape : "${stage.label}". 
-            Écris un message qui valorise cette progression sans être trop technique. Ton : Premium, rassurant, expert.`;
+            contextInstruction = `Le projet avance. Nous avons atteint l'étape : "${stage.label}". Écris un message qui valorise cette progression. Ton : Premium, rassurant, expert.`;
         } else if (type === 'delay') {
-            contextInstruction = `Petit contretemps sur l'étape "${stage.label}".
-            Écris un message élégant qui explique que pour garantir un résultat d'exception, nous avons besoin de 48h supplémentaires. Transforme ce retard en une preuve d'exigence qualité.`;
+            contextInstruction = `Petit contretemps sur l'étape "${stage.label}". Écris un message élégant expliquant que nous avons besoin de 48h sup pour la qualité.`;
         } else if (type === 'note') {
-            contextInstruction = `Une précision importante a été ajoutée concernant l'étape "${stage.label}".
-            Contenu de la note : "${stage.description || 'Veuillez consulter votre espace.'}".
-            Invite le client à consulter son espace pour en savoir plus.`;
+            contextInstruction = `Une précision ajoutée sur "${stage.label}" : "${stage.description || 'Veuillez consulter votre espace.'}". Invite le client à consulter son espace.`;
         }
 
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: `Agis en tant qu'expert en Copywriting B2B pour créatifs (photographes, précisémment les créateurs d'images). 
-            Rédige un email pour le client "${project.clientName}" au sujet du projet "${project.type}".
-            Le studio s'appelle "${studioName}".
-            
-            CONTEXTE : ${contextInstruction}
-            
-            L'email doit inviter le client à utiliser son lien Peekit personnel sécurisé pour voir les détails.
-            L'email ne doit pas contenir de placeholders comme [Lien] ou [Signature], il sera complété par l'application.`,
-            config: {
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
-                    type: Type.OBJECT,
+                    type: SchemaType.OBJECT,
                     properties: {
-                        subject: { type: Type.STRING, description: "Objet de l'email accrocheur" },
-                        body: { type: Type.STRING, description: "Corps de l'email formaté (sans signature)" }
+                        subject: { type: SchemaType.STRING },
+                        body: { type: SchemaType.STRING }
                     },
                     required: ["subject", "body"]
                 }
             }
         });
-        return JSON.parse(response.text);
+
+        const prompt = `Agis en tant qu'expert en Copywriting B2B pour photographes. Rédige un email pour ${project.clientName} (Projet: ${project.type}). Studio: ${studioName}. CONTEXTE : ${contextInstruction}. Pas de placeholders [Lien], le lien Peekit sera ajouté après.`;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        return JSON.parse(responseText);
+
     } catch (error) {
         console.error("Erreur IA Notification:", error);
         return {
@@ -355,7 +347,7 @@ function App() {
   const handleUploadTeasers = async (files: File[]) => {
       if (!editingProject || !session) return;
       const currentCount = (editingProject.teasers || []).length;
-      if (userPlan === 'discovery' && (currentCount + files.length) > 3) { alert("Plan Découverte limité à 3 fichiers. Passez Pro !"); return; }
+      if (userPlan === 'discovery' && (currentCount + files.length) > 3) { alert("Plan Découverte limité à 3 fichiers."); return; }
       try {
           const newTeasers: Teaser[] = [];
           for (const file of files) {
@@ -374,7 +366,7 @@ function App() {
           const updatedProject = { ...editingProject, teasers: updatedTeasers };
           setEditingProject(updatedProject);
           setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
-      } catch (error: any) { alert("Erreur lors de l'upload : " + getErrorMessage(error)); }
+      } catch (error: any) { alert("Erreur upload : " + getErrorMessage(error)); }
   };
 
   const handleDeleteTeaser = async (teaserId: string) => {
@@ -400,21 +392,15 @@ function App() {
 
   const handleDeleteAccount = async () => {
     if (!session) return;
-    const userId = session.user.id;
     try {
         setLoading(true);
-        await supabase.from('teasers').delete().eq('user_id', userId);
-        await supabase.from('projects').delete().eq('user_id', userId);
-        await supabase.from('profiles').delete().eq('id', userId);
+        await supabase.from('teasers').delete().eq('user_id', session.user.id);
+        await supabase.from('projects').delete().eq('user_id', session.user.id);
+        await supabase.from('profiles').delete().eq('id', session.user.id);
         await supabase.auth.signOut();
         setCurrentPage('home');
         setSession(null);
-    } catch (error) {
-        console.error("Erreur lors de la suppression du compte:", error);
-        alert("Une erreur est survenue lors de la suppression de vos données.");
-    } finally {
-        setLoading(false);
-    }
+    } catch (error) { console.error("Erreur suppression:", error); } finally { setLoading(false); }
   };
 
   const handleClientBack = async () => {
@@ -437,21 +423,9 @@ function App() {
 
   if (currentPage === 'client-view' && clientViewProject) {
     if (clientViewProject.accessPassword && !clientAccessGranted) {
-      return (
-        <ClientAccessGate 
-          project={clientViewProject} 
-          onAccessGranted={() => setClientAccessGranted(true)} 
-          onBack={handleClientBack}
-        />
-      );
+      return <ClientAccessGate project={clientViewProject} onAccessGranted={() => setClientAccessGranted(true)} onBack={handleClientBack} />;
     }
-    return (
-      <ClientTrackingPage 
-        project={clientViewProject} 
-        stageConfig={stageConfig} 
-        onBack={handleClientBack} 
-      />
-    );
+    return <ClientTrackingPage project={clientViewProject} stageConfig={stageConfig} onBack={handleClientBack} />;
   }
 
   if (currentPage === 'auth') return <AuthPage onBack={() => setCurrentPage('home')} onLogin={() => setCurrentPage('dashboard')} initialView={authMode} />;
