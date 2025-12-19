@@ -17,8 +17,6 @@ import { OnboardingWizard } from './components/OnboardingWizard';
 import { ProjectDetails } from './components/ProjectDetails';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser, WorkflowStep, NotificationType } from './types';
 import { supabase } from './supabaseClient';
-// Correction de l'import ici
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
   { id: 'secured', label: "Sécurisation des fichiers", minDays: 0, maxDays: 1, message: "Projet commencé" },
@@ -202,48 +200,28 @@ function App() {
     } finally { setIsAuthChecking(false); }
   };
 
-  // FONCTION IA CORRIGÉE
+  // NOUVELLE FONCTION SANS IA (MESSAGES PRÉDÉFINIS)
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
-    try {
-        const genAI = new GoogleGenerativeAI(import.meta.env.VITE_API_KEY || '');
-        
-        let contextInstruction = "";
-        if (type === 'status') {
-            contextInstruction = `Le projet avance. Nous avons atteint l'étape : "${stage.label}". Écris un message qui valorise cette progression. Ton : Premium, rassurant, expert.`;
-        } else if (type === 'delay') {
-            contextInstruction = `Petit contretemps sur l'étape "${stage.label}". Écris un message élégant expliquant que nous avons besoin de 48h sup pour la qualité.`;
-        } else if (type === 'note') {
-            contextInstruction = `Une précision ajoutée sur "${stage.label}" : "${stage.description || 'Veuillez consulter votre espace.'}". Invite le client à consulter son espace.`;
-        }
+    let subject = "";
+    let body = "";
 
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: SchemaType.OBJECT,
-                    properties: {
-                        subject: { type: SchemaType.STRING },
-                        body: { type: SchemaType.STRING }
-                    },
-                    required: ["subject", "body"]
-                }
-            }
-        });
-
-        const prompt = `Agis en tant qu'expert en Copywriting B2B pour photographes. Rédige un email pour ${project.clientName} (Projet: ${project.type}). Studio: ${studioName}. CONTEXTE : ${contextInstruction}. Pas de placeholders [Lien], le lien Peekit sera ajouté après.`;
-
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-        return JSON.parse(responseText);
-
-    } catch (error) {
-        console.error("Erreur IA Notification:", error);
-        return {
-            subject: `Mise à jour : ${project.type}`,
-            body: `Bonjour ${project.clientName},\n\nVotre projet avance. Nous sommes actuellement à l'étape : ${stage.label}.\n\nVous pouvez suivre l'avancée en temps réel sur votre espace Peekit.\n\nÀ très vite.`
-        };
+    // 1. MISE A JOUR D'ÉTAPE
+    if (type === 'status') {
+        subject = `Avancement de votre projet ${project.type}`;
+        body = `Bonjour ${project.clientName},\n\nBonne nouvelle ! Le projet avance bien.\nNous venons de passer officiellement à l'étape : "${stage.label}".\n\nTout se déroule comme prévu. Vous pouvez consulter l'avancement en temps réel sur votre espace.`;
+    } 
+    // 2. RETARD DE PRODUCTION
+    else if (type === 'delay') {
+        subject = `Information concernant votre projet ${project.type}`;
+        body = `Bonjour ${project.clientName},\n\nJe tenais à vous informer d'un léger contretemps sur l'étape "${stage.label}".\n\nPour garantir une qualité optimale, je préfère prendre un peu plus de temps que prévu sur cette partie.\nMerci de votre patience et de votre confiance.`;
+    } 
+    // 3. NOUVELLE NOTE DÉTAILLÉE
+    else if (type === 'note') {
+        subject = `Note importante - Projet ${project.type}`;
+        body = `Bonjour ${project.clientName},\n\nJ'ai ajouté une précision importante concernant l'étape en cours ("${stage.label}").\n\nMerci de vous connecter à votre espace personnel pour en prendre connaissance dès que possible.`;
     }
+
+    return { subject, body };
   };
 
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
