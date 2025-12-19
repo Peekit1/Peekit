@@ -39,7 +39,7 @@
 
     <style>
       html {
-        /* Zoom réglé sur 71% */
+        /* Zoom maintenu à 71% */
         zoom: 71%; 
       }
 
@@ -48,18 +48,28 @@
         -moz-osx-font-smoothing: grayscale;
         background-color: #FFFFFF;
         margin: 0;
-        
-        /* CORRECTION POUR 71% : 
-           100 / 0.71 = 140.8, on arrondit à 141vh */
-        min-height: 141vh;
+        min-height: 141vh; /* Sécurité pour le fond du body */
       }
       
       #root {
-        /* On applique la même correction ici */
         min-height: 141vh;
         display: flex;
         flex-direction: column;
       }
+
+      /* === LE CORRECTIF CRUCIAL EST ICI === */
+      /* On force les composants React (Dashboard, Login) à prendre toute la hauteur */
+      /* Sinon ils restent bloqués à 100vh (donc trop courts à cause du zoom) */
+      
+      .min-h-screen {
+        min-height: 141vh !important;
+      }
+      
+      .h-screen {
+        height: 141vh !important;
+      }
+
+      /* =================================== */
       
       .bg-noise {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
