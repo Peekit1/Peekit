@@ -45,8 +45,9 @@ export const StickyHeader: React.FC<AuthNavigationProps> = ({ onAuthClick }) => 
                     <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center text-white">
                         <Activity size={16} strokeWidth={2.5} />
                     </div>
-                    <span className={`font-bold text-sm tracking-tight text-gray-900 hidden sm:block ${isScrolled ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'} transition-all`}>
-                        Peekit
+                    {/* MODIFICATION ICI : Police Agbalumo (font-brand) et taille augmentée */}
+                    <span className={`font-brand text-2xl text-gray-900 hidden sm:block ${isScrolled ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'} transition-all`}>
+                        Peekit.
                     </span>
                 </div>
                 
