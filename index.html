@@ -64,17 +64,25 @@
     </script>
 
     <style>
-      /* C'EST ICI QUE SE JOUE LE ZOOM */
       html {
-        zoom: 0.80; /* Réduit tout le site à 80% */
-        -moz-transform: scale(0.71); /* Pour Firefox */
-        -moz-transform-origin: 0 0;
+        /* Zoom maintenu pour Chrome */
+        zoom: 71%; 
       }
 
       body {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background-color: #FFFFFF;
+        /* CORRECTION BANDE BLANCHE : On force le body à prendre toute la hauteur */
+        min-height: 100vh;
+        margin: 0;
+      }
+      
+      /* CORRECTION BANDE BLANCHE : Le conteneur React doit s'étirer */
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       
       .bg-noise {
