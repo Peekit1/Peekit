@@ -212,7 +212,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                       </div>
                       <div className="w-full bg-gray-50 h-1"><div className="bg-gray-900 h-1 transition-all duration-500" style={{ width: `${getProgress()}%` }}></div></div>
                       
-                      {/* LISTE DES ÉTAPES DU WORKFLOW */}
                       <div className="divide-y divide-gray-50">
                           {localWorkflow.map((step, index) => {
                               const isCurrent = index === currentStageIndex;
@@ -239,7 +238,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                     `}
                                   >
                                       <div className="flex items-center gap-4">
-                                          {/* GESTION DE L'ICÔNE */}
                                           <div className={`
                                               w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all
                                               ${isLoading 
@@ -285,7 +283,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                           {step.label}
                                                       </span>
                                                       
-                                                      {/* BADGE D'ÉTAT */}
                                                       {isCurrent && (
                                                           <span className={`
                                                               px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide
@@ -360,7 +357,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                               </button>
                           )}
 
-                          {/* BANNIÈRE DE FÉLICITATIONS (Visible uniquement si la dernière étape est active) */}
                           {localWorkflow.length > 0 && project.currentStage === localWorkflow[localWorkflow.length - 1].id && (
                               <div className="p-6 bg-emerald-50/50 flex flex-col items-center justify-center text-center animate-fade-in border-t border-emerald-100">
                                   <div className="text-2xl mb-1">🎉</div>
@@ -382,9 +378,19 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                       <div className="p-6">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                               {(project.teasers || []).length === 0 && (
-                                  <div className="col-span-full py-10 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl bg-gray-50/30">
-                                      <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-2 text-gray-400"><FileImage size={18}/></div>
-                                      <p className="text-xs font-medium text-gray-500">Aucun fichier pour le moment</p>
+                                  <div 
+                                      onClick={() => fileInputRef.current?.click()}
+                                      className="col-span-full py-10 flex flex-col items-center justify-center border border-dashed border-gray-200 rounded-xl bg-gray-50/30 cursor-pointer hover:bg-gray-50 hover:border-gray-300 transition-all group"
+                                  >
+                                      <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-2 text-gray-400 group-hover:scale-110 transition-transform">
+                                          <Upload size={18}/>
+                                      </div>
+                                      <p className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                          Ajouter des fichiers
+                                      </p>
+                                      <p className="text-[10px] text-gray-500 mt-1">
+                                          Cliquez ici pour uploader des images ou vidéos
+                                      </p>
                                   </div>
                               )}
                               {(project.teasers || []).map(t => (
