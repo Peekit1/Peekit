@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Activity, Clock, Package, Loader2, Video, 
@@ -222,26 +221,52 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
                                   
+                                  // DÉTECTION : Est-ce la toute dernière étape ?
+                                  const isLastStep = index === stageConfig.length - 1;
+                                  
+                                  // Est-ce que le projet est FINI (dernière étape active) ?
+                                  const isProjectFinished = isCurrent && isLastStep;
+
                                   return (
                                       <div key={step.id} className="relative z-10 flex items-start gap-4">
                                           
-                                          {/* Icon Node */}
+                                          {/* ICONE RONDE */}
                                           <div className={`
-                                              w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300
-                                              ${isDone ? 'bg-gray-900 border-gray-900 text-white' : 
-                                                isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 
-                                                'bg-white border-gray-200 text-gray-300'}
+                                              w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-500
+                                              ${isDone 
+                                                  ? 'bg-gray-900 border-gray-900 text-white' // Étapes passées (Noir)
+                                                  : isProjectFinished 
+                                                      ? 'bg-emerald-600 border-emerald-600 text-white ring-4 ring-emerald-50' // FINI (Vert)
+                                                      : isCurrent 
+                                                          ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' // En cours (Bleu)
+                                                          : 'bg-white border-gray-200 text-gray-300' // Futur (Gris)
+                                              }
                                           `}>
-                                              {isDone && <Check size={12} strokeWidth={3}/>}
-                                              {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
+                                              {isDone ? (
+                                                  <Check size={12} strokeWidth={3}/>
+                                              ) : isProjectFinished ? (
+                                                  <Check size={14} strokeWidth={3}/> // Coche pour la fin
+                                              ) : isCurrent ? (
+                                                  <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>
+                                              ) : null}
                                           </div>
                                           
-                                          <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
+                                          {/* TEXTE ET DESCRIPTION */}
+                                          <div className={`flex-1 pt-0.5 transition-opacity duration-500 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
                                               <div className="flex justify-between items-center mb-1">
-                                                  <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                  {isDone && <span className="text-[10px] font-medium text-gray-400">Terminé</span>}
+                                                  <h4 className={`text-sm font-bold ${isProjectFinished ? 'text-emerald-900' : 'text-gray-900'}`}>
+                                                      {step.label}
+                                                  </h4>
+                                                  
+                                                  {/* Badge "Terminé" à droite */}
+                                                  {(isDone || isProjectFinished) && (
+                                                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isProjectFinished ? 'text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded' : 'text-gray-400'}`}>
+                                                          {isProjectFinished ? "Projet Livré" : "Terminé"}
+                                                      </span>
+                                                  )}
                                               </div>
-                                              <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                              
+                                              <p className={`text-xs leading-relaxed font-medium ${isProjectFinished ? 'text-emerald-700' : 'text-gray-500'}`}>
                                                   {step.message}
                                               </p>
                                           </div>
@@ -249,6 +274,17 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                   );
                               })}
                           </div>
+
+                          {/* BANNIÈRE FINALE (Visible uniquement si le projet est terminé) */}
+                          {isCompleted && (
+                              <div className="mt-8 p-6 bg-emerald-50 border border-emerald-100 rounded-xl text-center animate-fade-in">
+                                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white rounded-full mb-3 shadow-sm text-2xl">
+                                      🎉
+                                  </div>
+                                  <h3 className="text-emerald-900 font-bold text-lg mb-1">Tout est prêt !</h3>
+                                  <p className="text-emerald-700 text-sm">Votre projet a été intégralement livré. Merci de votre confiance.</p>
+                              </div>
+                          )}
                       </div>
                   </div>
               </div>
