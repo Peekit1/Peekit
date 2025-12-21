@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, Calendar, MapPin, Check, Loader2, Link as LinkIcon, Lock, 
@@ -13,17 +12,17 @@ import { Button } from './Button';
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
   project, 
-  stageConfig,
-  defaultConfig,
-  userPlan,
+  stageConfig, 
+  defaultConfig, 
+  userPlan, 
   studioName,
   onBack, 
-  onUpdateStage,
-  onUpdateStageConfig,
-  onViewClientVersion,
-  onUpdatePassword,
-  onUploadTeasers,
-  onDeleteTeaser,
+  onUpdateStage, 
+  onUpdateStageConfig, 
+  onViewClientVersion, 
+  onUpdatePassword, 
+  onUploadTeasers, 
+  onDeleteTeaser, 
   onUpdateCoverImage,
   onNotifyClient
 }) => {
@@ -213,6 +212,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                       </div>
                       <div className="w-full bg-gray-50 h-1"><div className="bg-gray-900 h-1 transition-all duration-500" style={{ width: `${getProgress()}%` }}></div></div>
                       
+                      {/* LISTE DES ÉTAPES DU WORKFLOW */}
                       <div className="divide-y divide-gray-50">
                           {localWorkflow.map((step, index) => {
                               const isCurrent = index === currentStageIndex;
@@ -220,15 +220,50 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               
+                              // Détection si c'est la toute dernière étape de la liste
+                              const isLastStep = index === localWorkflow.length - 1;
+
                               return (
                                   <div 
                                     key={step.id} 
                                     onClick={() => handleStageClick(step.id)} 
-                                    className={`group px-6 py-4 flex flex-col transition-colors ${isCurrent ? 'bg-blue-50/20' : 'hover:bg-gray-50'} ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''}`}
+                                    className={`
+                                        group px-6 py-4 flex flex-col transition-all cursor-pointer
+                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''}
+                                        ${!isEditing && isCurrent && isLastStep 
+                                            ? 'bg-emerald-50/40' // Fond vert si dernière étape active
+                                            : isCurrent 
+                                                ? 'bg-blue-50/20' // Fond bleu si étape normale active
+                                                : 'hover:bg-gray-50'
+                                        }
+                                    `}
                                   >
                                       <div className="flex items-center gap-4">
-                                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
-                                              {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="hidden group-hover:block w-2 h-2 bg-gray-200 rounded-full"></div>}
+                                          {/* GESTION DE L'ICÔNE */}
+                                          <div className={`
+                                              w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all
+                                              ${isLoading 
+                                                  ? 'border-gray-200 bg-white' 
+                                                  : isCurrent && isLastStep 
+                                                      ? 'bg-emerald-600 border-emerald-600 text-white' // Icone Verte si Fin
+                                                      : isDone 
+                                                          ? 'bg-emerald-500 border-emerald-500 text-white' 
+                                                          : isCurrent 
+                                                              ? 'border-blue-600 bg-white' 
+                                                              : 'border-gray-300 bg-white'
+                                              }
+                                          `}>
+                                              {isLoading ? (
+                                                  <Loader2 size={12} className="animate-spin text-gray-400"/>
+                                              ) : isCurrent && isLastStep ? (
+                                                  <Check size={14} strokeWidth={3}/> // Coche pour la fin
+                                              ) : isDone ? (
+                                                  <Check size={14} strokeWidth={3}/>
+                                              ) : isCurrent ? (
+                                                  <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
+                                              ) : (
+                                                  <div className="hidden group-hover:block w-2 h-2 bg-gray-200 rounded-full"></div>
+                                              )}
                                           </div>
 
                                           <div className="flex-1 min-w-0">
@@ -246,8 +281,22 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                   />
                                               ) : (
                                                   <div className="flex items-center justify-between">
-                                                      <span className={`text-sm font-bold ${isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
-                                                      {isCurrent && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 uppercase tracking-wide">Étape active</span>}
+                                                      <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>
+                                                          {step.label}
+                                                      </span>
+                                                      
+                                                      {/* BADGE D'ÉTAT */}
+                                                      {isCurrent && (
+                                                          <span className={`
+                                                              px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide
+                                                              ${isLastStep 
+                                                                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                                                  : 'bg-blue-100 text-blue-700'
+                                                              }
+                                                          `}>
+                                                              {isLastStep ? "Projet Terminé" : "Étape active"}
+                                                          </span>
+                                                      )}
                                                   </div>
                                               )}
                                           </div>
@@ -272,24 +321,14 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                           <div className="flex items-center justify-between">
                                                               <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée (Visible client)</label>
                                                               {step.description ? (
-                                                                  <button 
-                                                                    onClick={(e) => { e.stopPropagation(); handleUpdateStepField(step.id, 'description', ''); }}
-                                                                    className="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase transition-colors"
-                                                                  >
-                                                                      Supprimer la note
-                                                                  </button>
+                                                                  <button onClick={(e) => { e.stopPropagation(); handleUpdateStepField(step.id, 'description', ''); }} className="text-[9px] font-bold text-red-500 hover:text-red-700 uppercase transition-colors">Supprimer la note</button>
                                                               ) : (
-                                                                  <button 
-                                                                    onClick={(e) => { e.stopPropagation(); handleUpdateStepField(step.id, 'description', ' '); }}
-                                                                    className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 uppercase transition-colors flex items-center gap-1"
-                                                                  >
-                                                                      <Plus size={10}/> Ajouter une note
-                                                                  </button>
+                                                                  <button onClick={(e) => { e.stopPropagation(); handleUpdateStepField(step.id, 'description', ' '); }} className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 uppercase transition-colors flex items-center gap-1"><Plus size={10}/> Ajouter une note</button>
                                                               )}
                                                           </div>
                                                           {step.description !== undefined && step.description !== null && step.description !== '' && (
                                                               <textarea 
-                                                                autoFocus
+                                                                autoFocus 
                                                                 value={step.description} 
                                                                 onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} 
                                                                 className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-300 min-h-[80px]" 
@@ -304,7 +343,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                   </>
                                               ) : (
                                                   <div className="flex flex-col gap-1.5">
-                                                      <p className="text-xs text-gray-500 italic font-medium">"{step.message}"</p>
+                                                      <p className={`text-xs italic font-medium ${isLastStep ? 'text-emerald-700' : 'text-gray-500'}`}>"{step.message}"</p>
                                                       {step.description && <div className="p-3 bg-gray-50 rounded-lg border border-gray-100"><p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{step.description}</p></div>}
                                                   </div>
                                               )}
@@ -319,6 +358,15 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                   <div className="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center group-hover:border-gray-900"><Plus size={14} /></div>
                                   <span className="text-sm font-medium">Ajouter une étape au processus...</span>
                               </button>
+                          )}
+
+                          {/* BANNIÈRE DE FÉLICITATIONS (Visible uniquement si la dernière étape est active) */}
+                          {localWorkflow.length > 0 && project.currentStage === localWorkflow[localWorkflow.length - 1].id && (
+                              <div className="p-6 bg-emerald-50/50 flex flex-col items-center justify-center text-center animate-fade-in border-t border-emerald-100">
+                                  <div className="text-2xl mb-1">🎉</div>
+                                  <h4 className="text-emerald-900 font-bold text-sm">Félicitations !</h4>
+                                  <p className="text-emerald-600 text-xs mt-0.5 font-medium">Le workflow est complet.</p>
+                              </div>
                           )}
                       </div>
                   </div>
