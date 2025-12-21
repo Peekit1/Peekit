@@ -60,35 +60,17 @@ export const Benefits: React.FC = () => {
                 </div>
             </div>
 
-            {/* Card 4: Large - Client Experience (VISUEL CORRIGÉ) */}
-            <div className="md:col-span-2 bg-gray-50 rounded-3xl p-8 border border-gray-100 relative overflow-hidden group hover:border-gray-200 transition-all duration-500 flex flex-col md:flex-row items-center gap-8">
+            {/* Card 4: Large - Client Experience (VISUEL SUPPRIMÉ) */}
+            <div className="md:col-span-2 bg-gray-50 rounded-3xl p-8 border border-gray-100 relative overflow-hidden group hover:border-gray-200 transition-all duration-500">
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-gray-200/50 rounded-full blur-3xl -ml-16 -mb-16"></div>
                 
-                <div className="flex-1 relative z-10">
+                <div className="relative z-10 flex flex-col justify-between h-full">
                     <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-900 mb-6">
                         <Smartphone size={24} strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Une expérience client premium</h3>
-                    <p className="text-gray-500 leading-relaxed">Offrez une interface mobile dédiée et sécurisée. Ils se sentent privilégiés.</p>
-                </div>
-
-                {/* VISUEL CORRIGÉ : Plus de contraste et de détails */}
-                <div className="w-full md:w-1/2 bg-white rounded-xl border border-gray-200 shadow-lg p-5 rotate-3 group-hover:rotate-0 transition-transform duration-500 relative z-10">
-                    {/* Header Mockup */}
-                    <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                        <div className="h-2.5 w-24 bg-gray-200 rounded"></div>
-                    </div>
-                    {/* Content Mockup - Barres plus foncées pour être visibles */}
-                    <div className="space-y-3">
-                         <div className="h-2.5 w-full bg-gray-100 rounded"></div>
-                         <div className="h-2.5 w-3/4 bg-gray-100 rounded"></div>
-                         <div className="h-2.5 w-5/6 bg-gray-100 rounded"></div>
-                    </div>
-                    {/* Image Grid Mockup - Ajouté pour remplir l'espace */}
-                    <div className="mt-5 grid grid-cols-2 gap-2">
-                         <div className="aspect-square bg-gray-100 rounded-lg border border-gray-50"></div>
-                         <div className="aspect-square bg-gray-100 rounded-lg border border-gray-50"></div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Une expérience client premium</h3>
+                        <p className="text-gray-500 leading-relaxed max-w-md">Offrez une interface mobile dédiée et sécurisée. Ils se sentent privilégiés.</p>
                     </div>
                 </div>
             </div>
