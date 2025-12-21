@@ -1,12 +1,11 @@
 import React from 'react';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Reveal } from './Reveal';
 import { Button } from './Button';
 import { AuthNavigationProps } from '../types';
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    // MODIFICATION : Padding-top augmenté à 'pt-48' (mobile) et 'md:pt-80' (desktop)
     <section className="relative pt-48 md:pt-80 pb-20 md:pb-32 overflow-hidden">
       
       {/* Background Elements */}
@@ -15,14 +14,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
       
       <div className="container mx-auto px-6 max-w-3xl text-center">
         <Reveal>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full mb-8 transition-transform hover:scale-105 cursor-pointer mx-auto">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-900"></span>
-                </span>
-                <span className="text-xs font-bold text-gray-900 tracking-wide">Nouveau : Gérer l'attente client</span>
-                <ChevronRight size={14} className="text-gray-400" />
-            </div>
+            {/* L'étiquette "Nouveau..." a été supprimée ici */}
             
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 tracking-tight leading-[1.1]">
               Ne laissez plus vos clients <br className="hidden md:block"/>
