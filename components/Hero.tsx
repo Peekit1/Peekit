@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from './Button';
 import { Reveal } from './Reveal';
 import { AuthNavigationProps } from '../types';
@@ -15,16 +14,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
             <div className="flex flex-col items-center text-center max-w-5xl mx-auto mb-10">
                 
-                <Reveal delay={0}>
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200 shadow-subtle text-[11px] font-medium text-gray-600 mb-8 hover:border-gray-300 hover:text-gray-900 transition-all cursor-default group">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-gray-900"></span>
-                        </span>
-                        Le suivi de post-production réinventé
-                        <ChevronRight size={12} className="text-gray-400 group-hover:text-gray-900 transition-colors group-hover:translate-x-0.5 transform duration-300"/>
-                    </div>
-                </Reveal>
+                {/* L'élément a été supprimé ici */}
                 
                 <Reveal delay={100}>
                     <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tighter mb-8 leading-[0.95] drop-shadow-sm">
