@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Sliders, Eye, Heart, ArrowRight } from 'lucide-react';
+import { Sliders, Eye, Heart } from 'lucide-react'; // Removed ArrowRight from import
 import { Reveal } from './Reveal';
 
 export const Solution: React.FC = () => {
@@ -38,7 +37,7 @@ export const Solution: React.FC = () => {
                         Un dashboard simple pour gérer vos workflows. Ajoutez des étapes, supprimez-en, uploadez des teasers. C'est votre espace de contrôle, invisible pour le client.
                     </p>
                     <div className="mt-8 pt-6 border-t border-gray-200/50 flex items-center text-xs font-bold text-gray-900 uppercase tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
-                        Côté Admin <ArrowRight size={12} className="ml-2"/>
+                        Côté Admin
                     </div>
                 </div>
             </Reveal>
@@ -58,7 +57,7 @@ export const Solution: React.FC = () => {
                             Une vue simplifiée, accessible via un lien unique sécurisé. Pas de compte à créer, pas de jargon technique. Juste une barre de progression et vos médias.
                         </p>
                         <div className="mt-8 pt-6 border-t border-white/10 flex items-center text-xs font-bold text-white uppercase tracking-widest">
-                            Vue Client <ArrowRight size={12} className="ml-2"/>
+                            Vue Client
                         </div>
                     </div>
                 </div>
@@ -75,7 +74,7 @@ export const Solution: React.FC = () => {
                         L'inquiétude disparaît. Le client se sent impliqué et valorisé. Vous transformez un temps mort ("J'attends mes photos") en un moment fort ("Regarde ce teasing !").
                     </p>
                     <div className="mt-8 pt-6 border-t border-gray-100 flex items-center text-xs font-bold text-indigo-600 uppercase tracking-widest opacity-50 group-hover:opacity-100 transition-opacity">
-                        Résultat <ArrowRight size={12} className="ml-2"/>
+                        Résultat
                     </div>
                 </div>
             </Reveal>
