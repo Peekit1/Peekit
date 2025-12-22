@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowRight, Activity, Building2, User, Sparkles, Loader2, MapPin, Calendar, Mail, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Activity, Building2, User, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './Button';
 import { OnboardingWizardProps, Project } from '../types';
 
@@ -42,7 +41,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         formattedExpectedDate = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     }
 
-    // Fix: Adding missing userId property to satisfy the Project interface requirement.
     const firstProject: Project = {
         id: Date.now().toString(),
         userId: '', // Placeholder, correctly assigned in App.tsx handleCreateProject
@@ -64,16 +62,17 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   };
 
   return (
-    <div className="min-h-screen bg-dot-pattern flex flex-col items-center justify-center p-6 font-sans">
+    // FIX MOBILE: min-h-[100dvh] + py-10 instead of centering fixed height
+    <div className="min-h-[100dvh] bg-dot-pattern flex flex-col items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
       
       {/* Progress */}
-      <div className="w-full max-w-md mb-8 flex justify-center gap-2">
+      <div className="w-full max-w-md mb-8 flex justify-center gap-2 shrink-0">
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`}></div>
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-black' : 'bg-gray-200'}`}></div>
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-black' : 'bg-gray-200'}`}></div>
       </div>
 
-      <div className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl p-8 relative">
+      <div className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl p-6 sm:p-8 relative">
         
         {/* Step 1: Studio Name */}
         {step === 1 && (
@@ -138,7 +137,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* FIX: grid-cols-1 on mobile, grid-cols-2 on tablet/desktop */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
                                 <input 
@@ -159,7 +159,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                 />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* FIX: grid-cols-1 on mobile, grid-cols-2 on tablet/desktop */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
                                 <select 
@@ -171,6 +172,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                     <option value="Shooting Mode">Shooting Mode</option>
                                     <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
                                     <option value="Identité Visuelle">Identité Visuelle</option>
+                                    <option value="Corporate">Corporate</option>
                                 </select>
                             </div>
                             <div>
@@ -209,7 +211,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
       </div>
       
-      <div className="mt-8 flex items-center gap-2 text-gray-300 select-none">
+      <div className="mt-8 flex items-center gap-2 text-gray-300 select-none shrink-0">
         <Activity size={16} strokeWidth={2.5} />
         <span className="text-[10px] font-bold tracking-widest uppercase">Peekit</span>
       </div>
