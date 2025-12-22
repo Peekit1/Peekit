@@ -111,6 +111,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button onClick={() => { setCurrentView('subscription'); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentView === 'subscription' ? 'bg-gray-50 text-gray-900 border border-gray-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
                     <CreditCard size={18} strokeWidth={1.5} className={currentView === 'subscription' ? "text-gray-900" : "text-gray-400"} /> Abonnement
                 </button>
+                
+                {/* NEW: Logout Button in Menu */}
+                <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+                    <LogOut size={18} strokeWidth={1.5} /> Se déconnecter
+                </button>
+
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3 mt-8">Outils</div>
                 <button onClick={() => { setIsSettingsModalOpen(true); setIsMobileSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
                     <Settings size={18} strokeWidth={1.5} className="text-gray-400"/> Paramètres
@@ -124,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div className="text-xs font-bold text-gray-900 truncate">{studioName}</div>
                         <div className="text-[10px] text-gray-500 truncate capitalize">Plan {userPlan === 'discovery' ? 'Découverte' : (userPlan.charAt(0).toUpperCase() + userPlan.slice(1))}</div>
                     </div>
-                    <button onClick={onLogout} className="text-gray-400 hover:text-red-500 p-1"><LogOut size={16} /></button>
+                    {/* Logout button removed from here */}
                 </div>
             </div>
         </aside>
