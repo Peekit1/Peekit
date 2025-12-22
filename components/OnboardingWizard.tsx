@@ -25,7 +25,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const handleFinish = () => {
     setIsLoading(true);
     
-    // Format date to French long format
+    // Format date to French long format (e.g. "30 avril 2025")
     let formattedDate = projectDate;
     if (projectDate) {
         const [year, month, day] = projectDate.split('-').map(Number);
@@ -43,13 +43,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
     const firstProject: Project = {
         id: Date.now().toString(),
-        userId: '', 
+        userId: '', // Placeholder, correctly assigned in App.tsx handleCreateProject
         clientName: clientName,
         clientEmail: clientEmail,
         date: formattedDate, 
         location: projectLocation || 'Non spécifié',
         type: projectType,
-        coverImage: '', 
+        coverImage: '', // No default image
         currentStage: 'secured',
         lastUpdate: "À l'instant",
         expectedDeliveryDate: formattedExpectedDate,
@@ -62,10 +62,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   };
 
   return (
-    // FIX MOBILE: min-h-[100dvh] assure que la page prend toute la hauteur sans être coupée
     <div className="min-h-[100dvh] bg-dot-pattern flex flex-col items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
       
-      {/* Progress Bar */}
+      {/* Progress */}
       <div className="w-full max-w-md mb-8 flex justify-center gap-2 shrink-0">
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`}></div>
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-black' : 'bg-gray-200'}`}></div>
@@ -80,7 +79,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center mb-6 shadow-md">
                     <Building2 size={20} strokeWidth={1.5}/>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Bienvenue dans votre espace</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Bienvenue dans votre Studio OS</h2>
                 <p className="text-gray-500 mb-8 text-sm leading-relaxed">
                     Commençons par le commencement. Quel est le nom de votre structure ?
                 </p>
@@ -93,7 +92,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                             value={studioName}
                             onChange={(e) => setStudioName(e.target.value)}
                             placeholder="Ex: Studio Nova, Agence Aura..."
-                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-md text-base font-medium focus:border-black focus:ring-1 focus:ring-black transition-all outline-none text-gray-900 placeholder:text-gray-300"
+                            className="w-full h-11 px-4 bg-white border border-gray-200 rounded-md text-base font-medium focus:border-black focus:ring-1 focus:ring-black transition-all outline-none text-gray-900 placeholder:text-gray-300 appearance-none"
                             onKeyDown={(e) => e.key === 'Enter' && studioName && handleNext()}
                         />
                     </div>
@@ -112,7 +111,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Initialisons votre espace</h2>
                 <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-                    Ajoutez un premier projet pour voir la magie opérer.
+                    Ajoutez un premier projet (réel ou fictif) pour voir la magie opérer.
                 </p>
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-4">
@@ -124,7 +123,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                 value={clientName}
                                 onChange={(e) => setClientName(e.target.value)}
                                 placeholder="Ex: Sophie & Marc"
-                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                             />
                         </div>
                         <div>
@@ -134,11 +133,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                 value={clientEmail}
                                 onChange={(e) => setClientEmail(e.target.value)}
                                 placeholder="email@client.com"
-                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                             />
                         </div>
                         
-                        {/* FIX MOBILE : 1 colonne sur mobile, 2 colonnes sur écran large (sm) */}
+                        {/* FIX: h-11 and appearance-none applied to date/select inputs */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
@@ -146,7 +145,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                     type="date" 
                                     value={projectDate}
                                     onChange={(e) => setProjectDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                 />
                             </div>
                             <div>
@@ -156,19 +155,18 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                     value={projectLocation}
                                     onChange={(e) => setProjectLocation(e.target.value)}
                                     placeholder="Ville"
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                 />
                             </div>
                         </div>
                         
-                        {/* FIX MOBILE : 1 colonne sur mobile, 2 colonnes sur écran large (sm) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
                                 <select 
                                     value={projectType}
                                     onChange={(e) => setProjectType(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
+                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
                                 >
                                     <option value="Mariage">Mariage</option>
                                     <option value="Shooting Mode">Shooting Mode</option>
@@ -183,7 +181,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                                     type="date" 
                                     value={projectExpectedDate}
                                     onChange={(e) => setProjectExpectedDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                 />
                             </div>
                         </div>
