@@ -88,7 +88,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
   return (
-    // FIX DÉFINITIF : 'fixed inset-0' force le dashboard à prendre exactement la taille de l'écran visible, sans scroll de page.
     <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         
         {/* Overlay Mobile Sidebar */}
@@ -154,7 +153,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             </header>
 
-            <div className="flex-1 overflow-auto p-4 md:p-8">
+            <div className="flex-1 overflow-auto p-4 md:p-8 pb-24">
                 {currentView === 'projects' && (
                     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-[600px]">
                         
@@ -172,15 +171,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         <div className="flex-1">
                             
-                            {/* --- MOBILE VIEW: CARDS (Visible uniquement sur mobile) --- */}
-                            <div className="md:hidden space-y-3 p-4">
+                            {/* --- MOBILE VIEW: CARDS (Visible ONLY on mobile) --- */}
+                            <div className="md:hidden space-y-4 p-6">
                                 {paginatedProjects.map(project => {
                                     const { label, progress } = getProjectStageInfo(project);
                                     return (
                                         <div 
                                             key={project.id} 
                                             onClick={() => onOpenProject(project)} 
-                                            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm active:scale-[0.98] transition-transform"
+                                            className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
                                         >
                                             <div className="flex items-center gap-4 mb-4">
                                                 <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
@@ -228,7 +227,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 })}
                             </div>
 
-                            {/* --- DESKTOP VIEW: TABLE (Visible uniquement sur ordinateur) --- */}
+                            {/* --- DESKTOP VIEW: TABLE (Visible ONLY on desktop) --- */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
@@ -360,140 +359,143 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </main>
 
         {isNewProjectModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-slide-up relative">
-                    <button onClick={() => setIsNewProjectModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-10"><X size={20} /></button>
-                    
-                    <form onSubmit={handleCreateSubmit} className="p-8 md:p-10">
-                        <div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">
-                            {editingProjectId ? <Pencil size={20} strokeWidth={1.5} /> : <User size={20} strokeWidth={1.5} />}
-                        </div>
+            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fade-in">
+                <div className="flex min-h-full items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-slide-up relative">
+                        <button onClick={() => setIsNewProjectModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-10"><X size={20} /></button>
                         
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
-                            {editingProjectId ? 'Modifier le projet' : 'Initialisons votre projet'}
-                        </h2>
-                        <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-                            {editingProjectId ? 'Mettez à jour les informations du client et les délais.' : 'Ajoutez un projet pour voir la magie opérer sur Peekit.'}
-                        </p>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Client</label>
-                                <input 
-                                    autoFocus
-                                    type="text" 
-                                    required 
-                                    value={newProject.clientName} 
-                                    onChange={(e) => setNewProject({...newProject, clientName: e.target.value})} 
-                                    placeholder="Ex: Sophie & Marc"
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Email de contact</label>
-                                <input 
-                                    type="email" 
-                                    required 
-                                    value={newProject.clientEmail} 
-                                    onChange={(e) => setNewProject({...newProject, clientEmail: e.target.value})} 
-                                    placeholder="email@client.com"
-                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
-                                />
+                        <form onSubmit={handleCreateSubmit} className="p-6 md:p-10">
+                            <div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">
+                                {editingProjectId ? <Pencil size={20} strokeWidth={1.5} /> : <User size={20} strokeWidth={1.5} />}
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-4">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                                {editingProjectId ? 'Modifier le projet' : 'Initialisons votre projet'}
+                            </h2>
+                            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+                                {editingProjectId ? 'Mettez à jour les informations du client et les délais.' : 'Ajoutez un projet pour voir la magie opérer sur Peekit.'}
+                            </p>
+
+                            <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Client</label>
                                     <input 
-                                        type="date" 
-                                        required 
-                                        value={newProject.date} 
-                                        onChange={(e) => setNewProject({...newProject, date: e.target.value})} 
-                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Lieu</label>
-                                    <input 
+                                        autoFocus
                                         type="text" 
-                                        value={newProject.location} 
-                                        onChange={(e) => setNewProject({...newProject, location: e.target.value})} 
-                                        placeholder="Ville"
+                                        required 
+                                        value={newProject.clientName} 
+                                        onChange={(e) => setNewProject({...newProject, clientName: e.target.value})} 
+                                        placeholder="Ex: Sophie & Marc"
                                         className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
                                     />
                                 </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
-                                    <select 
-                                        value={newProject.type} 
-                                        onChange={(e) => setNewProject({...newProject, type: e.target.value})} 
-                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
-                                    >
-                                        <option value="Mariage">Mariage</option>
-                                        <option value="Shooting Mode">Shooting Mode</option>
-                                        <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
-                                        <option value="Identité Visuelle">Identité Visuelle</option>
-                                        <option value="Corporate">Corporate</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Rendu Estimé</label>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Email de contact</label>
                                     <input 
-                                        type="date" 
-                                        value={newProject.expectedDeliveryDate} 
-                                        onChange={(e) => setNewProject({...newProject, expectedDeliveryDate: e.target.value})} 
+                                        type="email" 
+                                        required 
+                                        value={newProject.clientEmail} 
+                                        onChange={(e) => setNewProject({...newProject, clientEmail: e.target.value})} 
+                                        placeholder="email@client.com"
                                         className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
                                     />
                                 </div>
-                            </div>
+                                
+                                {/* FIX MOBILE: grid-cols-1 sur mobile, grid-cols-2 à partir de SM */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
+                                        <input 
+                                            type="date" 
+                                            required 
+                                            value={newProject.date} 
+                                            onChange={(e) => setNewProject({...newProject, date: e.target.value})} 
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Lieu</label>
+                                        <input 
+                                            type="text" 
+                                            value={newProject.location} 
+                                            onChange={(e) => setNewProject({...newProject, location: e.target.value})} 
+                                            placeholder="Ville"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                        />
+                                    </div>
+                                </div>
 
-                            <div className="pt-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Image de couverture</label>
-                                <div className="relative group/cover">
-                                    <input 
-                                        type="file" 
-                                        id="cover-upload"
-                                        className="hidden" 
-                                        onChange={(e) => setCoverFile(e.target.files ? e.target.files[0] : undefined)} 
-                                        accept="image/*"
-                                    />
-                                    <label 
-                                        htmlFor="cover-upload" 
-                                        className="flex items-center gap-3 w-full px-3 py-2.5 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"
-                                    >
-                                        <Camera size={18} className="text-gray-400" />
-                                        <span className="text-xs font-bold text-gray-500 truncate">
-                                            {coverFile ? coverFile.name : 'Choisir une image...'}
-                                        </span>
-                                    </label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
+                                        <select 
+                                            value={newProject.type} 
+                                            onChange={(e) => setNewProject({...newProject, type: e.target.value})} 
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
+                                        >
+                                            <option value="Mariage">Mariage</option>
+                                            <option value="Shooting Mode">Shooting Mode</option>
+                                            <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
+                                            <option value="Identité Visuelle">Identité Visuelle</option>
+                                            <option value="Corporate">Corporate</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Rendu Estimé</label>
+                                        <input 
+                                            type="date" 
+                                            value={newProject.expectedDeliveryDate} 
+                                            onChange={(e) => setNewProject({...newProject, expectedDeliveryDate: e.target.value})} 
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="pt-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Image de couverture</label>
+                                    <div className="relative group/cover">
+                                        <input 
+                                            type="file" 
+                                            id="cover-upload"
+                                            className="hidden" 
+                                            onChange={(e) => setCoverFile(e.target.files ? e.target.files[0] : undefined)} 
+                                            accept="image/*"
+                                        />
+                                        <label 
+                                            htmlFor="cover-upload" 
+                                            className="flex items-center gap-3 w-full px-3 py-2.5 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"
+                                        >
+                                            <Camera size={18} className="text-gray-400" />
+                                            <span className="text-xs font-bold text-gray-500 truncate">
+                                                {coverFile ? coverFile.name : 'Choisir une image...'}
+                                            </span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="mt-10 flex gap-4">
-                            <Button 
-                                type="button" 
-                                variant="secondary" 
-                                onClick={() => setIsNewProjectModalOpen(false)} 
-                                fullWidth
-                                className="h-11"
-                            >
-                                Annuler
-                            </Button>
-                            <Button 
-                                type="submit" 
-                                variant="black" 
-                                fullWidth 
-                                isLoading={newProjectLoading}
-                                className="h-11 shadow-lg shadow-black/10"
-                            >
-                                {editingProjectId ? 'Enregistrer' : 'Créer le projet'}
-                            </Button>
-                        </div>
-                    </form>
+                            <div className="mt-10 flex gap-4">
+                                <Button 
+                                    type="button" 
+                                    variant="secondary" 
+                                    onClick={() => setIsNewProjectModalOpen(false)} 
+                                    fullWidth
+                                    className="h-11"
+                                >
+                                    Annuler
+                                </Button>
+                                <Button 
+                                    type="submit" 
+                                    variant="black" 
+                                    fullWidth 
+                                    isLoading={newProjectLoading}
+                                    className="h-11 shadow-lg shadow-black/10"
+                                >
+                                    {editingProjectId ? 'Enregistrer' : 'Créer le projet'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         )}
