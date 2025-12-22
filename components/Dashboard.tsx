@@ -88,8 +88,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
   return (
-    // FIX MOBILE: Utilisation de h-[100dvh] au lieu de h-screen pour s'adapter à la barre d'adresse mobile
-    <div className="flex h-[100dvh] bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
+    // FIX DÉFINITIF : 'fixed inset-0' force le dashboard à prendre exactement la taille de l'écran visible, sans scroll de page.
+    <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         
         {/* Overlay Mobile Sidebar */}
         {isMobileSidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setIsMobileSidebarOpen(false)} />}
@@ -172,7 +172,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         <div className="flex-1">
                             
-                            {/* --- MOBILE VIEW: CARDS (Visible ONLY on mobile) --- */}
+                            {/* --- MOBILE VIEW: CARDS (Visible uniquement sur mobile) --- */}
                             <div className="md:hidden space-y-3 p-4">
                                 {paginatedProjects.map(project => {
                                     const { label, progress } = getProjectStageInfo(project);
@@ -228,7 +228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 })}
                             </div>
 
-                            {/* --- DESKTOP VIEW: TABLE (Visible ONLY on desktop) --- */}
+                            {/* --- DESKTOP VIEW: TABLE (Visible uniquement sur ordinateur) --- */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
