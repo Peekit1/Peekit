@@ -386,7 +386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         value={newProject.clientName} 
                                         onChange={(e) => setNewProject({...newProject, clientName: e.target.value})} 
                                         placeholder="Ex: Sophie & Marc"
-                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                        className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                     />
                                 </div>
                                 <div>
@@ -397,11 +397,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         value={newProject.clientEmail} 
                                         onChange={(e) => setNewProject({...newProject, clientEmail: e.target.value})} 
                                         placeholder="email@client.com"
-                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                        className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                     />
                                 </div>
                                 
-                                {/* FIX MOBILE: grid-cols-1 sur mobile, grid-cols-2 à partir de SM */}
+                                {/* CORRECTION INPUTS : h-11 (44px) partout et appearance-none pour aligner les champs DATE */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
@@ -410,7 +410,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             required 
                                             value={newProject.date} 
                                             onChange={(e) => setNewProject({...newProject, date: e.target.value})} 
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                            className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                         />
                                     </div>
                                     <div>
@@ -420,7 +420,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             value={newProject.location} 
                                             onChange={(e) => setNewProject({...newProject, location: e.target.value})} 
                                             placeholder="Ville"
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                            className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                         />
                                     </div>
                                 </div>
@@ -431,7 +431,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <select 
                                             value={newProject.type} 
                                             onChange={(e) => setNewProject({...newProject, type: e.target.value})} 
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
+                                            className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
                                         >
                                             <option value="Mariage">Mariage</option>
                                             <option value="Shooting Mode">Shooting Mode</option>
@@ -446,7 +446,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             type="date" 
                                             value={newProject.expectedDeliveryDate} 
                                             onChange={(e) => setNewProject({...newProject, expectedDeliveryDate: e.target.value})} 
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors"
+                                            className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                                         />
                                     </div>
                                 </div>
@@ -463,7 +463,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         />
                                         <label 
                                             htmlFor="cover-upload" 
-                                            className="flex items-center gap-3 w-full px-3 py-2.5 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"
+                                            className="flex items-center gap-3 w-full h-11 px-3 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"
                                         >
                                             <Camera size={18} className="text-gray-400" />
                                             <span className="text-xs font-bold text-gray-500 truncate">
