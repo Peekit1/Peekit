@@ -88,6 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
   return (
+    // FIX MOBILE: Utilisation de h-[100dvh] au lieu de h-screen pour s'adapter à la barre d'adresse mobile
     <div className="flex h-[100dvh] bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         
         {/* Overlay Mobile Sidebar */}
