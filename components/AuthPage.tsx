@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, AlertCircle, Activity, Check } from 'lucide-react';
 import { Button } from './Button';
@@ -107,23 +106,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center py-12 px-6 sm:px-6 lg:px-8 bg-[#F9FAFB] font-sans relative overflow-hidden">
+    // CORRECTION ICI : "min-h-screen" mais avec "py-12" ou "py-24" pour espacer,
+    // et suppression de "justify-center" sur mobile pour éviter le centrage forcé qui coupe l'écran.
+    <div className="min-h-screen w-full flex flex-col justify-start md:justify-center py-20 px-6 sm:px-6 lg:px-8 bg-[#F9FAFB] font-sans relative">
       
       <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
       
       <button 
         onClick={onBack} 
-        className="absolute top-8 left-8 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
+        className="absolute top-6 left-6 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
       >
           <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform"/> Retour
       </button>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-[420px] relative z-10 animate-fade-in">
+      <div className="sm:mx-auto sm:w-full sm:max-w-[420px] relative z-10 animate-fade-in w-full">
         
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 mt-4 md:mt-0">
             <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
                 <Activity size={24} strokeWidth={2.5} />
             </div>
+            {/* CORRECTION POLICE : Agbalumo pour le titre Peekit (optionnel si vous voulez la marque ici) */}
+            {/* <h1 className="text-3xl font-brand text-gray-900 mb-2">Peekit</h1> */}
+            
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                 {isLogin ? 'Bon retour parmi nous' : 'Créer un compte'}
             </h2>
@@ -132,7 +136,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
             </p>
         </div>
 
-        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl">
+        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl w-full">
             
             {error && (
                 <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 border border-red-100">
@@ -256,7 +260,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
             </div>
         </div>
         
-        <p className="text-center text-xs text-gray-400 mt-8">
+        <p className="text-center text-xs text-gray-400 mt-8 mb-4">
             &copy; {new Date().getFullYear()} Peekit. Sécurisé et chiffré.
         </p>
       </div>
