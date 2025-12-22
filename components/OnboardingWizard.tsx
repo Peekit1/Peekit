@@ -79,7 +79,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <div className="w-12 h-12 bg-black text-white rounded-lg flex items-center justify-center mb-6 shadow-md">
                     <Building2 size={20} strokeWidth={1.5}/>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Bienvenue dans votre Studio OS</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Bienvenue dans votre Studio</h2>
                 <p className="text-gray-500 mb-8 text-sm leading-relaxed">
                     Commençons par le commencement. Quel est le nom de votre structure ?
                 </p>
@@ -111,7 +111,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Initialisons votre espace</h2>
                 <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-                    Ajoutez un premier projet (réel ou fictif) pour voir la magie opérer.
+                    Ajoutez un premier projet pour voir la magie opérer.
                 </p>
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-4">
