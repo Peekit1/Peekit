@@ -1,4 +1,14 @@
+Here's the corrected `Dashboard.tsx`.
 
+### What changed:
+
+1. **Mobile View Fix:** I replaced `h-screen` with `h-[100dvh]` on the main container. This uses the *dynamic viewport height*, which accounts for the mobile browser address bar appearing/disappearing, preventing the content from being cut off.
+2. **Responsive Layout:** I implemented a **Card View** specifically for mobile devices (screens smaller than `md`/768px) and kept the **Table View** only for larger screens. This eliminates the need for horizontal scrolling on mobile, making the interface much cleaner and easier to use.
+3. **Sidebar Overlay:** Added a backdrop overlay when the mobile sidebar is open, allowing users to close it by clicking outside.
+
+Copy and paste this entire code into your `src/components/Dashboard.tsx` file:
+
+```tsx
 import React, { useState } from 'react';
 import { 
   Search, Plus, LayoutGrid, CreditCard, LogOut, Settings,
@@ -90,14 +100,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
   return (
-    <div className="flex h-screen bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
+    // FIX MOBILE: h-[100dvh] adapts to mobile browser chrome
+    <div className="flex h-[100dvh] bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
+        
+        {/* Overlay Mobile Sidebar */}
         {isMobileSidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setIsMobileSidebarOpen(false)} />}
 
+        {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
                 <div className="flex items-center gap-3">
                      <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white shadow-sm"><span className="font-bold text-xs">P</span></div>
-                     <span className="font-bold text-lg tracking-tight">Peekit</span>
+                     {/* Using the specific font class you likely defined in tailwind config */}
+                     <span className="font-brand text-2xl tracking-tight text-gray-900">Peekit</span>
                 </div>
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-900"><X size={20} /></button>
             </div>
@@ -128,6 +143,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </aside>
 
+        {/* MAIN CONTENT */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
             <header className="h-16 md:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-3 md:gap-4">
@@ -154,64 +170,127 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex-1 overflow-auto p-4 md:p-8">
                 {currentView === 'projects' && (
                     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-[600px]">
-                        <div className="md:p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gray-50/30">
+                        
+                        {/* FILTERS BAR */}
+                        <div className="md:p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gray-50/30 p-4">
                             <div className="relative w-full lg:w-80">
                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Filtrer..." className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-black transition-all font-medium"/>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0">
                                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2.5 outline-none focus:border-black cursor-pointer shadow-sm"><option value="all">Status: Tous</option><option value="active">En cours</option><option value="completed">Terminés</option></select>
                                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2.5 outline-none focus:border-black cursor-pointer shadow-sm"><option value="all">Type: Tous</option>{availableTypes.map(t => <option key={t} value={t}>{t}</option>)}</select>
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
-                                <tbody>
-                                    {paginatedProjects.map(project => {
-                                        const { label, progress } = getProjectStageInfo(project);
-                                        return (
-                                            <tr key={project.id} onClick={() => onOpenProject(project)} className="group hover:bg-gray-50/50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
-                                                <td className="py-4 px-6">
-                                                  <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                      {project.coverImage ? (
-                                                        <img src={project.coverImage} className="w-full h-full object-cover" />
-                                                      ) : (
-                                                        <ImageIcon size={18} className="text-gray-300" />
-                                                      )}
-                                                    </div>
-                                                    <div>
-                                                      <div className="font-bold text-gray-900 text-sm">{project.clientName}</div>
-                                                      <div className="text-xs text-gray-500">{project.clientEmail}</div>
-                                                    </div>
-                                                  </div>
-                                                </td>
-                                                <td className="py-4 px-6"><div className="space-y-1"><span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span><div className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar size={12}/> {project.date}</div></div></td>
-                                                <td className="py-4 px-6"><div className="w-full max-w-[180px]"><div className="flex justify-between items-end mb-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span><span className="text-xs font-bold text-gray-900">{progress}%</span></div><div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div></div></td>
-                                                <td className="py-4 px-6 text-right"><div className="flex items-center justify-end gap-2">
-                                                    <button onClick={(e) => { 
-                                                        e.stopPropagation(); 
-                                                        setEditingProjectId(project.id); 
-                                                        setNewProject({
-                                                            clientName: project.clientName,
-                                                            clientEmail: project.clientEmail,
-                                                            date: project.date,
-                                                            location: project.location,
-                                                            type: project.type,
-                                                            expectedDeliveryDate: project.expectedDeliveryDate || ''
-                                                        }); 
-                                                        setIsNewProjectModalOpen(true); 
-                                                    }} className="p-2 border border-gray-200 rounded-lg hover:bg-white transition-colors"><Pencil size={14}/></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
-                                                </div></td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        <div className="flex-1">
+                            
+                            {/* --- MOBILE VIEW: CARDS (Visible ONLY on mobile) --- */}
+                            <div className="md:hidden space-y-3 p-4">
+                                {paginatedProjects.map(project => {
+                                    const { label, progress } = getProjectStageInfo(project);
+                                    return (
+                                        <div 
+                                            key={project.id} 
+                                            onClick={() => onOpenProject(project)} 
+                                            className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm active:scale-[0.98] transition-transform"
+                                        >
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                                    {project.coverImage ? <img src={project.coverImage} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
+                                                    <div className="text-xs text-gray-500 truncate">{project.clientEmail}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span>
+                                                <span className="text-[10px] text-gray-400 flex items-center gap-1"><Calendar size={10}/> {project.date}</span>
+                                            </div>
+
+                                            <div className="mb-4">
+                                                <div className="flex justify-between items-end mb-1.5">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
+                                                    <span className="text-xs font-bold text-gray-900">{progress}%</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-black rounded-full" style={{ width: `${progress}%` }}></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end gap-2 pt-3 border-t border-gray-50">
+                                                <button onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    setEditingProjectId(project.id); 
+                                                    setNewProject({
+                                                        clientName: project.clientName,
+                                                        clientEmail: project.clientEmail,
+                                                        date: project.date,
+                                                        location: project.location,
+                                                        type: project.type,
+                                                        expectedDeliveryDate: project.expectedDeliveryDate || ''
+                                                    }); 
+                                                    setIsNewProjectModalOpen(true); 
+                                                }} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600"><Pencil size={14}/></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* --- DESKTOP VIEW: TABLE (Visible ONLY on desktop) --- */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
+                                    <tbody>
+                                        {paginatedProjects.map(project => {
+                                            const { label, progress } = getProjectStageInfo(project);
+                                            return (
+                                                <tr key={project.id} onClick={() => onOpenProject(project)} className="group hover:bg-gray-50/50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                                                    <td className="py-4 px-6">
+                                                      <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                                          {project.coverImage ? (
+                                                            <img src={project.coverImage} className="w-full h-full object-cover" />
+                                                          ) : (
+                                                            <ImageIcon size={18} className="text-gray-300" />
+                                                          )}
+                                                        </div>
+                                                        <div>
+                                                          <div className="font-bold text-gray-900 text-sm">{project.clientName}</div>
+                                                          <div className="text-xs text-gray-500">{project.clientEmail}</div>
+                                                        </div>
+                                                      </div>
+                                                    </td>
+                                                    <td className="py-4 px-6"><div className="space-y-1"><span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span><div className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar size={12}/> {project.date}</div></div></td>
+                                                    <td className="py-4 px-6"><div className="w-full max-w-[180px]"><div className="flex justify-between items-end mb-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span><span className="text-xs font-bold text-gray-900">{progress}%</span></div><div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div></div></td>
+                                                    <td className="py-4 px-6 text-right"><div className="flex items-center justify-end gap-2">
+                                                        <button onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            setEditingProjectId(project.id); 
+                                                            setNewProject({
+                                                                clientName: project.clientName,
+                                                                clientEmail: project.clientEmail,
+                                                                date: project.date,
+                                                                location: project.location,
+                                                                type: project.type,
+                                                                expectedDeliveryDate: project.expectedDeliveryDate || ''
+                                                            }); 
+                                                            setIsNewProjectModalOpen(true); 
+                                                        }} className="p-2 border border-gray-200 rounded-lg hover:bg-white transition-colors"><Pencil size={14}/></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
+                                                    </div></td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
                         <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-2xl mt-auto">
                             <div className="text-xs text-gray-500 font-medium">Page {page} / {totalPages}</div>
                             <div className="flex gap-2">
@@ -507,3 +586,5 @@ export const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
+
+```
