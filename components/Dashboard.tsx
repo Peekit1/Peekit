@@ -112,14 +112,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <CreditCard size={18} strokeWidth={1.5} className={currentView === 'subscription' ? "text-gray-900" : "text-gray-400"} /> Abonnement
                 </button>
                 
-                {/* NEW: Logout Button in Menu */}
-                <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
-                    <LogOut size={18} strokeWidth={1.5} /> Se déconnecter
-                </button>
-
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3 mt-8">Outils</div>
                 <button onClick={() => { setIsSettingsModalOpen(true); setIsMobileSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
                     <Settings size={18} strokeWidth={1.5} className="text-gray-400"/> Paramètres
+                </button>
+                
+                {/* NEW LOCATION: Logout Button after Settings */}
+                <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+                    <LogOut size={18} strokeWidth={1.5} /> Se déconnecter
                 </button>
             </nav>
 
@@ -130,7 +130,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div className="text-xs font-bold text-gray-900 truncate">{studioName}</div>
                         <div className="text-[10px] text-gray-500 truncate capitalize">Plan {userPlan === 'discovery' ? 'Découverte' : (userPlan.charAt(0).toUpperCase() + userPlan.slice(1))}</div>
                     </div>
-                    {/* Logout button removed from here */}
                 </div>
             </div>
         </aside>
@@ -407,7 +406,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     />
                                 </div>
                                 
-                                {/* CORRECTION INPUTS : h-11 (44px) partout et appearance-none pour aligner les champs DATE */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
