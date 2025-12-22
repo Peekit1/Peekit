@@ -23,7 +23,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   onUpdatePassword, 
   onUploadTeasers, 
   onDeleteTeaser, 
-  onUpdateCoverImage,
+  onUpdateCoverImage, 
   onNotifyClient
 }) => {
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
@@ -48,7 +48,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   }, [stageConfig]);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
-  const currentStage = stageConfig[currentStageIndex] || stageConfig[0];
   
   const handleStageClick = async (id: string) => {
       if (editingStepId) return;
@@ -167,6 +166,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
+  
+  // Use currentStageIndex for notifications logic
+  const currentStage = stageConfig[currentStageIndex] || stageConfig[0];
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
@@ -227,23 +229,23 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                     key={step.id} 
                                     onClick={() => handleStageClick(step.id)} 
                                     className={`
-                                        group px-6 py-4 flex flex-col transition-all cursor-pointer
+                                        group px-6 py-4 flex flex-col transition-all cursor-pointer select-none
                                         ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''}
                                         ${!isEditing && isCurrent && isLastStep 
-                                            ? 'bg-emerald-50/40' // Fond vert si dernière étape active
+                                            ? 'bg-emerald-50/40' 
                                             : isCurrent 
-                                                ? 'bg-blue-50/20' // Fond bleu si étape normale active
-                                                : 'hover:bg-gray-50'
+                                                ? 'bg-blue-50/20' 
+                                                : 'hover:bg-gray-50 active:bg-gray-100' // Added active state for better mobile feedback
                                         }
                                     `}
                                   >
-                                      <div className="flex items-center gap-4">
+                                      <div className="flex items-center gap-4 pointer-events-none"> {/* pointer-events-none on inner content to prevent child clicks stealing the parent click */}
                                           <div className={`
                                               w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all
                                               ${isLoading 
                                                   ? 'border-gray-200 bg-white' 
                                                   : isCurrent && isLastStep 
-                                                      ? 'bg-emerald-600 border-emerald-600 text-white' // Icone Verte si Fin
+                                                      ? 'bg-emerald-600 border-emerald-600 text-white' 
                                                       : isDone 
                                                           ? 'bg-emerald-500 border-emerald-500 text-white' 
                                                           : isCurrent 
@@ -254,17 +256,18 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                               {isLoading ? (
                                                   <Loader2 size={12} className="animate-spin text-gray-400"/>
                                               ) : isCurrent && isLastStep ? (
-                                                  <Check size={14} strokeWidth={3}/> // Coche pour la fin
+                                                  <Check size={14} strokeWidth={3}/> 
                                               ) : isDone ? (
                                                   <Check size={14} strokeWidth={3}/>
                                               ) : isCurrent ? (
                                                   <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
                                               ) : (
-                                                  <div className="hidden group-hover:block w-2 h-2 bg-gray-200 rounded-full"></div>
+                                                  // MODIFICATION ICI : On rend le point gris toujours visible
+                                                  <div className="w-1.5 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-400 transition-colors"></div>
                                               )}
                                           </div>
 
-                                          <div className="flex-1 min-w-0">
+                                          <div className="flex-1 min-w-0 pointer-events-auto"> {/* Re-enable pointer events for inputs/buttons */}
                                               {isEditing ? (
                                                   <input 
                                                     autoFocus
@@ -278,7 +281,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                     }}
                                                   />
                                               ) : (
-                                                  <div className="flex items-center justify-between">
+                                                  <div className="flex items-center justify-between pointer-events-none">
                                                       <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>
                                                           {step.label}
                                                       </span>
@@ -299,7 +302,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                           </div>
 
                                           {isPro && !isEditing && (
-                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
                                                   <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded border border-transparent hover:border-gray-200"><Pencil size={14}/></button>
                                                   <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
                                               </div>
@@ -307,7 +310,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                       </div>
 
                                       {(isCurrent || isEditing) && (
-                                          <div className="mt-3 ml-10 space-y-3 animate-fade-in">
+                                          <div className="mt-3 ml-10 space-y-3 animate-fade-in pointer-events-auto">
                                               {isEditing ? (
                                                   <>
                                                       <div className="space-y-1">
