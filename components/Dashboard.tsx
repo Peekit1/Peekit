@@ -1,20 +1,9 @@
-Here's the corrected `Dashboard.tsx`.
-
-### What changed:
-
-1. **Mobile View Fix:** I replaced `h-screen` with `h-[100dvh]` on the main container. This uses the *dynamic viewport height*, which accounts for the mobile browser address bar appearing/disappearing, preventing the content from being cut off.
-2. **Responsive Layout:** I implemented a **Card View** specifically for mobile devices (screens smaller than `md`/768px) and kept the **Table View** only for larger screens. This eliminates the need for horizontal scrolling on mobile, making the interface much cleaner and easier to use.
-3. **Sidebar Overlay:** Added a backdrop overlay when the mobile sidebar is open, allowing users to close it by clicking outside.
-
-Copy and paste this entire code into your `src/components/Dashboard.tsx` file:
-
-```tsx
 import React, { useState } from 'react';
 import { 
   Search, Plus, LayoutGrid, CreditCard, LogOut, Settings,
-  Trash2, Pencil, Calendar, ChevronDown, X, Menu,
-  ChevronLeft, ChevronRight, Bell, Check, Download, Zap, Star,
-  TrendingUp, Shield, Receipt, Activity, ShieldCheck, User, Camera, AlertTriangle, Image as ImageIcon
+  Trash2, Pencil, Calendar, X, Menu,
+  ChevronLeft, ChevronRight, Bell, Check, Download, Zap,
+  Receipt, ShieldCheck, User, Camera, AlertTriangle, Image as ImageIcon
 } from 'lucide-react';
 import { DashboardProps, Project } from '../types';
 import { Button } from './Button';
@@ -32,7 +21,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteProject,
   onEditProject,
   onUpgradeClick,
-  onResetStudioConfig,
   onDeleteAccount
 }) => {
   const [currentView, setCurrentView] = useState<'projects' | 'subscription'>('projects');
@@ -100,7 +88,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
   return (
-    // FIX MOBILE: h-[100dvh] adapts to mobile browser chrome
     <div className="flex h-[100dvh] bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         
         {/* Overlay Mobile Sidebar */}
@@ -111,7 +98,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
                 <div className="flex items-center gap-3">
                      <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white shadow-sm"><span className="font-bold text-xs">P</span></div>
-                     {/* Using the specific font class you likely defined in tailwind config */}
                      <span className="font-brand text-2xl tracking-tight text-gray-900">Peekit</span>
                 </div>
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-900"><X size={20} /></button>
@@ -586,5 +572,3 @@ export const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
-
-```
