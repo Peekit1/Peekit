@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep, NotificationType } from '../types';
 import { Button } from './Button';
+// IMPORT AJOUTÉ
 import emailjs from '@emailjs/browser';
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
@@ -151,34 +152,34 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
+  // --- FONCTION SENDNOTIFICATION MISE À JOUR ---
   const sendNotification = async () => {
     // Vérification de sécurité
     if (!notificationEmail) return;
     
     setIsSendingNotification(true);
 
-    // Construction du lien vers l'espace client (basé sur l'URL actuelle)
-    // On prend l'URL de base et on ajoute le chemin vers la vue client
+    // Construction du lien vers l'espace client
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
 
     try {
-        // REMPLACEZ PAR VOS CLÉS EMAILJS ICI
-        const SERVICE_ID = "service_service_vlelgtd"; // Votre Service ID
-        const TEMPLATE_ID = "template_mjzqkyl"; // Votre Template ID
-        const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; // Votre Public Key
+        // VOS CLES EMAILJS
+        const SERVICE_ID = "service_service_vlelgtd"; 
+        const TEMPLATE_ID = "template_mjzqkyl"; 
+        const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
 
         await emailjs.send(
             SERVICE_ID,
             TEMPLATE_ID,
             {
                 // Ces variables doivent correspondre à celles dans votre template EmailJS
-                to_email: project.clientEmail,   // L'email du client (venant du projet)
-                client_name: project.clientName, // Le nom du client
-                subject: notificationEmail.subject, // Le sujet (modifié ou non par l'utilisateur)
-                message: notificationEmail.body,    // Le corps du message (modifié ou non)
-                link: clientLink,                // Le lien généré
-                studio_name: studioName          // Votre nom de studio
+                to_email: project.clientEmail,   
+                client_name: project.clientName, 
+                subject: notificationEmail.subject, 
+                message: notificationEmail.body,    
+                link: clientLink,                
+                studio_name: studioName          
             },
             PUBLIC_KEY
         );
@@ -248,7 +249,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               
-                              // Détection si c'est la toute dernière étape de la liste
                               const isLastStep = index === localWorkflow.length - 1;
 
                               return (
@@ -262,11 +262,11 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                             ? 'bg-emerald-50/40' 
                                             : isCurrent 
                                                 ? 'bg-blue-50/20' 
-                                                : 'hover:bg-gray-50 active:bg-gray-100' // Added active state for better mobile feedback
+                                                : 'hover:bg-gray-50 active:bg-gray-100'
                                         }
                                     `}
                                   >
-                                      <div className="flex items-center gap-4 pointer-events-none"> {/* pointer-events-none on inner content to prevent child clicks stealing the parent click */}
+                                      <div className="flex items-center gap-4 pointer-events-none">
                                           <div className={`
                                               w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all
                                               ${isLoading 
@@ -293,7 +293,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                               )}
                                           </div>
 
-                                          <div className="flex-1 min-w-0 pointer-events-auto"> {/* Re-enable pointer events for inputs/buttons */}
+                                          <div className="flex-1 min-w-0 pointer-events-auto">
                                               {isEditing ? (
                                                   <input 
                                                     autoFocus
