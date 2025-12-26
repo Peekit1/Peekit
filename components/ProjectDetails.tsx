@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep, NotificationType } from '../types';
 import { Button } from './Button';
+import emailjs from '@emailjs/browser';
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
   project, 
@@ -48,6 +49,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   }, [stageConfig]);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
+  const currentStage = stageConfig[currentStageIndex] || stageConfig[0];
   
   const handleStageClick = async (id: string) => {
       if (editingStepId) return;
@@ -149,26 +151,51 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
-  const sendNotification = () => {
-      if (!notificationEmail) return;
-      setIsSendingNotification(true);
-      
-      const finalBody = `${notificationEmail.body}\n\nLien de votre espace sécurisé : ${getClientUrl()}\n\n--\n${studioName}`;
-      const mailtoUrl = `mailto:${project.clientEmail}?subject=${encodeURIComponent(notificationEmail.subject)}&body=${encodeURIComponent(finalBody)}`;
-      
-      window.location.href = mailtoUrl;
+  const sendNotification = async () => {
+    // Vérification de sécurité
+    if (!notificationEmail) return;
+    
+    setIsSendingNotification(true);
 
-      setTimeout(() => {
-          setIsSendingNotification(false);
-          setNotifyStep('success');
-          setTimeout(() => setIsNotifyModalOpen(false), 2500);
-      }, 1000);
+    // Construction du lien vers l'espace client (basé sur l'URL actuelle)
+    // On prend l'URL de base et on ajoute le chemin vers la vue client
+    const baseUrl = window.location.href.split('#')[0]; 
+    const clientLink = `${baseUrl}#/v/${project.id}`;
+
+    try {
+        // REMPLACEZ PAR VOS CLÉS EMAILJS ICI
+        const SERVICE_ID = "service_xxxxxxx"; // Votre Service ID
+        const TEMPLATE_ID = "template_xxxxxxx"; // Votre Template ID
+        const PUBLIC_KEY = "public_xxxxxxx"; // Votre Public Key
+
+        await emailjs.send(
+            SERVICE_ID,
+            TEMPLATE_ID,
+            {
+                // Ces variables doivent correspondre à celles dans votre template EmailJS
+                to_email: project.clientEmail,   // L'email du client (venant du projet)
+                client_name: project.clientName, // Le nom du client
+                subject: notificationEmail.subject, // Le sujet (modifié ou non par l'utilisateur)
+                message: notificationEmail.body,    // Le corps du message (modifié ou non)
+                link: clientLink,                // Le lien généré
+                studio_name: studioName          // Votre nom de studio
+            },
+            PUBLIC_KEY
+        );
+
+        // Si l'envoi réussit :
+        setNotifyStep('success');
+        setTimeout(() => setIsNotifyModalOpen(false), 2500);
+
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de l'email:", error);
+        alert("Une erreur est survenue lors de l'envoi. Vérifiez votre configuration EmailJS.");
+    } finally {
+        setIsSendingNotification(false);
+    }
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
-  
-  // Use currentStageIndex for notifications logic
-  const currentStage = stageConfig[currentStageIndex] || stageConfig[0];
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
@@ -229,23 +256,23 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                     key={step.id} 
                                     onClick={() => handleStageClick(step.id)} 
                                     className={`
-                                        group px-6 py-4 flex flex-col transition-all cursor-pointer select-none
+                                        group px-6 py-4 flex flex-col transition-all cursor-pointer
                                         ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''}
                                         ${!isEditing && isCurrent && isLastStep 
-                                            ? 'bg-emerald-50/40' 
+                                            ? 'bg-emerald-50/40' // Fond vert si dernière étape active
                                             : isCurrent 
-                                                ? 'bg-blue-50/20' 
-                                                : 'hover:bg-gray-50 active:bg-gray-100' // Added active state for better mobile feedback
+                                                ? 'bg-blue-50/20' // Fond bleu si étape normale active
+                                                : 'hover:bg-gray-50'
                                         }
                                     `}
                                   >
-                                      <div className="flex items-center gap-4 pointer-events-none"> {/* pointer-events-none on inner content to prevent child clicks stealing the parent click */}
+                                      <div className="flex items-center gap-4">
                                           <div className={`
                                               w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all
                                               ${isLoading 
                                                   ? 'border-gray-200 bg-white' 
                                                   : isCurrent && isLastStep 
-                                                      ? 'bg-emerald-600 border-emerald-600 text-white' 
+                                                      ? 'bg-emerald-600 border-emerald-600 text-white' // Icone Verte si Fin
                                                       : isDone 
                                                           ? 'bg-emerald-500 border-emerald-500 text-white' 
                                                           : isCurrent 
@@ -256,18 +283,17 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                               {isLoading ? (
                                                   <Loader2 size={12} className="animate-spin text-gray-400"/>
                                               ) : isCurrent && isLastStep ? (
-                                                  <Check size={14} strokeWidth={3}/> 
+                                                  <Check size={14} strokeWidth={3}/> // Coche pour la fin
                                               ) : isDone ? (
                                                   <Check size={14} strokeWidth={3}/>
                                               ) : isCurrent ? (
                                                   <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
                                               ) : (
-                                                  // MODIFICATION ICI : On rend le point gris toujours visible
-                                                  <div className="w-1.5 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-400 transition-colors"></div>
+                                                  <div className="hidden group-hover:block w-2 h-2 bg-gray-200 rounded-full"></div>
                                               )}
                                           </div>
 
-                                          <div className="flex-1 min-w-0 pointer-events-auto"> {/* Re-enable pointer events for inputs/buttons */}
+                                          <div className="flex-1 min-w-0">
                                               {isEditing ? (
                                                   <input 
                                                     autoFocus
@@ -281,7 +307,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                     }}
                                                   />
                                               ) : (
-                                                  <div className="flex items-center justify-between pointer-events-none">
+                                                  <div className="flex items-center justify-between">
                                                       <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>
                                                           {step.label}
                                                       </span>
@@ -302,7 +328,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                           </div>
 
                                           {isPro && !isEditing && (
-                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                   <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded border border-transparent hover:border-gray-200"><Pencil size={14}/></button>
                                                   <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
                                               </div>
@@ -310,7 +336,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                       </div>
 
                                       {(isCurrent || isEditing) && (
-                                          <div className="mt-3 ml-10 space-y-3 animate-fade-in pointer-events-auto">
+                                          <div className="mt-3 ml-10 space-y-3 animate-fade-in">
                                               {isEditing ? (
                                                   <>
                                                       <div className="space-y-1">
