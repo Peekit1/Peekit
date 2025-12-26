@@ -164,9 +164,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
 
     try {
         // REMPLACEZ PAR VOS CLÉS EMAILJS ICI
-        const SERVICE_ID = "service_xxxxxxx"; // Votre Service ID
-        const TEMPLATE_ID = "template_xxxxxxx"; // Votre Template ID
-        const PUBLIC_KEY = "public_xxxxxxx"; // Votre Public Key
+        const SERVICE_ID = "service_vlelgtd"; // Votre Service ID
+        const TEMPLATE_ID = "template_mjzqkyl"; // Votre Template ID
+        const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; // Votre Public Key
 
         await emailjs.send(
             SERVICE_ID,
