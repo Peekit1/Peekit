@@ -7,17 +7,18 @@ import { AuthNavigationProps } from '../types';
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
     <section className="relative pt-44 pb-32 md:pt-56 md:pb-48 overflow-hidden bg-white">
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
-            <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
+        <div className="container mx-auto px-4 max-w-7xl relative z-10">
+            <div className="flex flex-col items-center text-center max-w-5xl mx-auto">
                 
                 <Reveal delay={0}>
-                    {/* MODIFICATIONS :
-                        1. text-3xl sur mobile (au lieu de 5xl) pour que les mots rentrent sur la ligne.
-                        2. Sauts de ligne stratégiques (<br>) pour forcer la découpe harmonieuse.
+                    {/* Titre optimisé pour 2 lignes :
+                        - Sur mobile (sm) : text-4xl pour que ça rentre.
+                        - Sur tablette/desktop : text-6xl/8xl.
+                        - <br /> force le saut de ligne après "expérience".
                     */}
-                    <h1 className="text-3xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tighter mb-10 leading-[1.2] sm:leading-[1.1]">
+                    <h1 className="text-4xl sm:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tighter mb-10 leading-[1.1] sm:leading-[0.95]">
                         Offrez une expérience <br />
-                        aussi soignée que votre travail. <br className="sm:hidden" />
+                        aussi soignée que votre travail.
                     </h1>
                 </Reveal>
                 
