@@ -28,11 +28,11 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const isAllSelected = totalFiles > 0 && selectedCount === totalFiles;
 
   const defaultStepContent: Record<string, string> = {
-    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
-    'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
-    'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
-    'export': "Vérifications finales\nOptimisation des fichiers\nContrôle qualité\nCette étape assure que chaque fichier respecte les standards de qualité avant livraison.",
-    'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
+    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\n\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
+    'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\n\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
+    'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\n\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
+    'export': "Vérifications finales\nOptimisation des fichiers\nContrôle qualité\n\nCette étape assure que chaque fichier respecte les standards de qualité avant livraison.",
+    'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\n\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
   };
 
   useEffect(() => {
@@ -235,7 +235,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   
                   {/* Phrase statique ajoutée ici */}
                   <p className="text-xs text-gray-500 leading-relaxed italic">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire et continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire et continue.
                   </p>
                   
                   <p className="text-sm text-gray-700 leading-relaxed pt-1">
@@ -389,7 +389,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 text-balance">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire&nbsp;et&nbsp;continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire&nbsp;et&nbsp;continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
                       Accéder à votre espace
