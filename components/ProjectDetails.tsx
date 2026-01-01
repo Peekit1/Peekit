@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep, NotificationType } from '../types';
 import { Button } from './Button';
-// IMPORT AJOUTÉ
 import emailjs from '@emailjs/browser';
 
 export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
@@ -45,8 +44,22 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Default descriptions mapping
+  const defaultDescriptions: Record<string, string> = {
+    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
+    'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
+    'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
+    'export': "Vérifications finales\nOptimisation des fichiers\nContrôle qualité\nCette étape assure que chaque fichier respecte les standards de qualité avant livraison.",
+    'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
+  };
+
   useEffect(() => {
-    setLocalWorkflow(JSON.parse(JSON.stringify(stageConfig)));
+    // Initialize workflow with default descriptions if missing
+    const initializedWorkflow = stageConfig.map(step => ({
+      ...step,
+      description: step.description || defaultDescriptions[step.id] || ''
+    }));
+    setLocalWorkflow(JSON.parse(JSON.stringify(initializedWorkflow)));
   }, [stageConfig]);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
@@ -152,20 +165,20 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
-  // --- FONCTION SENDNOTIFICATION MISE À JOUR ---
   const sendNotification = async () => {
     // Vérification de sécurité
     if (!notificationEmail) return;
     
     setIsSendingNotification(true);
 
-    // Construction du lien vers l'espace client
+    // Construction du lien vers l'espace client (basé sur l'URL actuelle)
+    // On prend l'URL de base et on ajoute le chemin vers la vue client
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
 
     try {
-        // VOS CLES EMAILJS
-        const SERVICE_ID = "service_vlelgtd"; // Votre Service ID
+        // REMPLACEZ PAR VOS CLÉS EMAILJS ICI
+        const SERVICE_ID = "service_service_vlelgtd"; // Votre Service ID
         const TEMPLATE_ID = "template_mjzqkyl"; // Votre Template ID
         const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; // Votre Public Key
 
@@ -174,12 +187,12 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
             TEMPLATE_ID,
             {
                 // Ces variables doivent correspondre à celles dans votre template EmailJS
-                to_email: project.clientEmail,   
-                client_name: project.clientName, 
-                subject: notificationEmail.subject, 
-                message: notificationEmail.body,    
-                link: clientLink,                
-                studio_name: studioName          
+                to_email: project.clientEmail,   // L'email du client (venant du projet)
+                client_name: project.clientName, // Le nom du client
+                subject: notificationEmail.subject, // Le sujet (modifié ou non par l'utilisateur)
+                message: notificationEmail.body,    // Le corps du message (modifié ou non)
+                link: clientLink,                // Le lien généré
+                studio_name: studioName          // Votre nom de studio
             },
             PUBLIC_KEY
         );
@@ -248,7 +261,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                               const isDone = index < currentStageIndex;
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
-                              
                               const isLastStep = index === localWorkflow.length - 1;
 
                               return (
@@ -370,6 +382,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                               ) : (
                                                   <div className="flex flex-col gap-1.5">
                                                       <p className={`text-xs italic font-medium ${isLastStep ? 'text-emerald-700' : 'text-gray-500'}`}>"{step.message}"</p>
+                                                      {/* Replaced 'teaser' message with the new descriptions logic.
+                                                          The descriptions are now populated by default in useEffect above. */}
                                                       {step.description && <div className="p-3 bg-gray-50 rounded-lg border border-gray-100"><p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{step.description}</p></div>}
                                                   </div>
                                               )}
