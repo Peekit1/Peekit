@@ -13,7 +13,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
   
-  // NOUVEAU : État pour le pop-up de bienvenue
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
 
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
@@ -27,8 +26,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const selectedCount = selectedFileIds.length;
   const isAllSelected = totalFiles > 0 && selectedCount === totalFiles;
 
+  // Textes par défaut avec le double saut de ligne (\n\n) pour la structure
   const defaultStepContent: Record<string, string> = {
-    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\n\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
+    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\n\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification.",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\n\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
     'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\n\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
     'export': "Vérifications finales\nOptimisation des fichiers\nContrôle qualité\n\nCette étape assure que chaque fichier respecte les standards de qualité avant livraison.",
@@ -36,19 +36,15 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   };
 
   useEffect(() => {
-    // 1. Vérification note lue
     const noteKey = `peekit_note_read_${project.id}_${project.currentStage}`;
     const isRead = localStorage.getItem(noteKey) === 'true';
     setHasReadNote(isRead);
 
-    // 2. Vérification première visite (Welcome Modal)
     const welcomeKey = `peekit_welcome_seen_${project.id}`;
     const hasSeenWelcome = localStorage.getItem(welcomeKey);
     
     if (!hasSeenWelcome) {
-        // Petit délai pour l'animation
         setTimeout(() => setIsWelcomeModalOpen(true), 500);
-        // On marque comme vu pour ne plus l'afficher
         localStorage.setItem(welcomeKey, 'true');
     }
   }, [project.id, project.currentStage]);
@@ -61,27 +57,41 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
         localStorage.setItem(key, 'true');
     }
   };
-  
-// FONCTION DE FORMATAGE : Gère le gras après le double saut de ligne
+
+  // FONCTION ROBUSTE POUR LE FORMATAGE
+  // Elle force la séparation même si le texte d'origine n'a qu'un seul saut de ligne
   const renderFormattedDescription = (text: string) => {
     if (!text) return null;
-    const parts = text.split('\n\n');
+
+    // 1. On s'assure qu'il y a un double saut de ligne avant les phrases clés
+    // Cela corrige le problème si les données ont été sauvegardées avec un simple \n
+    let processedText = text.replace(
+      /(\n)(Cette phase|Cette étape|Les fichiers)/g, 
+      '\n\n$2'
+    );
+
+    // 2. On sépare sur le double saut de ligne
+    const parts = processedText.split('\n\n');
     
     if (parts.length > 1) {
-      const mainText = parts.slice(0, -1).join('\n\n');
-      const boldText = parts[parts.length - 1];
+      const mainText = parts.slice(0, -1).join('\n\n'); // Tout sauf la dernière partie
+      const boldText = parts[parts.length - 1]; // La dernière partie
       
       return (
         <>
           <span className="whitespace-pre-line">{mainText}</span>
+          {/* Double saut de ligne visuel */}
           <br /><br />
+          {/* Dernière phrase en gras */}
           <span className="font-bold text-gray-900">{boldText}</span>
         </>
       );
     }
+    
+    // Fallback si aucune séparation trouvée
     return <span className="whitespace-pre-line">{text}</span>;
   };
-  
+
   const calculateDeliveryRange = () => {
     if (!project.date || !project.expectedDeliveryDate) return "plusieurs";
     const start = new Date(project.date);
@@ -245,17 +255,16 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
               </div>
           </div>
 
-          {/* 2. CADRE DE LIVRAISON (CORRIGÉ) */}
+          {/* 2. CADRE DE LIVRAISON */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm flex items-start gap-4">
               <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
                   <Clock size={20} />
               </div>
               <div className="space-y-1.5">
-                  <h3 className="text-sm font-bold text-gray-900">Cadre de livraison</h3> {/* "s" enlevé */}
+                  <h3 className="text-sm font-bold text-gray-900">Cadre de livraison</h3>
                   
-                  {/* Phrase statique ajoutée ici */}
                   <p className="text-xs text-gray-500 leading-relaxed italic">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire et continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement sans interrompre le processus.
                   </p>
                   
                   <p className="text-sm text-gray-700 leading-relaxed pt-1">
@@ -316,7 +325,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                           
                                           {isExpanded && description && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{description}</p>
+                                                  <p className="text-xs text-gray-600 leading-relaxed">
+                                                      {renderFormattedDescription(description)}
+                                                  </p>
                                               </div>
                                           )}
                                       </div>
@@ -332,16 +343,13 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
                           
-                          {/* TITRE À GAUCHE */}
                           <h3 className="font-bold text-gray-900 text-sm shrink-0">
                               {totalFiles > 1 ? 'Fichiers disponibles' : 'Fichier disponible'} <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
                           </h3>
                           
-                          {/* ACTIONS À DROITE */}
                           {(project.teasers || []).length > 0 && (
                               <div className="flex items-center gap-4">
                                   
-                                  {/* Select All */}
                                   <div className="flex items-center gap-2 cursor-pointer group select-none" onClick={toggleSelectAll} title="Tout sélectionner">
                                       <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
                                           {isAllSelected && <Check size={10} className="text-white" strokeWidth={3} />}
@@ -351,7 +359,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
                                   <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
 
-                                  {/* Download Button */}
                                   <button onClick={handleBulkDownload} disabled={isDownloadingAll} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm ${selectedCount > 0 || isAllSelected ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>
                                       {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
                                       {isDownloadingAll ? '...' : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
@@ -400,7 +407,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       </div>
 
-      {/* --- POP-UP DE BIENVENUE (PREMIÈRE VISITE) --- */}
       {isWelcomeModalOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center animate-scale-up relative">
@@ -409,7 +415,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 text-balance">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire&nbsp;et&nbsp;continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire&nbsp;et&nbsp;continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
                       Accéder à votre espace
@@ -418,7 +424,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       )}
 
-      {/* MODAL INFO (Note détaillée) */}
       {isInfoModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative" onClick={(e) => e.stopPropagation()}>
