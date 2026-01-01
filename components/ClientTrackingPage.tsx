@@ -13,7 +13,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
   
-  // NOUVEAU: État pour gérer quelle étape est "déroulée"
+  // État pour gérer quelle étape est "déroulée"
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
@@ -198,14 +198,19 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                               
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
-                                                  <div className="flex justify-between items-center mb-1">
+                                                  <div className="flex justify-between items-start mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                      <div className="flex items-center gap-2">
+                                                      <div className="flex flex-col items-end gap-1">
                                                           {isDone && <span className="text-[10px] font-medium text-gray-400">Terminé</span>}
-                                                          {/* BOUTON FLÈCHE POUR DÉROULER L'INFO COMPLÉMENTAIRE */}
+                                                          
+                                                          {/* BOUTON "COMPRENDRE CETTE ÉTAPE" */}
                                                           {infoContent && (
-                                                              <button onClick={() => toggleStepDetails(step.id)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                                                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                              <button 
+                                                                  onClick={() => toggleStepDetails(step.id)} 
+                                                                  className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors border border-gray-100 hover:border-gray-200"
+                                                              >
+                                                                  <span className="text-[10px] font-bold uppercase tracking-tight">Comprendre cette étape</span>
+                                                                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                                                               </button>
                                                           )}
                                                       </div>
