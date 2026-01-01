@@ -9,16 +9,19 @@ import { Button } from './Button';
 
 export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false); // État pour le téléchargement global
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
+  
+  // NOUVEAU: État pour gérer quelle étape est "déroulée"
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  const defaultDescriptions: Record<string, string> = {
+  // TEXTES PAR DÉFAUT (Pour affichage si 'content' est vide côté donnée)
+  const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
     'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
@@ -49,11 +52,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // Fonction pour télécharger un fichier unique
   const handleDownload = async (url: string, id: string, filename?: string) => {
-    // Si c'est un téléchargement individuel, on met à jour l'ID, sinon on laisse le loading global gérer
     if (!isDownloadingAll) setDownloadingId(id);
-    
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error("Erreur de récupération du fichier");
@@ -77,33 +77,22 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // --- NOUVELLE FONCTION : TOUT TÉLÉCHARGER ---
   const handleDownloadAll = async () => {
     if (!project.teasers || project.teasers.length === 0) return;
-    
     setIsDownloadingAll(true);
-    
-    // On boucle sur chaque fichier
     for (const teaser of project.teasers) {
-        // On attend que le téléchargement se lance avant de passer au suivant
         await handleDownload(teaser.url, teaser.id, teaser.title);
-        // Petit délai pour éviter que le navigateur ne bloque les téléchargements multiples
         await new Promise(resolve => setTimeout(resolve, 800));
     }
-    
     setIsDownloadingAll(false);
   };
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20 relative">
       
-      {/* MINIMAL HEADER */}
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-4">
-              <button 
-                onClick={onBack} 
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors bg-white"
-              >
+              <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors bg-white">
                   <ArrowLeft size={16}/>
               </button>
               <div className="flex items-center gap-2">
@@ -113,7 +102,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <span className="font-bold text-sm tracking-tight text-gray-900">Peekit</span>
               </div>
           </div>
-          
           <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
               <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Espace Sécurisé</span>
@@ -122,31 +110,23 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
-          {/* 1. PROJECT OVERVIEW CARD */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
                       <div className="flex items-center gap-3 mb-2">
-                          <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold uppercase tracking-wider text-gray-600">
-                              {project.type}
-                          </span>
+                          <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold uppercase tracking-wider text-gray-600">{project.type}</span>
                           <span className="text-gray-300">|</span>
-                          <span className="text-xs text-gray-500 font-medium flex items-center gap-1">
-                              <Calendar size={12}/> {project.date}
-                          </span>
+                          <span className="text-xs text-gray-500 font-medium flex items-center gap-1"><Calendar size={12}/> {project.date}</span>
                       </div>
                       <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">{project.clientName}</h1>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <MapPin size={14} className="text-gray-400"/> {project.location}
-                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500"><MapPin size={14} className="text-gray-400"/> {project.location}</div>
                   </div>
                   
-                  {/* Status Box */}
                   <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 w-full md:w-auto min-w-[280px] relative group transition-all hover:border-gray-200 hover:shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
-                          {/* Info Button */}
-                          {(currentStageConfig.description || defaultDescriptions[currentStageConfig.id]) && (
+                          {/* Info Button trigger only if DESCRIPTION (Note détaillée) exists */}
+                          {currentStageConfig.description && (
                               <button 
                                   onClick={handleOpenInfo}
                                   className={`relative p-1.5 rounded-full transition-colors ${hasReadNote ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100'}`}
@@ -163,42 +143,22 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           )}
                       </div>
                       <div className="flex items-center gap-3 mb-1">
-                          {isCompleted ? (
-                              <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                          ) : (
-                              <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>
-                          )}
+                          {isCompleted ? <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div> : <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>}
                           <span className="text-lg font-bold text-gray-900">{currentStageConfig.label}</span>
                       </div>
                       <p className="text-xs text-gray-500 leading-snug">{currentStageConfig.message}</p>
                       
-                      {(currentStageConfig.description || defaultDescriptions[currentStageConfig.id]) && (
+                      {currentStageConfig.description && (
                           <div className="mt-4">
                               {!hasReadNote ? (
-                                  <button 
-                                    onClick={handleOpenInfo}
-                                    className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-200 transition-all group relative overflow-hidden active:scale-[0.98]"
-                                  >
+                                  <button onClick={handleOpenInfo} className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-200 transition-all group relative overflow-hidden active:scale-[0.98]">
                                       <div className="absolute -top-10 -right-10 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
-                                      <div className="relative shrink-0">
-                                          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                              <MessageSquare size={16} fill="currentColor" className="text-white"/>
-                                          </div>
-                                      </div>
-                                      <div className="text-left flex-1 min-w-0">
-                                          <div className="text-[10px] font-bold opacity-80 uppercase tracking-wide mb-0.5 flex items-center gap-2">
-                                            Message
-                                            <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></span>
-                                          </div>
-                                          <div className="text-xs font-bold leading-none truncate">Lire la note détaillée</div>
-                                      </div>
+                                      <div className="relative shrink-0"><div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><MessageSquare size={16} fill="currentColor" className="text-white"/></div></div>
+                                      <div className="text-left flex-1 min-w-0"><div className="text-[10px] font-bold opacity-80 uppercase tracking-wide mb-0.5 flex items-center gap-2">Message<span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></span></div><div className="text-xs font-bold leading-none truncate">Lire la note détaillée</div></div>
                                       <ArrowRight size={14} className="opacity-70 group-hover:translate-x-1 transition-transform"/>
                                   </button>
                               ) : (
-                                  <button 
-                                    onClick={handleOpenInfo}
-                                    className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors active:scale-[0.98]"
-                                  >
+                                  <button onClick={handleOpenInfo} className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors active:scale-[0.98]">
                                       <BookOpen size={14} />
                                       <span className="text-xs font-bold">Relire la note</span>
                                   </button>
@@ -211,7 +171,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* LEFT: TIMELINE HISTORY */}
               <div className="lg:col-span-2">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -220,25 +179,20 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       
                       <div className="p-6">
                           <div className="relative pl-2 space-y-8">
-                              {/* Vertical Line */}
                               <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gray-100"></div>
 
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  const description = step.description || defaultDescriptions[step.id];
+                                  
+                                  // RÉCUPÉRATION DU CONTENU INFO COMPLÉMENTAIRE
+                                  const infoContent = (step as any).content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
 
                                   return (
                                       <div key={step.id} className="relative z-10">
                                           <div className="flex items-start gap-4">
-                                              
-                                              <div className={`
-                                                  w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300
-                                                  ${isDone ? 'bg-gray-900 border-gray-900 text-white' : 
-                                                    isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 
-                                                    'bg-white border-gray-200 text-gray-300'}
-                                              `}>
+                                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${isDone ? 'bg-gray-900 border-gray-900 text-white' : isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 'bg-white border-gray-200 text-gray-300'}`}>
                                                   {isDone && <Check size={12} strokeWidth={3}/>}
                                                   {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
                                               </div>
@@ -248,28 +202,22 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
                                                       <div className="flex items-center gap-2">
                                                           {isDone && <span className="text-[10px] font-medium text-gray-400">Terminé</span>}
-                                                          {description && (
-                                                              <button 
-                                                                  onClick={() => toggleStepDetails(step.id)}
-                                                                  className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                                                              >
+                                                          {/* BOUTON FLÈCHE POUR DÉROULER L'INFO COMPLÉMENTAIRE */}
+                                                          {infoContent && (
+                                                              <button onClick={() => toggleStepDetails(step.id)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                                                                   {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                                               </button>
                                                           )}
                                                       </div>
                                                   </div>
-                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                                                      {step.message}
-                                                  </p>
+                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium">{step.message}</p>
                                               </div>
                                           </div>
                                           
-                                          {/* Expandable Description */}
-                                          {isExpanded && description && (
+                                          {/* AFFICHAGE DU TEXTE INFO COMPLÉMENTAIRE */}
+                                          {isExpanded && infoContent && (
                                               <div className="ml-11 mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 animate-fade-in">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
-                                                      {description}
-                                                  </p>
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{infoContent}</p>
                                               </div>
                                           )}
                                       </div>
@@ -280,35 +228,25 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
               </div>
 
-              {/* RIGHT: FILES & DOWNLOADS */}
               <div className="space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
                           <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
                           <div className="flex items-center gap-2">
-                              {/* BOUTON TOUT TÉLÉCHARGER AJOUTÉ ICI */}
                               {(project.teasers || []).length > 0 && (
-                                <button 
-                                    onClick={handleDownloadAll}
-                                    disabled={isDownloadingAll}
-                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors flex items-center gap-1"
-                                >
+                                <button onClick={handleDownloadAll} disabled={isDownloadingAll} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
                                     {isDownloadingAll ? <Loader2 size={10} className="animate-spin"/> : <ArrowDownToLine size={10}/>}
                                     {isDownloadingAll ? '...' : 'Tout télécharger'}
                                 </button>
                               )}
-                              <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500">
-                                 {(project.teasers || []).length}
-                              </span>
+                              <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500">{(project.teasers || []).length}</span>
                           </div>
                       </div>
 
                       <div className="p-4">
                           {(!project.teasers || project.teasers.length === 0) ? (
                               <div className="py-12 flex flex-col items-center justify-center text-center border border-dashed border-gray-200 rounded-lg">
-                                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-gray-400">
-                                      <FileText size={18}/>
-                                  </div>
+                                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-gray-400"><FileText size={18}/></div>
                                   <p className="text-xs font-bold text-gray-900">Aucun document</p>
                                   <p className="text-[10px] text-gray-500 mt-1">L'espace est vide pour le moment.</p>
                               </div>
@@ -323,13 +261,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               <h4 className="text-xs font-bold text-gray-900 truncate">{t.title || 'Fichier Média'}</h4>
                                               <p className="text-[10px] text-gray-400 font-mono mt-0.5">{t.date}</p>
                                           </div>
-                                          
-                                          <button 
-                                              onClick={() => handleDownload(t.url, t.id, t.title)}
-                                              disabled={downloadingId === t.id || isDownloadingAll}
-                                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors"
-                                              title="Télécharger"
-                                          >
+                                          <button onClick={() => handleDownload(t.url, t.id, t.title)} disabled={downloadingId === t.id || isDownloadingAll} className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors" title="Télécharger">
                                               {downloadingId === t.id ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
                                           </button>
                                       </div>
@@ -339,63 +271,37 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                   </div>
                   
-                  {/* Help Card */}
                   <div className="bg-white rounded-xl border border-gray-200 p-5 text-center shadow-sm">
                       <h3 className="text-xs font-bold text-gray-900 mb-1">Une question ?</h3>
                       <p className="text-[10px] text-gray-500 mb-3">Contactez votre prestataire directement.</p>
-                      <Button variant="outline" size="sm" fullWidth className="text-xs">
-                          Envoyer un email
-                      </Button>
+                      <Button variant="outline" size="sm" fullWidth className="text-xs">Envoyer un email</Button>
                   </div>
               </div>
-
           </div>
-
       </div>
 
-      {/* INFO MODAL */}
+      {/* INFO MODAL FOR "NOTE DÉTAILLÉE" ONLY */}
       {isInfoModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
-              <div 
-                  className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative"
-                  onClick={(e) => e.stopPropagation()}
-              >
-                  {/* Modal Header */}
+              <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative" onClick={(e) => e.stopPropagation()}>
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                               <Info size={16} />
-                           </div>
-                           <div>
-                               <h3 className="font-bold text-gray-900 text-sm">Note sur l'avancement</h3>
-                               <p className="text-[10px] text-gray-500 font-medium">{currentStageConfig.label}</p>
-                           </div>
+                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Info size={16} /></div>
+                           <div><h3 className="font-bold text-gray-900 text-sm">Note sur l'avancement</h3><p className="text-[10px] text-gray-500 font-medium">{currentStageConfig.label}</p></div>
                       </div>
-                      <button 
-                          onClick={() => setIsInfoModalOpen(false)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"
-                      >
-                          <X size={18} />
-                      </button>
+                      <button onClick={() => setIsInfoModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
                   </div>
-
-                  {/* Modal Content */}
                   <div className="p-6">
                       <div className="prose prose-sm text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                          {currentStageConfig.description || defaultDescriptions[currentStageConfig.id] || "Aucune information supplémentaire pour cette étape."}
+                          {currentStageConfig.description}
                       </div>
                   </div>
-
-                  {/* Modal Footer */}
                   <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-                      <Button variant="black" size="sm" onClick={() => setIsInfoModalOpen(false)}>
-                          J'ai compris
-                      </Button>
+                      <Button variant="black" size="sm" onClick={() => setIsInfoModalOpen(false)}>J'ai compris</Button>
                   </div>
               </div>
           </div>
       )}
-
     </div>
   );
 };
