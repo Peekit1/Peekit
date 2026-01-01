@@ -10,8 +10,7 @@ import { Button } from './Button';
 export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [hasReadNote, setHasReadNote] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // Gardé pour "Comprendre cette étape"
   
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
@@ -32,20 +31,23 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
   };
 
-  useEffect(() => {
-    const key = `peekit_note_read_${project.id}_${project.currentStage}`;
-    const isRead = localStorage.getItem(key) === 'true';
-    setHasReadNote(isRead);
-  }, [project.id, project.currentStage]);
-
-  const handleOpenInfo = () => {
-    setIsInfoModalOpen(true);
-    if (!hasReadNote) {
-        setHasReadNote(true);
-        const key = `peekit_note_read_${project.id}_${project.currentStage}`;
-        localStorage.setItem(key, 'true');
-    }
+  // Calcul du délai de livraison (Différence en semaines + 2)
+  const calculateDeliveryDelay = () => {
+    if (!project.date || !project.expectedDeliveryDate) return "plusieurs";
+    
+    const start = new Date(project.date);
+    const end = new Date(project.expectedDeliveryDate);
+    
+    // Différence en millisecondes
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    // Conversion en semaines (1000ms * 60s * 60m * 24h * 7j)
+    const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+    
+    // Ajout de 2 semaines comme demandé
+    return diffWeeks + 2;
   };
+
+  const deliveryWeeks = calculateDeliveryDelay();
 
   const toggleStepDetails = (stepId: string) => {
     if (expandedStepId === stepId) {
@@ -136,8 +138,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       </header>
 
-      <div className="max-w-6xl mx-auto p-6 md:p-8 animate-fade-in">
+      <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
+          {/* 1. PROJECT OVERVIEW CARD */}
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
               
               {project.coverImage && (
@@ -164,57 +167,38 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                   </div>
                   
+                  {/* Status Box */}
                   <div className={`rounded-xl p-5 border w-full md:w-auto min-w-[280px] relative group transition-all hover:shadow-sm ${project.coverImage ? 'bg-white/95 backdrop-blur-md border-white/20 text-gray-900' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
-                          {currentStageConfig.description && (
-                              <button 
-                                  onClick={handleOpenInfo}
-                                  className={`relative p-1.5 rounded-full transition-colors ${hasReadNote ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100'}`}
-                                  title="Lire le message du créatif"
-                              >
-                                  {!hasReadNote && (
-                                    <span className="absolute top-0 right-0 flex h-2.5 w-2.5 -mt-0.5 -mr-0.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-                                    </span>
-                                  )}
-                                  <Info size={14} />
-                              </button>
-                          )}
+                          {/* SUPPRESSION DU BOUTON INFO ICI COMME DEMANDÉ */}
                       </div>
                       <div className="flex items-center gap-3 mb-1">
                           {isCompleted ? <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div> : <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>}
                           <span className="text-lg font-bold text-gray-900">{currentStageConfig.label}</span>
                       </div>
                       <p className="text-xs text-gray-500 leading-snug">{currentStageConfig.message}</p>
-                      
-                      {currentStageConfig.description && (
-                          <div className="mt-4">
-                              {!hasReadNote ? (
-                                  <button onClick={handleOpenInfo} className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-200 transition-all group relative overflow-hidden active:scale-[0.98]">
-                                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
-                                      <div className="relative shrink-0"><div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><MessageSquare size={16} fill="currentColor" className="text-white"/></div></div>
-                                      <div className="text-left flex-1 min-w-0"><div className="text-[10px] font-bold opacity-80 uppercase tracking-wide mb-0.5 flex items-center gap-2">Message<span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></span></div><div className="text-xs font-bold leading-none truncate">Lire la note détaillée</div></div>
-                                      <ArrowRight size={14} className="opacity-70 group-hover:translate-x-1 transition-transform"/>
-                                  </button>
-                              ) : (
-                                  <button onClick={handleOpenInfo} className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors active:scale-[0.98]">
-                                      <BookOpen size={14} />
-                                      <span className="text-xs font-bold">Relire la note</span>
-                                  </button>
-                              )}
-                          </div>
-                      )}
                   </div>
               </div>
           </div>
 
-          {/* --- CHANGEMENT DE LA GRILLE ICI --- */}
-          {/* Passage de grid-cols-3 à grid-cols-12 pour un contrôle fin de la largeur */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6"> {/* gap-6 réduit un peu l'espace entre les colonnes */}
+          {/* 2. NOUVELLE SECTION : CADRE DE LIVRAISONS */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm flex items-start gap-4">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+                  <Clock size={20} />
+              </div>
+              <div>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">Cadre de livraisons</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                      La livraison intervient généralement dans un délai de <span className="font-bold text-gray-900">{deliveryWeeks} semaines</span>, selon la nature du projet et les étapes créatives nécessaires.
+                  </p>
+              </div>
+          </div>
+
+          {/* 3. GRID CONTENU */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
-              {/* HISTORIQUE : Prend 7 colonnes sur 12 (environ 58%) */}
+              {/* HISTORIQUE */}
               <div className="lg:col-span-7">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -228,8 +212,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  
-                                  const infoContent = (step as any).content || defaultStepContent[step.id];
+                                  const description = step.content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
 
                                   return (
@@ -267,7 +250,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                       {step.message}
                                                   </p>
 
-                                                  {infoContent && (
+                                                  {description && (
                                                       <button 
                                                           onClick={() => toggleStepDetails(step.id)} 
                                                           className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wide group"
@@ -281,9 +264,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                           </div>
                                           
-                                          {isExpanded && infoContent && (
+                                          {isExpanded && description && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{infoContent}</p>
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{description}</p>
                                               </div>
                                           )}
                                       </div>
@@ -294,52 +277,47 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
               </div>
 
-              {/* TÉLÉCHARGEMENT : Prend 5 colonnes sur 12 (environ 42%) */}
+              {/* TÉLÉCHARGEMENT */}
               <div className="lg:col-span-5 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       
-                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between h-16">
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
                           
-                          {(!project.teasers || project.teasers.length === 0) ? (
-                              <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
-                          ) : (
-                              // HEADER OPTIMISÉ POUR L'ESPACE
-                              <div className="flex items-center justify-between w-full">
-                                  
-                                  {/* GAUCHE : TOUT SÉLECTIONNER */}
+                          {/* TITRE : RÉTROUVÉ AVEC SINGULIER/PLURIEL */}
+                          <h3 className="font-bold text-gray-900 text-sm shrink-0">
+                              {totalFiles > 1 ? 'Fichiers disponibles' : 'Fichier disponible'} <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
+                          </h3>
+                          
+                          {(project.teasers || []).length > 0 && (
+                              <div className="flex items-center gap-3">
+                                  {/* Select All */}
                                   <div 
-                                    className="flex items-center gap-3 cursor-pointer group select-none mr-2"
+                                    className="flex items-center gap-2 cursor-pointer group select-none"
                                     onClick={toggleSelectAll}
+                                    title="Tout sélectionner"
                                   >
-                                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm shrink-0 ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
+                                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
                                           {isAllSelected && <Check size={12} className="text-white" strokeWidth={3} />}
-                                      </div>
-                                      <div className="flex flex-col">
-                                          {/* Whitespace-nowrap force le texte sur une ligne */}
-                                          <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
-                                              {isAllSelected ? "Tout est sélectionné" : "Tout sélectionner"}
-                                          </span>
-                                          <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
-                                              {selectedCount > 0 ? `${selectedCount} fichier${selectedCount > 1 ? 's' : ''}` : `${totalFiles} fichier${totalFiles > 1 ? 's' : ''}`}
-                                          </span>
                                       </div>
                                   </div>
 
-                                  {/* DROITE : ACTION */}
+                                  <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
+
+                                  {/* Download Button */}
                                   <button 
                                       onClick={handleBulkDownload}
                                       disabled={isDownloadingAll}
                                       className={`
-                                          text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
+                                          text-[10px] font-bold px-3 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
                                           ${selectedCount > 0 || isAllSelected
-                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' 
+                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' 
                                               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
                                       `}
                                   >
                                       {isDownloadingAll ? <Loader2 size={14} className="animate-spin"/> : <ArrowDownToLine size={14}/>}
                                       {isDownloadingAll 
                                           ? '...' 
-                                          : selectedCount > 0 ? 'Télécharger' : 'Tout télécharger'}
+                                          : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
                                   </button>
                               </div>
                           )}
@@ -400,28 +378,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
               </div>
           </div>
       </div>
-
-      {isInfoModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative" onClick={(e) => e.stopPropagation()}>
-                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                      <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Info size={16} /></div>
-                           <div><h3 className="font-bold text-gray-900 text-sm">Note sur l'avancement</h3><p className="text-[10px] text-gray-500 font-medium">{currentStageConfig.label}</p></div>
-                      </div>
-                      <button onClick={() => setIsInfoModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
-                  </div>
-                  <div className="p-6">
-                      <div className="prose prose-sm text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                          {currentStageConfig.description}
-                      </div>
-                  </div>
-                  <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-                      <Button variant="black" size="sm" onClick={() => setIsInfoModalOpen(false)}>J'ai compris</Button>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 };
