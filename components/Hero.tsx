@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from './Button';
@@ -12,8 +11,11 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
             <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
                 
                 <Reveal delay={0}>
-                    <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tighter mb-10 leading-[0.9] text-balance">
-                        Offrez une expérience aussi soignée que votre travail.
+                    {/* Taille ajustée à text-4xl sur mobile pour éviter une 4ème ligne */}
+                    <h1 className="text-4xl sm:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tighter mb-10 leading-[0.95] text-balance">
+                        Offrez une expérience <br className="block" />
+                        aussi soignée <br className="block" />
+                        que votre travail.
                     </h1>
                 </Reveal>
                 
