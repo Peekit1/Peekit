@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Activity, Clock, Package, Loader2, Video, 
   ArrowDownToLine, CheckCircle2, MapPin, Calendar, LayoutGrid, Check, FileText, Download,
-  Info, X, MessageSquare, ArrowRight, BookOpen, ChevronDown, ChevronUp
+  Info, X, MessageSquare, ArrowRight, BookOpen, ChevronDown, ChevronUp, Sparkles
 } from 'lucide-react';
 import { ClientTrackingPageProps } from '../types';
 import { Button } from './Button';
@@ -13,6 +13,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
   
+  // NOUVEAU : État pour le pop-up de bienvenue
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
 
@@ -33,9 +36,21 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   };
 
   useEffect(() => {
-    const key = `peekit_note_read_${project.id}_${project.currentStage}`;
-    const isRead = localStorage.getItem(key) === 'true';
+    // 1. Vérification note lue
+    const noteKey = `peekit_note_read_${project.id}_${project.currentStage}`;
+    const isRead = localStorage.getItem(noteKey) === 'true';
     setHasReadNote(isRead);
+
+    // 2. Vérification première visite (Welcome Modal)
+    const welcomeKey = `peekit_welcome_seen_${project.id}`;
+    const hasSeenWelcome = localStorage.getItem(welcomeKey);
+    
+    if (!hasSeenWelcome) {
+        // Petit délai pour l'animation
+        setTimeout(() => setIsWelcomeModalOpen(true), 500);
+        // On marque comme vu pour ne plus l'afficher
+        localStorage.setItem(welcomeKey, 'true');
+    }
   }, [project.id, project.currentStage]);
 
   const handleOpenInfo = () => {
@@ -47,21 +62,14 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // --- CALCUL DE LA PLAGE DE LIVRAISON ---
   const calculateDeliveryRange = () => {
     if (!project.date || !project.expectedDeliveryDate) return "plusieurs";
-    
     const start = new Date(project.date);
     const end = new Date(project.expectedDeliveryDate);
-    
-    // Différence en semaines
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-    
-    // Plage : [Semaines - 2] à [Semaines + 1] (Min 1 semaine)
     const minWeeks = Math.max(1, diffWeeks - 2);
     const maxWeeks = diffWeeks + 1;
-    
     return `${minWeeks} et ${maxWeeks}`;
   };
   
@@ -189,7 +197,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className={`rounded-xl p-5 border w-full md:w-auto min-w-[280px] relative group transition-all hover:shadow-sm ${project.coverImage ? 'bg-white/95 backdrop-blur-md border-white/20 text-gray-900' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
-                          {/* SUPPRESSION DU BOUTON (i) ICI */}
                       </div>
                       <div className="flex items-center gap-3 mb-1">
                           {isCompleted ? <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div> : <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>}
@@ -197,7 +204,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                       <p className="text-xs text-gray-500 leading-snug">{currentStageConfig.message}</p>
                       
-                      {/* LE BOUTON NOTE DÉTAILLÉE EST CONSERVÉ ICI */}
                       {currentStageConfig.description && (
                           <div className="mt-4">
                               {!hasReadNote ? (
@@ -219,14 +225,20 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
               </div>
           </div>
 
-          {/* 2. CADRE DE LIVRAISONS */}
+          {/* 2. CADRE DE LIVRAISON (CORRIGÉ) */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm flex items-start gap-4">
               <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
                   <Clock size={20} />
               </div>
-              <div>
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">Cadre de livraisons</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+              <div className="space-y-1.5">
+                  <h3 className="text-sm font-bold text-gray-900">Cadre de livraison</h3> {/* "s" enlevé */}
+                  
+                  {/* Phrase statique ajoutée ici */}
+                  <p className="text-xs text-gray-500 leading-relaxed italic">
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement sans interrompre le processus.
+                  </p>
+                  
+                  <p className="text-sm text-gray-700 leading-relaxed pt-1">
                       La livraison intervient généralement entre <span className="font-bold text-gray-900">{deliveryRange} semaines</span>, selon la nature du projet et les étapes créatives nécessaires.
                   </p>
               </div>
@@ -264,6 +276,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                   
                                                   <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
+                                                      
                                                       {isDone && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">Terminé</span>}
                                                       {isCurrent && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">En cours</span>}
                                                   </div>
@@ -299,12 +312,12 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
                           
-                          {/* TITRE : RÉTROUVÉ */}
+                          {/* TITRE À GAUCHE */}
                           <h3 className="font-bold text-gray-900 text-sm shrink-0">
                               {totalFiles > 1 ? 'Fichiers disponibles' : 'Fichier disponible'} <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
                           </h3>
                           
-                          {/* ACTIONS : REGROUPÉES À DROITE */}
+                          {/* ACTIONS À DROITE */}
                           {(project.teasers || []).length > 0 && (
                               <div className="flex items-center gap-4">
                                   
@@ -367,6 +380,25 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       </div>
 
+      {/* --- POP-UP DE BIENVENUE (PREMIÈRE VISITE) --- */}
+      {isWelcomeModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center animate-scale-up relative">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Sparkles size={20} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement sans interrompre le processus.
+                  </p>
+                  <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
+                      Accéder à mon projet
+                  </Button>
+              </div>
+          </div>
+      )}
+
+      {/* MODAL INFO (Note détaillée) */}
       {isInfoModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative" onClick={(e) => e.stopPropagation()}>
