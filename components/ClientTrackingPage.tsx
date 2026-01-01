@@ -2,21 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Activity, Clock, Package, Loader2, Video, 
   ArrowDownToLine, CheckCircle2, MapPin, Calendar, LayoutGrid, Check, FileText, Download,
-  Info, X, MessageSquare, ArrowRight, BookOpen
+  Info, X, MessageSquare, ArrowRight, BookOpen, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { ClientTrackingPageProps } from '../types';
 import { Button } from './Button';
 
 export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false); // État pour le téléchargement global
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  // Check LocalStorage on mount or stage change
+  const defaultDescriptions: Record<string, string> = {
+    'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
+    'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
+    'editing': "Harmonisation des couleurs\nAjustement des lumières\nAffinage des détails\nCohérence visuelle de la série\nCette phase demande précision et attention pour garantir un rendu homogène sur l’ensemble du projet.",
+    'export': "Vérifications finales\nOptimisation des fichiers\nContrôle qualité\nCette étape assure que chaque fichier respecte les standards de qualité avant livraison.",
+    'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
+  };
+
   useEffect(() => {
     const key = `peekit_note_read_${project.id}_${project.currentStage}`;
     const isRead = localStorage.getItem(key) === 'true';
@@ -25,7 +34,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
   const handleOpenInfo = () => {
     setIsInfoModalOpen(true);
-    // Mark as read immediately
     if (!hasReadNote) {
         setHasReadNote(true);
         const key = `peekit_note_read_${project.id}_${project.currentStage}`;
@@ -33,39 +41,57 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
+  const toggleStepDetails = (stepId: string) => {
+    if (expandedStepId === stepId) {
+      setExpandedStepId(null);
+    } else {
+      setExpandedStepId(stepId);
+    }
+  };
+
+  // Fonction pour télécharger un fichier unique
   const handleDownload = async (url: string, id: string, filename?: string) => {
-    setDownloadingId(id);
+    // Si c'est un téléchargement individuel, on met à jour l'ID, sinon on laisse le loading global gérer
+    if (!isDownloadingAll) setDownloadingId(id);
+    
     try {
-      // On récupère le fichier via fetch pour le transformer en Blob
       const response = await fetch(url);
       if (!response.ok) throw new Error("Erreur de récupération du fichier");
       
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       
-      // On crée un lien temporaire pour déclencher le téléchargement
       const link = document.createElement('a');
       link.href = blobUrl;
-      // On utilise le titre du teaser s'il existe, sinon un nom générique
       link.download = filename || `peekit-file-${id}`;
       document.body.appendChild(link);
       link.click();
       
-      // Nettoyage
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download failed, falling back to open:", error);
-      // En cas d'échec (CORS par ex), on ouvre simplement dans un nouvel onglet
       window.open(url, '_blank');
     } finally {
-      setDownloadingId(null);
+      if (!isDownloadingAll) setDownloadingId(null);
     }
   };
 
-  const getProgress = () => {
-    if (stageConfig.length === 0) return 0;
-    return Math.round(((currentStageIndex + 1) / stageConfig.length) * 100);
+  // --- NOUVELLE FONCTION : TOUT TÉLÉCHARGER ---
+  const handleDownloadAll = async () => {
+    if (!project.teasers || project.teasers.length === 0) return;
+    
+    setIsDownloadingAll(true);
+    
+    // On boucle sur chaque fichier
+    for (const teaser of project.teasers) {
+        // On attend que le téléchargement se lance avant de passer au suivant
+        await handleDownload(teaser.url, teaser.id, teaser.title);
+        // Petit délai pour éviter que le navigateur ne bloque les téléchargements multiples
+        await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    
+    setIsDownloadingAll(false);
   };
 
   return (
@@ -119,8 +145,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 w-full md:w-auto min-w-[280px] relative group transition-all hover:border-gray-200 hover:shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
-                          {/* Info Button Trigger - Small Icon Top Right */}
-                          {currentStageConfig.description && (
+                          {/* Info Button */}
+                          {(currentStageConfig.description || defaultDescriptions[currentStageConfig.id]) && (
                               <button 
                                   onClick={handleOpenInfo}
                                   className={`relative p-1.5 rounded-full transition-colors ${hasReadNote ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100'}`}
@@ -146,23 +172,19 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                       <p className="text-xs text-gray-500 leading-snug">{currentStageConfig.message}</p>
                       
-                      {currentStageConfig.description && (
+                      {(currentStageConfig.description || defaultDescriptions[currentStageConfig.id]) && (
                           <div className="mt-4">
                               {!hasReadNote ? (
-                                  // --- BOUTON VOYANT (NON LU) ---
                                   <button 
                                     onClick={handleOpenInfo}
                                     className="w-full flex items-center gap-3 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg shadow-indigo-200 transition-all group relative overflow-hidden active:scale-[0.98]"
                                   >
-                                      {/* Decorative glow */}
                                       <div className="absolute -top-10 -right-10 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
-
                                       <div className="relative shrink-0">
                                           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                                               <MessageSquare size={16} fill="currentColor" className="text-white"/>
                                           </div>
                                       </div>
-                                      
                                       <div className="text-left flex-1 min-w-0">
                                           <div className="text-[10px] font-bold opacity-80 uppercase tracking-wide mb-0.5 flex items-center gap-2">
                                             Message
@@ -170,11 +192,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                           </div>
                                           <div className="text-xs font-bold leading-none truncate">Lire la note détaillée</div>
                                       </div>
-                                      
                                       <ArrowRight size={14} className="opacity-70 group-hover:translate-x-1 transition-transform"/>
                                   </button>
                               ) : (
-                                  // --- BOUTON DISCRET (LU) ---
                                   <button 
                                     onClick={handleOpenInfo}
                                     className="w-full flex items-center justify-center gap-2 p-2.5 bg-white border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors active:scale-[0.98]"
@@ -185,20 +205,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               )}
                           </div>
                       )}
-                  </div>
-              </div>
-
-              {/* Big Progress Bar */}
-              <div className="mt-8 relative z-10">
-                  <div className="flex justify-between items-end mb-2">
-                      <span className="text-xs font-bold text-gray-900">Progression globale</span>
-                      <span className="text-xs font-bold text-gray-900">{getProgress()}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gray-900 rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${getProgress()}%` }}
-                      ></div>
                   </div>
               </div>
           </div>
@@ -220,71 +226,56 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  
-                                  // DÉTECTION : Est-ce la toute dernière étape ?
-                                  const isLastStep = index === stageConfig.length - 1;
-                                  
-                                  // Est-ce que le projet est FINI (dernière étape active) ?
-                                  const isProjectFinished = isCurrent && isLastStep;
+                                  const description = step.description || defaultDescriptions[step.id];
+                                  const isExpanded = expandedStepId === step.id;
 
                                   return (
-                                      <div key={step.id} className="relative z-10 flex items-start gap-4">
-                                          
-                                          {/* ICONE RONDE */}
-                                          <div className={`
-                                              w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-500
-                                              ${isDone 
-                                                  ? 'bg-gray-900 border-gray-900 text-white' // Étapes passées (Noir)
-                                                  : isProjectFinished 
-                                                      ? 'bg-emerald-600 border-emerald-600 text-white ring-4 ring-emerald-50' // FINI (Vert)
-                                                      : isCurrent 
-                                                          ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' // En cours (Bleu)
-                                                          : 'bg-white border-gray-200 text-gray-300' // Futur (Gris)
-                                              }
-                                          `}>
-                                              {isDone ? (
-                                                  <Check size={12} strokeWidth={3}/>
-                                              ) : isProjectFinished ? (
-                                                  <Check size={14} strokeWidth={3}/> // Coche pour la fin
-                                              ) : isCurrent ? (
-                                                  <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>
-                                              ) : null}
-                                          </div>
-                                          
-                                          {/* TEXTE ET DESCRIPTION */}
-                                          <div className={`flex-1 pt-0.5 transition-opacity duration-500 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
-                                              <div className="flex justify-between items-center mb-1">
-                                                  <h4 className={`text-sm font-bold ${isProjectFinished ? 'text-emerald-900' : 'text-gray-900'}`}>
-                                                      {step.label}
-                                                  </h4>
-                                                  
-                                                  {/* Badge "Terminé" à droite */}
-                                                  {(isDone || isProjectFinished) && (
-                                                      <span className={`text-[10px] font-bold uppercase tracking-wider ${isProjectFinished ? 'text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded' : 'text-gray-400'}`}>
-                                                          {isProjectFinished ? "Projet Livré" : "Terminé"}
-                                                      </span>
-                                                  )}
+                                      <div key={step.id} className="relative z-10">
+                                          <div className="flex items-start gap-4">
+                                              
+                                              <div className={`
+                                                  w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300
+                                                  ${isDone ? 'bg-gray-900 border-gray-900 text-white' : 
+                                                    isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 
+                                                    'bg-white border-gray-200 text-gray-300'}
+                                              `}>
+                                                  {isDone && <Check size={12} strokeWidth={3}/>}
+                                                  {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
                                               </div>
                                               
-                                              <p className={`text-xs leading-relaxed font-medium ${isProjectFinished ? 'text-emerald-700' : 'text-gray-500'}`}>
-                                                  {step.message}
-                                              </p>
+                                              <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
+                                                  <div className="flex justify-between items-center mb-1">
+                                                      <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
+                                                      <div className="flex items-center gap-2">
+                                                          {isDone && <span className="text-[10px] font-medium text-gray-400">Terminé</span>}
+                                                          {description && (
+                                                              <button 
+                                                                  onClick={() => toggleStepDetails(step.id)}
+                                                                  className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                                                              >
+                                                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                              </button>
+                                                          )}
+                                                      </div>
+                                                  </div>
+                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                                                      {step.message}
+                                                  </p>
+                                              </div>
                                           </div>
+                                          
+                                          {/* Expandable Description */}
+                                          {isExpanded && description && (
+                                              <div className="ml-11 mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 animate-fade-in">
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
+                                                      {description}
+                                                  </p>
+                                              </div>
+                                          )}
                                       </div>
                                   );
                               })}
                           </div>
-
-                          {/* BANNIÈRE FINALE (Visible uniquement si le projet est terminé) */}
-                          {isCompleted && (
-                              <div className="mt-8 p-6 bg-emerald-50 border border-emerald-100 rounded-xl text-center animate-fade-in">
-                                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white rounded-full mb-3 shadow-sm text-2xl">
-                                      🎉
-                                  </div>
-                                  <h3 className="text-emerald-900 font-bold text-lg mb-1">Tout est prêt !</h3>
-                                  <p className="text-emerald-700 text-sm">Votre projet a été intégralement livré. Merci de votre confiance.</p>
-                              </div>
-                          )}
                       </div>
                   </div>
               </div>
@@ -294,9 +285,22 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
                           <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
-                          <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500">
-                             {(project.teasers || []).length}
-                          </span>
+                          <div className="flex items-center gap-2">
+                              {/* BOUTON TOUT TÉLÉCHARGER AJOUTÉ ICI */}
+                              {(project.teasers || []).length > 0 && (
+                                <button 
+                                    onClick={handleDownloadAll}
+                                    disabled={isDownloadingAll}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors flex items-center gap-1"
+                                >
+                                    {isDownloadingAll ? <Loader2 size={10} className="animate-spin"/> : <ArrowDownToLine size={10}/>}
+                                    {isDownloadingAll ? '...' : 'Tout télécharger'}
+                                </button>
+                              )}
+                              <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500">
+                                 {(project.teasers || []).length}
+                              </span>
+                          </div>
                       </div>
 
                       <div className="p-4">
@@ -322,7 +326,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                           
                                           <button 
                                               onClick={() => handleDownload(t.url, t.id, t.title)}
-                                              disabled={downloadingId === t.id}
+                                              disabled={downloadingId === t.id || isDownloadingAll}
                                               className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors"
                                               title="Télécharger"
                                           >
@@ -378,7 +382,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   {/* Modal Content */}
                   <div className="p-6">
                       <div className="prose prose-sm text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                          {currentStageConfig.description || "Aucune information supplémentaire pour cette étape."}
+                          {currentStageConfig.description || defaultDescriptions[currentStageConfig.id] || "Aucune information supplémentaire pour cette étape."}
                       </div>
                   </div>
 
