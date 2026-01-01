@@ -11,11 +11,12 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
             <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
                 
                 <Reveal delay={0}>
-                    {/* Taille ajustée à text-4xl sur mobile pour éviter une 4ème ligne */}
+                    {/* MODIFICATION ICI : 
+                       Suppression des <br> manuels.
+                       'text-balance' va automatiquement équilibrer le texte sur 2 ou 3 lignes harmonieuses.
+                    */}
                     <h1 className="text-4xl sm:text-7xl lg:text-8xl font-bold text-gray-900 tracking-tighter mb-10 leading-[0.95] text-balance">
-                        Offrez une expérience <br className="block" />
-                        aussi soignée <br className="block" />
-                        que votre travail.
+                        Offrez une expérience aussi soignée que votre travail.
                     </h1>
                 </Reveal>
                 
