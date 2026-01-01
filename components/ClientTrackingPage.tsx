@@ -225,7 +225,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  const description = step.content || defaultStepContent[step.id];
+                                  
+                                  const infoContent = (step as any).content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
 
                                   return (
@@ -263,7 +264,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                       {step.message}
                                                   </p>
 
-                                                  {description && (
+                                                  {infoContent && (
                                                       <button 
                                                           onClick={() => toggleStepDetails(step.id)} 
                                                           className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wide group"
@@ -277,9 +278,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                           </div>
                                           
-                                          {isExpanded && description && (
+                                          {isExpanded && infoContent && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{description}</p>
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{infoContent}</p>
                                               </div>
                                           )}
                                       </div>
@@ -292,44 +293,48 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
               <div className="space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      {/* HEADER FICHIERS OPTIMISÉ */}
-                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                          <h3 className="font-bold text-gray-900 text-sm">
-                              Fichiers disponibles <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
-                          </h3>
+                      {/* HEADER FICHIERS NETTOYÉ ET OPTIMISÉ */}
+                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between h-16">
                           
-                          {(project.teasers || []).length > 0 && (
-                              <div className="flex items-center gap-4">
-                                  {/* Select All - Text + Checkbox style */}
-                                  <div 
-                                    className="flex items-center gap-2 cursor-pointer group select-none"
-                                    onClick={toggleSelectAll}
-                                  >
-                                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
-                                          {isAllSelected && <Check size={10} className="text-white" strokeWidth={3} />}
-                                      </div>
-                                      <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-800 uppercase tracking-wide hidden sm:inline">Tout sélectionner</span>
+                          {/* PARTIE GAUCHE : SÉLECTION */}
+                          {(project.teasers || []).length > 0 ? (
+                              <div 
+                                className="flex items-center gap-3 cursor-pointer group select-none"
+                                onClick={toggleSelectAll}
+                              >
+                                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
+                                      {isAllSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                                   </div>
-
-                                  <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
-
-                                  {/* Download Button */}
-                                  <button 
-                                      onClick={handleBulkDownload}
-                                      disabled={isDownloadingAll}
-                                      className={`
-                                          text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
-                                          ${selectedCount > 0 
-                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' 
-                                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
-                                      `}
-                                  >
-                                      {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
-                                      {isDownloadingAll 
-                                          ? 'Téléchargement...' 
-                                          : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
-                                  </button>
+                                  <div className="flex flex-col">
+                                      <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                          {isAllSelected ? "Tout est sélectionné" : "Tout sélectionner"}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 font-medium">
+                                          {selectedCount > 0 ? `${selectedCount} fichier${selectedCount > 1 ? 's' : ''} coché${selectedCount > 1 ? 's' : ''}` : `${totalFiles} fichier${totalFiles > 1 ? 's' : ''} au total`}
+                                      </span>
+                                  </div>
                               </div>
+                          ) : (
+                              <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
+                          )}
+
+                          {/* PARTIE DROITE : ACTION */}
+                          {(project.teasers || []).length > 0 && (
+                              <button 
+                                  onClick={handleBulkDownload}
+                                  disabled={isDownloadingAll}
+                                  className={`
+                                      text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
+                                      ${selectedCount > 0 || isAllSelected
+                                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' 
+                                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
+                                  `}
+                              >
+                                  {isDownloadingAll ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
+                                  {isDownloadingAll 
+                                      ? '...' 
+                                      : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
+                              </button>
                           )}
                       </div>
 
@@ -349,7 +354,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                         className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/10' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
                                       >
                                           {/* CHECKBOX INDIVIDUELLE */}
-                                          <div className="shrink-0 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                                          <div className="shrink-0 flex items-center justify-center w-8 h-8" onClick={(e) => e.stopPropagation()}>
                                               <input 
                                                 type="checkbox" 
                                                 checked={selectedFileIds.includes(t.id)}
