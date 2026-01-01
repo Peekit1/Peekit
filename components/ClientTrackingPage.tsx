@@ -235,7 +235,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   
                   {/* Phrase statique ajoutée ici */}
                   <p className="text-xs text-gray-500 leading-relaxed italic">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement du projet de manière claire et continue.
                   </p>
                   
                   <p className="text-sm text-gray-700 leading-relaxed pt-1">
@@ -389,7 +389,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement du projet de manière claire et continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
                       Accéder à mon espace
