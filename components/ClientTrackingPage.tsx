@@ -392,7 +392,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire et continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
-                      Accéder à mon projet
+                      Accéder à mon espace
                   </Button>
               </div>
           </div>
