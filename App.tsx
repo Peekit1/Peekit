@@ -4,7 +4,7 @@ import { Hero } from './components/Hero';
 import { Problem } from './components/Problem';
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
-import { ClientLove } from './components/ClientLove';
+// La ligne import ClientLove a été supprimée ici
 import { Pricing } from './components/Pricing';
 import { Footer } from './components/Footer';
 import { StickyHeader } from './components/StickyHeader';
@@ -432,7 +432,7 @@ function App() {
         onDeleteTeaser={handleDeleteTeaser}
         onUpdateCoverImage={async (file) => await handleEditProject(editingProject.id, {}, file)}
         onNotifyClient={handleNotifyClient}
-        // MODIFICATION ICI : On passe la fonction de mise à jour pour activer l'édition
+        // AJOUT: La fonction pour modifier les informations du projet
         onUpdateProject={async (id, data) => await handleEditProject(id, data)}
       />;
   }
@@ -455,7 +455,14 @@ function App() {
   return (
     <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white font-sans">
       <StickyHeader onAuthClick={handleAuthNavigation} />
-      <main><Hero onAuthClick={handleAuthNavigation} /><ClientLove /><Problem /><Solution /><Benefits /><Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} /></main>
+      <main>
+        <Hero onAuthClick={handleAuthNavigation} />
+        {/* ClientLove supprimé ici */}
+        <Problem />
+        <Solution />
+        <Benefits />
+        <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
+      </main>
       <Footer onAuthClick={handleAuthNavigation} />
     </div>
   );
