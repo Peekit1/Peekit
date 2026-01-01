@@ -20,7 +20,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  // Variables calculées pour l'UI de sélection
   const totalFiles = project.teasers?.length || 0;
   const selectedCount = selectedFileIds.length;
   const isAllSelected = totalFiles > 0 && selectedCount === totalFiles;
@@ -56,7 +55,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // GESTION DE LA SÉLECTION INDIVIDUELLE
   const toggleFileSelection = (id: string) => {
     setSelectedFileIds(prev => 
       prev.includes(id) 
@@ -65,12 +63,10 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     );
   };
 
-  // GESTION DU "TOUT SÉLECTIONNER" (MASTER CHECKBOX)
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedFileIds([]); // Tout désélectionner
+      setSelectedFileIds([]);
     } else {
-      // Tout sélectionner
       setSelectedFileIds(project.teasers?.map(t => t.id) || []);
     }
   };
@@ -100,12 +96,10 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // TÉLÉCHARGEMENT INTELLIGENT (Sélection ou Tout)
   const handleBulkDownload = async () => {
     const files = project.teasers || [];
     if (files.length === 0) return;
 
-    // Logique : Si 0 sélectionné => On télécharge tout. Sinon, on télécharge la sélection.
     const filesToDownload = selectedCount > 0 
       ? files.filter(f => selectedFileIds.includes(f.id))
       : files;
@@ -114,11 +108,11 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     
     for (const teaser of filesToDownload) {
         await handleDownload(teaser.url, teaser.id, teaser.title);
-        await new Promise(resolve => setTimeout(resolve, 800)); // Délai pour ne pas bloquer le navigateur
+        await new Promise(resolve => setTimeout(resolve, 800));
     }
     
     setIsDownloadingAll(false);
-    setSelectedFileIds([]); // Reset après téléchargement
+    setSelectedFileIds([]);
   };
 
   return (
@@ -144,7 +138,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
-          {/* PROJECT OVERVIEW CARD */}
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
               
               {project.coverImage && (
@@ -250,13 +243,25 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                               
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
+                                                  
                                                   <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                      {isDone && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">Terminé</span>}
-                                                      {isCurrent && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">En cours</span>}
+                                                      
+                                                      {isDone && (
+                                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">
+                                                              Terminé
+                                                          </span>
+                                                      )}
+                                                      {isCurrent && (
+                                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">
+                                                              En cours
+                                                          </span>
+                                                      )}
                                                   </div>
 
-                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">{step.message}</p>
+                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">
+                                                      {step.message}
+                                                  </p>
 
                                                   {description && (
                                                       <button 
@@ -287,48 +292,45 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
               <div className="space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      {/* HEADER FICHIERS AVEC SÉLECTION */}
-                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-3">
+                      {/* HEADER FICHIERS OPTIMISÉ */}
+                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                          <h3 className="font-bold text-gray-900 text-sm">
+                              Fichiers disponibles <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
+                          </h3>
                           
-                          <div className="flex items-center gap-3">
-                              {/* Master Checkbox */}
-                              {(project.teasers || []).length > 0 && (
+                          {(project.teasers || []).length > 0 && (
+                              <div className="flex items-center gap-4">
+                                  {/* Select All - Text + Checkbox style */}
                                   <div 
-                                    className="flex items-center gap-2 cursor-pointer group"
+                                    className="flex items-center gap-2 cursor-pointer group select-none"
                                     onClick={toggleSelectAll}
                                   >
-                                      <input 
-                                        type="checkbox" 
-                                        checked={isAllSelected}
-                                        onChange={() => {}} // Géré par le div parent pour l'UX
-                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                                      />
-                                      <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900 select-none">
-                                          Tout sélectionner
-                                      </span>
+                                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
+                                          {isAllSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                                      </div>
+                                      <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-800 uppercase tracking-wide hidden sm:inline">Tout sélectionner</span>
                                   </div>
-                              )}
-                          </div>
 
-                          <div className="flex items-center gap-2">
-                              {(project.teasers || []).length > 0 && (
-                                <button 
-                                    onClick={handleBulkDownload}
-                                    disabled={isDownloadingAll}
-                                    className={`
-                                        text-[10px] font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap
-                                        ${selectedCount > 0 
-                                            ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' 
-                                            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700'}
-                                    `}
-                                >
-                                    {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
-                                    {isDownloadingAll 
-                                        ? 'Téléchargement...' 
-                                        : selectedCount > 0 ? `Télécharger la sélection (${selectedCount})` : 'Tout télécharger'}
-                                </button>
-                              )}
-                          </div>
+                                  <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
+
+                                  {/* Download Button */}
+                                  <button 
+                                      onClick={handleBulkDownload}
+                                      disabled={isDownloadingAll}
+                                      className={`
+                                          text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
+                                          ${selectedCount > 0 
+                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' 
+                                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                                      `}
+                                  >
+                                      {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
+                                      {isDownloadingAll 
+                                          ? 'Téléchargement...' 
+                                          : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
+                                  </button>
+                              </div>
+                          )}
                       </div>
 
                       <div className="p-4">
@@ -341,13 +343,11 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           ) : (
                               <div className="space-y-3">
                                   {project.teasers.map(t => (
-                                      // Click sur la ligne entière sélectionne le fichier
                                       <div 
                                         key={t.id} 
                                         onClick={() => toggleFileSelection(t.id)}
-                                        className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
+                                        className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/10' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
                                       >
-                                          
                                           {/* CHECKBOX INDIVIDUELLE */}
                                           <div className="shrink-0 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                                               <input 
