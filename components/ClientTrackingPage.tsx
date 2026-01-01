@@ -13,7 +13,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
   
-  // États pour la gestion de l'affichage et de la sélection
+  // État pour gérer quelle étape est "déroulée"
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
 
@@ -52,7 +52,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // Gestion de la sélection multiple
   const toggleFileSelection = (id: string) => {
     setSelectedFileIds(prev => 
       prev.includes(id) 
@@ -86,12 +85,10 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  // Téléchargement intelligent (Sélection ou Tout)
   const handleBulkDownload = async () => {
     const files = project.teasers || [];
     if (files.length === 0) return;
 
-    // Si des fichiers sont sélectionnés, on ne télécharge qu'eux. Sinon, on télécharge tout.
     const filesToDownload = selectedFileIds.length > 0 
       ? files.filter(f => selectedFileIds.includes(f.id))
       : files;
@@ -100,12 +97,11 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     
     for (const teaser of filesToDownload) {
         await handleDownload(teaser.url, teaser.id, teaser.title);
-        // Petit délai pour éviter que le navigateur ne bloque les téléchargements multiples
         await new Promise(resolve => setTimeout(resolve, 800));
     }
     
     setIsDownloadingAll(false);
-    setSelectedFileIds([]); // Reset sélection après téléchargement
+    setSelectedFileIds([]);
   };
 
   return (
@@ -131,19 +127,37 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
-          <div className="bg-white rounded-xl border border-gray-200 p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
+          {/* 1. PROJECT OVERVIEW CARD AVEC IMAGE DE FOND */}
+          <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+              
+              {/* IMAGE DE FOND (Si disponible) */}
+              {project.coverImage && (
+                  <>
+                      <img src={project.coverImage} className="absolute inset-0 w-full h-full object-cover z-0" alt="Cover" />
+                      {/* Overlay sombre pour la lisibilité du texte blanc */}
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] z-0"></div>
+                  </>
+              )}
+
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
                       <div className="flex items-center gap-3 mb-2">
-                          <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold uppercase tracking-wider text-gray-600">{project.type}</span>
-                          <span className="text-gray-300">|</span>
-                          <span className="text-xs text-gray-500 font-medium flex items-center gap-1"><Calendar size={12}/> {project.date}</span>
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${project.coverImage ? 'bg-white/20 text-white backdrop-blur-md' : 'bg-gray-100 text-gray-600'}`}>
+                              {project.type}
+                          </span>
+                          <span className={project.coverImage ? 'text-white/40' : 'text-gray-300'}>|</span>
+                          <span className={`text-xs font-medium flex items-center gap-1 ${project.coverImage ? 'text-gray-200' : 'text-gray-500'}`}>
+                              <Calendar size={12}/> {project.date}
+                          </span>
                       </div>
-                      <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">{project.clientName}</h1>
-                      <div className="flex items-center gap-2 text-sm text-gray-500"><MapPin size={14} className="text-gray-400"/> {project.location}</div>
+                      <h1 className={`text-3xl font-bold tracking-tight mb-2 ${project.coverImage ? 'text-white shadow-sm' : 'text-gray-900'}`}>{project.clientName}</h1>
+                      <div className={`flex items-center gap-2 text-sm ${project.coverImage ? 'text-gray-200' : 'text-gray-500'}`}>
+                          <MapPin size={14} className={project.coverImage ? 'text-gray-300' : 'text-gray-400'}/> {project.location}
+                      </div>
                   </div>
                   
-                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 w-full md:w-auto min-w-[280px] relative group transition-all hover:border-gray-200 hover:shadow-sm">
+                  {/* Status Box */}
+                  <div className={`rounded-xl p-5 border w-full md:w-auto min-w-[280px] relative group transition-all hover:shadow-sm ${project.coverImage ? 'bg-white/95 backdrop-blur-md border-white/20 text-gray-900' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
                           {currentStageConfig.description && (
@@ -204,7 +218,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  const description = step.content || defaultStepContent[step.id];
+                                  
+                                  const infoContent = (step as any).content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
 
                                   return (
@@ -242,7 +257,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                       {step.message}
                                                   </p>
 
-                                                  {description && (
+                                                  {infoContent && (
                                                       <button 
                                                           onClick={() => toggleStepDetails(step.id)} 
                                                           className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wide group"
@@ -256,11 +271,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                           </div>
                                           
-                                          {isExpanded && description && (
+                                          {isExpanded && infoContent && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
-                                                      {description}
-                                                  </p>
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{infoContent}</p>
                                               </div>
                                           )}
                                       </div>
@@ -305,8 +318,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               <div className="space-y-3">
                                   {project.teasers.map(t => (
                                       <div key={t.id} className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}>
-                                          
-                                          {/* CHECKBOX DE SÉLECTION */}
                                           <div className="shrink-0 flex items-center justify-center">
                                               <input 
                                                 type="checkbox" 
@@ -315,7 +326,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                                               />
                                           </div>
-
                                           <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
                                               {t.type === 'video' ? <Video size={16}/> : <img src={t.url} className="w-full h-full object-cover"/>}
                                           </div>
@@ -323,13 +333,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               <h4 className="text-xs font-bold text-gray-900 truncate">{t.title || 'Fichier Média'}</h4>
                                               <p className="text-[10px] text-gray-400 font-mono mt-0.5">{t.date}</p>
                                           </div>
-                                          
-                                          <button 
-                                              onClick={() => handleDownload(t.url, t.id, t.title)}
-                                              disabled={downloadingId === t.id || isDownloadingAll}
-                                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors"
-                                              title="Télécharger"
-                                          >
+                                          <button onClick={() => handleDownload(t.url, t.id, t.title)} disabled={downloadingId === t.id || isDownloadingAll} className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors" title="Télécharger">
                                               {downloadingId === t.id ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
                                           </button>
                                       </div>
