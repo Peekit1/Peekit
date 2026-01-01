@@ -17,8 +17,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                     */}
                     <h1 className="text-3xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tighter mb-10 leading-[1.2] sm:leading-[1.1]">
                         Offrez une expérience <br />
-                        aussi soignée <br className="sm:hidden" />
-                        que votre travail.
+                        aussi soignée que votre travail. <br className="sm:hidden" />
                     </h1>
                 </Reveal>
                 
