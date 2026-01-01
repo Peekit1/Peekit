@@ -11,7 +11,7 @@ import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '..
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
-// On étend les props pour inclure la fonction de mise à jour du projet
+// Interface étendue
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
 }
@@ -31,7 +31,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   onDeleteTeaser, 
   onUpdateCoverImage, 
   onNotifyClient,
-  onUpdateProject // Nouvelle prop indispensable pour sauvegarder
+  onUpdateProject // INDISPENSABLE
 }) => {
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
   const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
@@ -42,7 +42,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
 
-  // --- NOUVEAUX ÉTATS POUR L'ÉDITION DES INFOS ---
+  // ÉTATS D'ÉDITION DES INFOS
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
       clientEmail: project.clientEmail,
@@ -76,7 +76,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
     setLocalWorkflow(JSON.parse(JSON.stringify(initializedWorkflow)));
   }, [stageConfig]);
 
-  // Synchronisation des données d'édition quand le projet change
   useEffect(() => {
       setEditedInfo({
           clientEmail: project.clientEmail,
@@ -142,18 +141,15 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       setLocalWorkflow(newWf);
   };
 
-  // --- FONCTION DE SAUVEGARDE DES INFOS PROJET ---
+  // SAUVEGARDE DES INFOS
   const handleSaveInfo = async () => {
-      if (!onUpdateProject) {
-          console.error("onUpdateProject prop is missing");
-          return;
-      }
+      if (!onUpdateProject) return;
       setIsSavingInfo(true);
       try {
           await onUpdateProject(project.id, editedInfo);
           setIsEditingInfo(false);
       } catch (error) {
-          console.error("Failed to save info:", error);
+          console.error("Erreur sauvegarde info:", error);
       } finally {
           setIsSavingInfo(false);
       }
@@ -210,35 +206,19 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const sendNotification = async () => {
     if (!notificationEmail) return;
     setIsSendingNotification(true);
-
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
-
     try {
         const SERVICE_ID = "service_xxxxxxx"; 
         const TEMPLATE_ID = "template_xxxxxxx"; 
         const PUBLIC_KEY = "public_xxxxxxx"; 
-
-        await emailjs.send(
-            SERVICE_ID,
-            TEMPLATE_ID,
-            {
-                to_email: project.clientEmail,
-                client_name: project.clientName,
-                subject: notificationEmail.subject,
-                message: notificationEmail.body,
-                link: clientLink,
-                studio_name: studioName
-            },
-            PUBLIC_KEY
-        );
-
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+            to_email: project.clientEmail, client_name: project.clientName, subject: notificationEmail.subject, message: notificationEmail.body, link: clientLink, studio_name: studioName
+        }, PUBLIC_KEY);
         setNotifyStep('success');
         setTimeout(() => setIsNotifyModalOpen(false), 2500);
-
     } catch (error) {
-        console.error("Erreur lors de l'envoi de l'email:", error);
-        alert("Erreur d'envoi EmailJS. Vérifiez les clés dans ProjectDetails.tsx");
+        console.error("Erreur email:", error);
     } finally {
         setIsSendingNotification(false);
     }
@@ -255,11 +235,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           </div>
           <div className="flex items-center gap-3">
                <span className="hidden md:flex items-center gap-2 text-xs font-medium text-gray-500 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100"><Clock size={12}/> MAJ: {project.lastUpdate}</span>
-               
                <div className="h-6 w-px bg-gray-200 mx-2 hidden md:block"></div>
-               
                <button onClick={onViewClientVersion} className="inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-900 transition-colors"><Eye size={12}/> <span className="hidden sm:inline">Vue Client</span></button>
-               
                <button onClick={handleOpenNotify} className={`group relative inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-bold rounded-lg transition-all ${isPro ? 'bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100' : 'bg-gray-50 border border-gray-200 text-gray-400'}`}>
                   <Mail size={12} /> <span className="hidden sm:inline">Notifier par mail</span>
                   {!isPro && <span className="ml-1 text-[8px] bg-gray-200 text-gray-500 px-1 rounded">PRO</span>}
@@ -270,20 +247,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       <div className="max-w-6xl mx-auto p-6 md:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-8 space-y-8">
+                  {/* WORKFLOW SECTION */}
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                           <div>
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3>
-                            </div>
+                            <div className="flex items-center gap-2"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3></div>
                             <p className="text-xs text-gray-500 mt-0.5">Cliquez sur une étape pour l'activer ou la modifier.</p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-gray-900 font-mono">{getProgress()}%</span>
-                          </div>
+                          <div className="flex items-center gap-2"><span className="text-xl font-bold text-gray-900 font-mono">{getProgress()}%</span></div>
                       </div>
                       <div className="w-full bg-gray-50 h-1"><div className="bg-gray-900 h-1 transition-all duration-500" style={{ width: `${getProgress()}%` }}></div></div>
-                      
                       <div className="divide-y divide-gray-50">
                           {localWorkflow.map((step, index) => {
                               const isCurrent = index === currentStageIndex;
@@ -291,14 +264,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               const isLastStep = index === localWorkflow.length - 1;
-
                               return (
                                   <div key={step.id} onClick={() => handleStageClick(step.id)} className={`group px-6 py-4 flex flex-col transition-all cursor-pointer select-none ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''} ${!isEditing && isCurrent && isLastStep ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : 'hover:bg-gray-50 active:bg-gray-100'}`}>
                                       <div className="flex items-center gap-4 pointer-events-none">
                                           <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isCurrent && isLastStep ? 'bg-emerald-600 border-emerald-600 text-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
                                               {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-400 transition-colors"></div>}
                                           </div>
-
                                           <div className="flex-1 min-w-0 pointer-events-auto">
                                               {isEditing ? (
                                                   <input autoFocus value={step.label} onChange={(e) => handleUpdateStepField(step.id, 'label', e.target.value)} className="w-full bg-transparent text-sm font-bold text-gray-900 outline-none border-b border-gray-300 pb-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') saveWorkflow(); if (e.key === 'Escape') cancelWorkflowEdit(); }}/>
@@ -309,7 +280,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                                   </div>
                                               )}
                                           </div>
-
                                           {isPro && !isEditing && (
                                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
                                                   <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded border border-transparent hover:border-gray-200"><Pencil size={14}/></button>
@@ -317,58 +287,32 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               </div>
                                           )}
                                       </div>
-
                                       {(isCurrent || isEditing) && (
                                           <div className="mt-3 ml-10 space-y-3 animate-fade-in pointer-events-auto">
                                               {isEditing ? (
                                                   <>
+                                                      <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court</label><input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none" onClick={(e) => e.stopPropagation()} /></div>
+                                                      <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée</label><textarea value={step.description} onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none min-h-[60px]" onClick={(e) => e.stopPropagation()} /></div>
                                                       <div className="space-y-1">
-                                                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court (Timeline)</label>
-                                                          <input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-300" onClick={(e) => e.stopPropagation()} />
+                                                          <div className="flex items-center justify-between"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Informations complémentaires {!isPro && <span className="bg-gray-200 text-gray-500 px-1 rounded text-[8px]">PRO</span>}</label></div>
+                                                          <textarea value={step.content} onChange={(e) => isPro && handleUpdateStepField(step.id, 'content', e.target.value)} className={`w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-600 outline-none min-h-[80px] ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={(e) => e.stopPropagation()} readOnly={!isPro}/>
                                                       </div>
-                                                      
-                                                      <div className="space-y-1">
-                                                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée (Message pour le client)</label>
-                                                          <textarea value={step.description} onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-300 min-h-[60px]" onClick={(e) => e.stopPropagation()} placeholder="Ex: J'ai un léger retard..." />
-                                                      </div>
-
-                                                      <div className="space-y-1">
-                                                          <div className="flex items-center justify-between">
-                                                              <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                                  Informations complémentaires sur l'étape
-                                                                  {!isPro && <span className="bg-gray-200 text-gray-500 px-1 rounded text-[8px]">PRO</span>}
-                                                              </label>
-                                                          </div>
-                                                          <textarea 
-                                                            value={step.content} 
-                                                            onChange={(e) => isPro && handleUpdateStepField(step.id, 'content', e.target.value)} 
-                                                            className={`w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-600 outline-none focus:border-gray-300 min-h-[80px] ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                            onClick={(e) => e.stopPropagation()} 
-                                                            readOnly={!isPro}
-                                                          />
-                                                      </div>
-
                                                       <div className="flex justify-end gap-3 pt-3 border-t border-gray-50 mt-2">
-                                                          <button onClick={(e) => { e.stopPropagation(); cancelWorkflowEdit(); }} className="px-4 py-2 text-[11px] font-bold text-gray-500 uppercase tracking-widest hover:text-gray-900 transition-colors">Annuler</button>
-                                                          <Button variant="black" size="sm" isLoading={isSavingWorkflow} onClick={(e) => { e.stopPropagation(); saveWorkflow(); }} className="!px-6 !rounded-lg !text-[11px] uppercase tracking-widest shadow-lg shadow-black/10">Enregistrer</Button>
+                                                          <button onClick={(e) => { e.stopPropagation(); cancelWorkflowEdit(); }} className="px-4 py-2 text-[11px] font-bold text-gray-500 uppercase tracking-widest hover:text-gray-900">Annuler</button>
+                                                          <Button variant="black" size="sm" isLoading={isSavingWorkflow} onClick={(e) => { e.stopPropagation(); saveWorkflow(); }} className="!px-6 !rounded-lg !text-[11px] uppercase tracking-widest">Enregistrer</Button>
                                                       </div>
                                                   </>
                                               ) : (
-                                                  <div className="flex flex-col gap-1.5">
-                                                      <p className={`text-xs italic font-medium ${isLastStep ? 'text-emerald-700' : 'text-gray-500'}`}>"{step.message}"</p>
-                                                      {step.description && <div className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm"><p className="text-xs text-gray-800 font-medium whitespace-pre-line leading-relaxed">{step.description}</p></div>}
-                                                  </div>
+                                                  <div className="flex flex-col gap-1.5"><p className={`text-xs italic font-medium ${isLastStep ? 'text-emerald-700' : 'text-gray-500'}`}>"{step.message}"</p>{step.description && <div className="p-3 bg-white border border-gray-200 rounded-lg shadow-sm"><p className="text-xs text-gray-800 font-medium whitespace-pre-line leading-relaxed">{step.description}</p></div>}</div>
                                               )}
                                           </div>
                                       )}
                                   </div>
                               );
                           })}
-
                           {isPro && !editingStepId && (
                               <button onClick={handleAddStep} className="w-full px-6 py-4 flex items-center gap-4 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-colors border-t border-dashed border-gray-100 group">
-                                  <div className="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center group-hover:border-gray-900"><Plus size={14} /></div>
-                                  <span className="text-sm font-medium">Ajouter une étape au processus...</span>
+                                  <div className="w-6 h-6 rounded-full border border-dashed border-gray-300 flex items-center justify-center group-hover:border-gray-900"><Plus size={14} /></div><span className="text-sm font-medium">Ajouter une étape au processus...</span>
                               </button>
                           )}
                       </div>
@@ -414,39 +358,23 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} accept="image/*" />
                       
-                      {/* --- SECTION INFORMATIONS MODIFIABLE --- */}
+                      {/* --- SECTION INFORMATIONS (AVEC ÉDITION) --- */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
+                              {/* BOUTON CRAYON POUR ACTIVER L'ÉDITION */}
                               {onUpdateProject && (
-                                  <button 
-                                      onClick={() => setIsEditingInfo(!isEditingInfo)} 
-                                      className={`p-1.5 rounded transition-colors ${isEditingInfo ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-100'}`}
-                                  >
-                                      <Pencil size={12} />
-                                  </button>
+                                  <button onClick={() => setIsEditingInfo(!isEditingInfo)} className={`p-1.5 rounded transition-colors ${isEditingInfo ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-100'}`}><Pencil size={12}/></button>
                               )}
                           </div>
-
+                          
                           <div className="space-y-4">
                               {isEditingInfo ? (
                                   <div className="space-y-3 animate-fade-in">
-                                      <div className="space-y-1">
-                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Email Client</label>
-                                          <input type="email" value={editedInfo.clientEmail} onChange={(e) => setEditedInfo({...editedInfo, clientEmail: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
-                                      </div>
-                                      <div className="space-y-1">
-                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Date</label>
-                                          <input type="date" value={editedInfo.date} onChange={(e) => setEditedInfo({...editedInfo, date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
-                                      </div>
-                                      <div className="space-y-1">
-                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Rendu Espéré</label>
-                                          <input type="date" value={editedInfo.expectedDeliveryDate || ''} onChange={(e) => setEditedInfo({...editedInfo, expectedDeliveryDate: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
-                                      </div>
-                                      <div className="space-y-1">
-                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Lieu</label>
-                                          <input type="text" value={editedInfo.location} onChange={(e) => setEditedInfo({...editedInfo, location: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
-                                      </div>
+                                      <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Email Client</label><input type="email" value={editedInfo.clientEmail} onChange={(e) => setEditedInfo({...editedInfo, clientEmail: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
+                                      <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Date</label><input type="date" value={editedInfo.date} onChange={(e) => setEditedInfo({...editedInfo, date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
+                                      <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Rendu Espéré</label><input type="date" value={editedInfo.expectedDeliveryDate || ''} onChange={(e) => setEditedInfo({...editedInfo, expectedDeliveryDate: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
+                                      <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Lieu</label><input type="text" value={editedInfo.location} onChange={(e) => setEditedInfo({...editedInfo, location: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
                                       <div className="flex gap-2 pt-2">
                                           <Button variant="outline" size="sm" onClick={() => setIsEditingInfo(false)} fullWidth>Annuler</Button>
                                           <Button variant="black" size="sm" onClick={handleSaveInfo} isLoading={isSavingInfo} fullWidth>Enregistrer</Button>
@@ -454,9 +382,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                   </div>
                               ) : (
                                   <>
-                                      {/* MODIFICATION ICI : Email visible entièrement (suppression de truncate) */}
+                                      {/* AFFICHAGE CLASSIQUE (Email en entier) */}
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
-                                      
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><MapPin size={14} /><span className="text-xs font-medium">Lieu</span></div><span className="text-xs font-bold text-gray-900">{project.location}</span></div>
@@ -465,7 +392,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                           </div>
                       </div>
                   </div>
-                  
+
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="p-6"><div className="flex items-center gap-2 mb-4 text-gray-900 border-b border-gray-100 pb-2"><Lock size={14} className="text-emerald-600"/><h3 className="font-bold text-xs uppercase tracking-wide">Accès Sécurisé</h3></div><div className="space-y-4"><div className="space-y-1.5"><label className="text-[10px] font-bold text-gray-400 uppercase">Mot de passe</label><div className="relative"><input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-10 py-2.5 text-xs font-mono font-medium focus:bg-white focus:border-black outline-none transition-all" placeholder="Mot de passe"/><button onClick={() => onUpdatePassword(password)} className="absolute right-1 top-1 p-1.5 hover:bg-white rounded-md text-gray-400 hover:text-emerald-600 transition-colors"><Check size={14}/></button></div></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-gray-400 uppercase">Lien Client Unique</label><div className="flex gap-2"><div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-[10px] text-gray-600 font-mono truncate select-all">{getClientUrl()}</div><button onClick={() => { navigator.clipboard.writeText(getClientUrl()); setShowCopyFeedback(true); setTimeout(() => setShowCopyFeedback(false), 2000); }} className={`px-3 rounded-lg border transition-all flex items-center justify-center ${showCopyFeedback ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-900'}`}>{showCopyFeedback ? <Check size={14}/> : <Copy size={14}/>}</button></div></div></div></div>
                   </div>
@@ -493,11 +420,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               <button onClick={() => generateNotification('note')} className="w-full p-4 bg-white border border-gray-200 rounded-xl hover:border-emerald-500 hover:shadow-md transition-all flex items-center gap-4 text-left group"><div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors"><StickyNote size={18} /></div><div><h4 className="text-sm font-bold text-gray-900">Nouvelle note détaillée</h4><p className="text-xs text-gray-500">Inviter le client à lire vos précisions sur l'étape en cours.</p></div></button>
                           </div>
                       )}
-
                       {notifyStep === 'generating' && (
                           <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in"><div className="relative"><Sparkles size={40} className="text-indigo-600 animate-pulse" /><div className="absolute inset-0 bg-indigo-400 blur-2xl opacity-20"></div></div><h3 className="mt-6 text-lg font-bold text-gray-900 tracking-tight">Rédaction en cours...</h3><p className="text-sm text-gray-500 max-w-xs mx-auto mt-2 font-medium">L'IA prépare votre brouillon premium.</p></div>
                       )}
-
                       {notifyStep === 'preview' && notificationEmail && (
                           <div className="animate-fade-in space-y-6">
                               <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -509,7 +434,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               <div className="flex gap-3"><Button variant="outline" fullWidth onClick={() => setNotifyStep('choice')}>Changer de type</Button><Button variant="black" fullWidth onClick={sendNotification} isLoading={isSendingNotification} className="gap-2">Confirmer et Envoyer <Send size={14}/></Button></div>
                           </div>
                       )}
-
                       {notifyStep === 'success' && (
                           <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in"><div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6"><Check size={32} strokeWidth={3}/></div><h3 className="text-xl font-bold text-gray-900 mb-2">Email prêt !</h3><p className="text-sm text-gray-500 font-medium">Le brouillon a été transmis à votre messagerie pour {project.clientEmail}.</p></div>
                       )}
