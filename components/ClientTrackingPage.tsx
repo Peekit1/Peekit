@@ -13,14 +13,14 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [hasReadNote, setHasReadNote] = useState(false);
   
-  // État pour gérer quelle étape est "déroulée"
+  // États pour la gestion de l'affichage et de la sélection
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  // TEXTES PAR DÉFAUT
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -52,6 +52,15 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
+  // Gestion de la sélection multiple
+  const toggleFileSelection = (id: string) => {
+    setSelectedFileIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(fid => fid !== id) 
+        : [...prev, id]
+    );
+  };
+
   const handleDownload = async (url: string, id: string, filename?: string) => {
     if (!isDownloadingAll) setDownloadingId(id);
     try {
@@ -77,14 +86,26 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
   };
 
-  const handleDownloadAll = async () => {
-    if (!project.teasers || project.teasers.length === 0) return;
+  // Téléchargement intelligent (Sélection ou Tout)
+  const handleBulkDownload = async () => {
+    const files = project.teasers || [];
+    if (files.length === 0) return;
+
+    // Si des fichiers sont sélectionnés, on ne télécharge qu'eux. Sinon, on télécharge tout.
+    const filesToDownload = selectedFileIds.length > 0 
+      ? files.filter(f => selectedFileIds.includes(f.id))
+      : files;
+
     setIsDownloadingAll(true);
-    for (const teaser of project.teasers) {
+    
+    for (const teaser of filesToDownload) {
         await handleDownload(teaser.url, teaser.id, teaser.title);
+        // Petit délai pour éviter que le navigateur ne bloque les téléchargements multiples
         await new Promise(resolve => setTimeout(resolve, 800));
     }
+    
     setIsDownloadingAll(false);
+    setSelectedFileIds([]); // Reset sélection après téléchargement
   };
 
   return (
@@ -110,7 +131,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
-          {/* 1. PROJECT OVERVIEW CARD */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
@@ -191,7 +211,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                       <div key={step.id} className="relative z-10">
                                           <div className="flex items-start gap-4">
                                               
-                                              {/* Icon Timeline */}
                                               <div className={`
                                                   w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 relative z-20
                                                   ${isDone ? 'bg-gray-900 border-gray-900 text-white' : 
@@ -204,11 +223,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
                                                   
-                                                  {/* LIGNE 1 : TITRE + BADGE */}
                                                   <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
                                                       
-                                                      {/* BADGES */}
                                                       {isDone && (
                                                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">
                                                               Terminé
@@ -221,12 +238,10 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                       )}
                                                   </div>
 
-                                                  {/* LIGNE 2 : MESSAGE COURT */}
                                                   <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">
                                                       {step.message}
                                                   </p>
 
-                                                  {/* LIGNE 3 : BOUTON DÉROULANT (Plus ergonomique ici) */}
                                                   {description && (
                                                       <button 
                                                           onClick={() => toggleStepDetails(step.id)} 
@@ -241,7 +256,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               </div>
                                           </div>
                                           
-                                          {/* Contenu Déroulé */}
                                           {isExpanded && description && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
                                                   <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
@@ -259,16 +273,24 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
               <div className="space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-3">
                           <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
                           <div className="flex items-center gap-2">
                               {(project.teasers || []).length > 0 && (
-                                <button onClick={handleDownloadAll} disabled={isDownloadingAll} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
-                                    {isDownloadingAll ? <Loader2 size={10} className="animate-spin"/> : <ArrowDownToLine size={10}/>}
-                                    {isDownloadingAll ? '...' : 'Tout télécharger'}
+                                <button 
+                                    onClick={handleBulkDownload}
+                                    disabled={isDownloadingAll}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                                >
+                                    {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
+                                    {selectedFileIds.length > 0 
+                                      ? `Télécharger la sélection (${selectedFileIds.length})` 
+                                      : isDownloadingAll ? 'Téléchargement...' : 'Tout télécharger'}
                                 </button>
                               )}
-                              <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500">{(project.teasers || []).length}</span>
+                              <span className="bg-white border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 whitespace-nowrap">
+                                 {(project.teasers || []).length}
+                              </span>
                           </div>
                       </div>
 
@@ -282,7 +304,18 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           ) : (
                               <div className="space-y-3">
                                   {project.teasers.map(t => (
-                                      <div key={t.id} className="group p-3 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-3">
+                                      <div key={t.id} className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}>
+                                          
+                                          {/* CHECKBOX DE SÉLECTION */}
+                                          <div className="shrink-0 flex items-center justify-center">
+                                              <input 
+                                                type="checkbox" 
+                                                checked={selectedFileIds.includes(t.id)}
+                                                onChange={() => toggleFileSelection(t.id)}
+                                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                              />
+                                          </div>
+
                                           <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
                                               {t.type === 'video' ? <Video size={16}/> : <img src={t.url} className="w-full h-full object-cover"/>}
                                           </div>
@@ -290,7 +323,13 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                               <h4 className="text-xs font-bold text-gray-900 truncate">{t.title || 'Fichier Média'}</h4>
                                               <p className="text-[10px] text-gray-400 font-mono mt-0.5">{t.date}</p>
                                           </div>
-                                          <button onClick={() => handleDownload(t.url, t.id, t.title)} disabled={downloadingId === t.id || isDownloadingAll} className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors" title="Télécharger">
+                                          
+                                          <button 
+                                              onClick={() => handleDownload(t.url, t.id, t.title)}
+                                              disabled={downloadingId === t.id || isDownloadingAll}
+                                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 hover:bg-black hover:text-white text-gray-500 transition-colors"
+                                              title="Télécharger"
+                                          >
                                               {downloadingId === t.id ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
                                           </button>
                                       </div>
