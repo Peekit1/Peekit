@@ -25,7 +25,6 @@ export const Problem: React.FC = () => {
             <div className="grid lg:grid-cols-2 gap-16 items-start">
                 <Reveal>
                     <div className="space-y-6">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">La Promesse</span>
                         <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">Votre processus mérite d’être perçu.</h2>
                     </div>
                 </Reveal>
