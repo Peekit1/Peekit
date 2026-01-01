@@ -138,6 +138,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
+          {/* PROJECT OVERVIEW CARD */}
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
               
               {project.coverImage && (
@@ -293,48 +294,48 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
               <div className="space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      {/* HEADER FICHIERS NETTOYÉ ET OPTIMISÉ */}
-                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between h-16">
+                      {/* HEADER FICHIERS : Mise en page propre */}
+                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
                           
-                          {/* PARTIE GAUCHE : SÉLECTION */}
-                          {(project.teasers || []).length > 0 ? (
-                              <div 
-                                className="flex items-center gap-3 cursor-pointer group select-none"
-                                onClick={toggleSelectAll}
-                              >
-                                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
-                                      {isAllSelected && <Check size={12} className="text-white" strokeWidth={3} />}
-                                  </div>
-                                  <div className="flex flex-col">
-                                      <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                          {isAllSelected ? "Tout est sélectionné" : "Tout sélectionner"}
-                                      </span>
-                                      <span className="text-[10px] text-gray-400 font-medium">
-                                          {selectedCount > 0 ? `${selectedCount} fichier${selectedCount > 1 ? 's' : ''} coché${selectedCount > 1 ? 's' : ''}` : `${totalFiles} fichier${totalFiles > 1 ? 's' : ''} au total`}
-                                      </span>
-                                  </div>
-                              </div>
-                          ) : (
-                              <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
-                          )}
-
-                          {/* PARTIE DROITE : ACTION */}
+                          <h3 className="font-bold text-gray-900 text-sm shrink-0">
+                              Fichiers disponibles <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
+                          </h3>
+                          
                           {(project.teasers || []).length > 0 && (
-                              <button 
-                                  onClick={handleBulkDownload}
-                                  disabled={isDownloadingAll}
-                                  className={`
-                                      text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
-                                      ${selectedCount > 0 || isAllSelected
-                                          ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' 
-                                          : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
-                                  `}
-                              >
-                                  {isDownloadingAll ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
-                                  {isDownloadingAll 
-                                      ? '...' 
-                                      : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
-                              </button>
+                              <div className="flex items-center gap-6">
+                                  {/* Select All */}
+                                  <div 
+                                    className="flex items-center gap-2 cursor-pointer group select-none"
+                                    onClick={toggleSelectAll}
+                                  >
+                                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
+                                          {isAllSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                                      </div>
+                                      {/* AJOUT WHITESPACE-NOWRAP ICI */}
+                                      <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-800 uppercase tracking-wide whitespace-nowrap">
+                                          Tout sélectionner
+                                      </span>
+                                  </div>
+
+                                  <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
+
+                                  {/* Download Button */}
+                                  <button 
+                                      onClick={handleBulkDownload}
+                                      disabled={isDownloadingAll}
+                                      className={`
+                                          text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
+                                          ${selectedCount > 0 || isAllSelected
+                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' 
+                                              : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
+                                      `}
+                                  >
+                                      {isDownloadingAll ? <Loader2 size={14} className="animate-spin"/> : <ArrowDownToLine size={14}/>}
+                                      {isDownloadingAll 
+                                          ? 'Téléchargement...' 
+                                          : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
+                                  </button>
+                              </div>
                           )}
                       </div>
 
