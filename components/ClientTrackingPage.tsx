@@ -136,7 +136,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       </header>
 
-      <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
+      <div className="max-w-6xl mx-auto p-6 md:p-8 animate-fade-in">
           
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
               
@@ -210,9 +210,12 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
               </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* --- CHANGEMENT DE LA GRILLE ICI --- */}
+          {/* Passage de grid-cols-3 à grid-cols-12 pour un contrôle fin de la largeur */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6"> {/* gap-6 réduit un peu l'espace entre les colonnes */}
               
-              <div className="lg:col-span-2">
+              {/* HISTORIQUE : Prend 7 colonnes sur 12 (environ 58%) */}
+              <div className="lg:col-span-7">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                           <h3 className="font-bold text-gray-900 text-sm">Historique du projet</h3>
@@ -291,51 +294,52 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
               </div>
 
-              <div className="space-y-6">
+              {/* TÉLÉCHARGEMENT : Prend 5 colonnes sur 12 (environ 42%) */}
+              <div className="lg:col-span-5 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      {/* HEADER FICHIERS OPTIMISÉ */}
-                      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between h-16">
+                      
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between h-16">
                           
-                          {/* S'il n'y a pas de fichiers, on affiche le titre normal */}
                           {(!project.teasers || project.teasers.length === 0) ? (
                               <h3 className="font-bold text-gray-900 text-sm">Fichiers disponibles</h3>
                           ) : (
-                              // S'il y a des fichiers, on affiche directement les contrôles
+                              // HEADER OPTIMISÉ POUR L'ESPACE
                               <div className="flex items-center justify-between w-full">
                                   
-                                  {/* PARTIE GAUCHE : TOUT SÉLECTIONNER */}
+                                  {/* GAUCHE : TOUT SÉLECTIONNER */}
                                   <div 
-                                    className="flex items-center gap-3 cursor-pointer group select-none"
+                                    className="flex items-center gap-3 cursor-pointer group select-none mr-2"
                                     onClick={toggleSelectAll}
                                   >
-                                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
+                                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shadow-sm shrink-0 ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
                                           {isAllSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                                       </div>
                                       <div className="flex flex-col">
-                                          <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                          {/* Whitespace-nowrap force le texte sur une ligne */}
+                                          <span className="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
                                               {isAllSelected ? "Tout est sélectionné" : "Tout sélectionner"}
                                           </span>
-                                          <span className="text-[10px] text-gray-400 font-medium">
+                                          <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">
                                               {selectedCount > 0 ? `${selectedCount} fichier${selectedCount > 1 ? 's' : ''}` : `${totalFiles} fichier${totalFiles > 1 ? 's' : ''}`}
                                           </span>
                                       </div>
                                   </div>
 
-                                  {/* PARTIE DROITE : BOUTON TÉLÉCHARGER */}
+                                  {/* DROITE : ACTION */}
                                   <button 
                                       onClick={handleBulkDownload}
                                       disabled={isDownloadingAll}
                                       className={`
                                           text-[10px] font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm
                                           ${selectedCount > 0 || isAllSelected
-                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' 
+                                              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' 
                                               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
                                       `}
                                   >
                                       {isDownloadingAll ? <Loader2 size={14} className="animate-spin"/> : <ArrowDownToLine size={14}/>}
                                       {isDownloadingAll 
                                           ? '...' 
-                                          : selectedCount > 0 ? `Télécharger` : 'Tout télécharger'}
+                                          : selectedCount > 0 ? 'Télécharger' : 'Tout télécharger'}
                                   </button>
                               </div>
                           )}
@@ -356,7 +360,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                         onClick={() => toggleFileSelection(t.id)}
                                         className={`group p-3 bg-white border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${selectedFileIds.includes(t.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/10' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
                                       >
-                                          {/* CHECKBOX INDIVIDUELLE */}
                                           <div className="shrink-0 flex items-center justify-center w-8 h-8" onClick={(e) => e.stopPropagation()}>
                                               <input 
                                                 type="checkbox" 
