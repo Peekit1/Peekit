@@ -43,7 +43,7 @@ export const Pricing: React.FC<PricingProps> = ({ onSelectPlan, onAuthClick }) =
           "Timeline 100% Personnalisable", 
           "Teasing Multimédia (Vidéo/Img)",
           "Email de notification", 
-          "Notes vocales et/ou textuelles possibles",
+          "Notes détaillées",
           "Support Prioritaire",
       ]
     },
@@ -86,16 +86,16 @@ export const Pricing: React.FC<PricingProps> = ({ onSelectPlan, onAuthClick }) =
   };
 
   return (
-    <section id="pricing" className="py-20 md:py-24 bg-gray-50/50 border-b border-gray-200">
+    <section id="pricing" className="py-32 bg-gray-50/50 border-b border-gray-200">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="text-center mb-16">
             <Reveal>
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 tracking-tight">Tarification simple</h2>
-                <p className="text-gray-500 max-w-xl mx-auto mb-8 font-light">
-                    Commencez gratuitement. Passez pro quand vous êtes prêt.
+                <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-6 tracking-tighter">Simple. Flexible. Sans engagement.</h2>
+                <p className="text-gray-500 max-w-xl mx-auto mb-8 font-light leading-relaxed">
+                    Commencez gratuitement. Passez en pro lorsque Peekit devient une évidence dans votre manière de travailler.
                 </p>
                 
-                <div className="inline-flex bg-gray-100 p-1 rounded-xl shadow-inner">
+                <div className="inline-flex bg-gray-100 p-1 rounded-xl shadow-inner mb-12">
                     <button 
                         onClick={() => setIsAnnual(false)}
                         className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${!isAnnual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
