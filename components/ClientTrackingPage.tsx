@@ -20,7 +20,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
   const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
 
-  // TEXTES PAR DÉFAUT (Pour affichage si 'content' est vide côté donnée)
+  // TEXTES PAR DÉFAUT
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -110,6 +110,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
           
+          {/* 1. PROJECT OVERVIEW CARD */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
@@ -125,7 +126,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 w-full md:w-auto min-w-[280px] relative group transition-all hover:border-gray-200 hover:shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
-                          {/* Info Button trigger only if DESCRIPTION (Note détaillée) exists */}
                           {currentStageConfig.description && (
                               <button 
                                   onClick={handleOpenInfo}
@@ -184,45 +184,69 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
-                                  
-                                  // RÉCUPÉRATION DU CONTENU INFO COMPLÉMENTAIRE
-                                  const infoContent = (step as any).content || defaultStepContent[step.id];
+                                  const description = step.content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
 
                                   return (
                                       <div key={step.id} className="relative z-10">
                                           <div className="flex items-start gap-4">
-                                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 ${isDone ? 'bg-gray-900 border-gray-900 text-white' : isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 'bg-white border-gray-200 text-gray-300'}`}>
+                                              
+                                              {/* Icon Timeline */}
+                                              <div className={`
+                                                  w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 relative z-20
+                                                  ${isDone ? 'bg-gray-900 border-gray-900 text-white' : 
+                                                    isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 
+                                                    'bg-white border-gray-200 text-gray-300'}
+                                              `}>
                                                   {isDone && <Check size={12} strokeWidth={3}/>}
                                                   {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
                                               </div>
                                               
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
-                                                  <div className="flex justify-between items-start mb-1">
+                                                  
+                                                  {/* LIGNE 1 : TITRE + BADGE */}
+                                                  <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                      <div className="flex flex-col items-end gap-1">
-                                                          {isDone && <span className="text-[10px] font-medium text-gray-400">Terminé</span>}
-                                                          
-                                                          {/* BOUTON "COMPRENDRE CETTE ÉTAPE" */}
-                                                          {infoContent && (
-                                                              <button 
-                                                                  onClick={() => toggleStepDetails(step.id)} 
-                                                                  className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors border border-gray-100 hover:border-gray-200"
-                                                              >
-                                                                  <span className="text-[10px] font-bold uppercase tracking-tight">Comprendre cette étape</span>
-                                                                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                                                              </button>
-                                                          )}
-                                                      </div>
+                                                      
+                                                      {/* BADGES */}
+                                                      {isDone && (
+                                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">
+                                                              Terminé
+                                                          </span>
+                                                      )}
+                                                      {isCurrent && (
+                                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">
+                                                              En cours
+                                                          </span>
+                                                      )}
                                                   </div>
-                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium">{step.message}</p>
+
+                                                  {/* LIGNE 2 : MESSAGE COURT */}
+                                                  <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">
+                                                      {step.message}
+                                                  </p>
+
+                                                  {/* LIGNE 3 : BOUTON DÉROULANT (Plus ergonomique ici) */}
+                                                  {description && (
+                                                      <button 
+                                                          onClick={() => toggleStepDetails(step.id)} 
+                                                          className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wide group"
+                                                      >
+                                                          Comprendre cette étape
+                                                          <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-0.5'}`}>
+                                                              <ChevronDown size={12} />
+                                                          </div>
+                                                      </button>
+                                                  )}
                                               </div>
                                           </div>
                                           
-                                          {/* AFFICHAGE DU TEXTE INFO COMPLÉMENTAIRE */}
-                                          {isExpanded && infoContent && (
-                                              <div className="ml-11 mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 animate-fade-in">
-                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">{infoContent}</p>
+                                          {/* Contenu Déroulé */}
+                                          {isExpanded && description && (
+                                              <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
+                                                  <p className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
+                                                      {description}
+                                                  </p>
                                               </div>
                                           )}
                                       </div>
@@ -285,7 +309,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           </div>
       </div>
 
-      {/* INFO MODAL FOR "NOTE DÉTAILLÉE" ONLY */}
       {isInfoModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative" onClick={(e) => e.stopPropagation()}>
