@@ -200,22 +200,18 @@ function App() {
     } finally { setIsAuthChecking(false); }
   };
 
-  // NOUVELLE FONCTION SANS IA (MESSAGES PRÉDÉFINIS)
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
     let subject = "";
     let body = "";
 
-    // 1. MISE A JOUR D'ÉTAPE
     if (type === 'status') {
         subject = `Avancement de votre projet ${project.type}`;
         body = `Bonjour ${project.clientName},\n\nBonne nouvelle ! Le projet avance bien.\nNous venons de passer officiellement à l'étape : "${stage.label}".\n\nTout se déroule comme prévu. Vous pouvez consulter l'avancement en temps réel sur votre espace.`;
     } 
-    // 2. RETARD DE PRODUCTION
     else if (type === 'delay') {
         subject = `Information concernant votre projet ${project.type}`;
         body = `Bonjour ${project.clientName},\n\nJe tenais à vous informer d'un léger contretemps sur l'étape "${stage.label}".\n\nPour garantir une qualité optimale, je préfère prendre un peu plus de temps que prévu sur cette partie.\nMerci de votre patience et de votre confiance.`;
     } 
-    // 3. NOUVELLE NOTE DÉTAILLÉE
     else if (type === 'note') {
         subject = `Note importante - Projet ${project.type}`;
         body = `Bonjour ${project.clientName},\n\nJ'ai ajouté une précision importante concernant l'étape en cours ("${stage.label}").\n\nMerci de vous connecter à votre espace personnel pour en prendre connaissance dès que possible.`;
@@ -436,6 +432,8 @@ function App() {
         onDeleteTeaser={handleDeleteTeaser}
         onUpdateCoverImage={async (file) => await handleEditProject(editingProject.id, {}, file)}
         onNotifyClient={handleNotifyClient}
+        // MODIFICATION ICI : On passe la fonction de mise à jour pour activer l'édition
+        onUpdateProject={async (id, data) => await handleEditProject(id, data)}
       />;
   }
 
