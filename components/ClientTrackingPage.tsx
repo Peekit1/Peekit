@@ -415,7 +415,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 text-balance">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire&nbsp;et&nbsp;continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire&nbsp;et&nbsp;continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
                       Accéder à votre espace
