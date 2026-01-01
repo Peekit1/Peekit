@@ -61,7 +61,27 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
         localStorage.setItem(key, 'true');
     }
   };
-
+  
+// FONCTION DE FORMATAGE : Gère le gras après le double saut de ligne
+  const renderFormattedDescription = (text: string) => {
+    if (!text) return null;
+    const parts = text.split('\n\n');
+    
+    if (parts.length > 1) {
+      const mainText = parts.slice(0, -1).join('\n\n');
+      const boldText = parts[parts.length - 1];
+      
+      return (
+        <>
+          <span className="whitespace-pre-line">{mainText}</span>
+          <br /><br />
+          <span className="font-bold text-gray-900">{boldText}</span>
+        </>
+      );
+    }
+    return <span className="whitespace-pre-line">{text}</span>;
+  };
+  
   const calculateDeliveryRange = () => {
     if (!project.date || !project.expectedDeliveryDate) return "plusieurs";
     const start = new Date(project.date);
