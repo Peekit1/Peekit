@@ -24,7 +24,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
                 
                 <Reveal delay={200}>
                     <p className="text-lg sm:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-                        Peekit transforme le suivi d’un projet créatif en une expérience fluide, élégante et professionnelle — <span className="text-gray-900">sans changer votre manière de créer.</span>
+                        Peekit transforme le suivi d’un projet créatif en une expérience fluide, élégante et professionnelle <span className="text-gray-900">sans changer votre manière de créer.</span>
                     </p>
                 </Reveal>
                 
