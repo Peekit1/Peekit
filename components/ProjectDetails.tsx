@@ -7,11 +7,16 @@ import {
   Copy, Globe, Flag, Sparkles, ShieldCheck, GitBranch, X, Send,
   Zap, MessageSquareText, AlertTriangle, StickyNote, GripVertical, ChevronRight as ChevronRightIcon, Image as ImageIcon
 } from 'lucide-react';
-import { ProjectDetailsProps, WorkflowStep, NotificationType } from '../types';
+import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '../types';
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
-export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ 
+// On étend les props pour inclure la fonction de mise à jour du projet
+interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
+    onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
+}
+
+export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({ 
   project, 
   stageConfig, 
   defaultConfig, 
@@ -25,7 +30,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   onUploadTeasers, 
   onDeleteTeaser, 
   onUpdateCoverImage, 
-  onNotifyClient
+  onNotifyClient,
+  onUpdateProject // Nouvelle prop indispensable pour sauvegarder
 }) => {
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
   const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
@@ -34,7 +40,17 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
-  const [localWorkflow, setLocalWorkflow] = useState<any[]>([]); // Using any to accommodate new field 'content'
+  const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
+
+  // --- NOUVEAUX ÉTATS POUR L'ÉDITION DES INFOS ---
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [editedInfo, setEditedInfo] = useState({
+      clientEmail: project.clientEmail,
+      date: project.date,
+      expectedDeliveryDate: project.expectedDeliveryDate,
+      location: project.location
+  });
+  const [isSavingInfo, setIsSavingInfo] = useState(false);
 
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
   const [notifyStep, setNotifyStep] = useState<'choice' | 'generating' | 'preview' | 'success'>('choice');
@@ -44,7 +60,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // TEXTES PAR DÉFAUT (Informations Complémentaires)
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -54,15 +69,22 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   useEffect(() => {
-    // Initialisation : On s'assure que chaque étape a le champ 'content' (Info compl.)
     const initializedWorkflow = stageConfig.map(step => ({
       ...step,
-      // Si 'content' n'existe pas, on met le texte par défaut. 
-      // 'description' reste la "Note détaillée".
       content: (step as any).content || defaultStepContent[step.id] || ''
     }));
     setLocalWorkflow(JSON.parse(JSON.stringify(initializedWorkflow)));
   }, [stageConfig]);
+
+  // Synchronisation des données d'édition quand le projet change
+  useEffect(() => {
+      setEditedInfo({
+          clientEmail: project.clientEmail,
+          date: project.date,
+          expectedDeliveryDate: project.expectedDeliveryDate,
+          location: project.location
+      });
+  }, [project]);
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
@@ -118,6 +140,23 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const handleUpdateStepField = (id: string, field: string, value: string) => {
       const newWf = localWorkflow.map(s => s.id === id ? { ...s, [field]: value } : s);
       setLocalWorkflow(newWf);
+  };
+
+  // --- FONCTION DE SAUVEGARDE DES INFOS PROJET ---
+  const handleSaveInfo = async () => {
+      if (!onUpdateProject) {
+          console.error("onUpdateProject prop is missing");
+          return;
+      }
+      setIsSavingInfo(true);
+      try {
+          await onUpdateProject(project.id, editedInfo);
+          setIsEditingInfo(false);
+      } catch (error) {
+          console.error("Failed to save info:", error);
+      } finally {
+          setIsSavingInfo(false);
+      }
   };
 
   const getClientUrl = () => {
@@ -176,7 +215,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     const clientLink = `${baseUrl}#/v/${project.id}`;
 
     try {
-        // REMPLACEZ PAR VOS CLÉS EMAILJS ICI
         const SERVICE_ID = "service_xxxxxxx"; 
         const TEMPLATE_ID = "template_xxxxxxx"; 
         const PUBLIC_KEY = "public_xxxxxxx"; 
@@ -294,7 +332,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                                           <textarea value={step.description} onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-300 min-h-[60px]" onClick={(e) => e.stopPropagation()} placeholder="Ex: J'ai un léger retard..." />
                                                       </div>
 
-                                                      {/* NOUVELLE SECTION : INFORMATIONS COMPLÉMENTAIRES */}
                                                       <div className="space-y-1">
                                                           <div className="flex items-center justify-between">
                                                               <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -376,8 +413,59 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                         </div>
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} accept="image/*" />
-                      <div className="p-6"><h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-4 border-b border-gray-100 pb-2">Informations</h3><div className="space-y-4"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 truncate max-w-[120px]" title={project.clientEmail}>{project.clientEmail || '—'}</span></div><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><MapPin size={14} /><span className="text-xs font-medium">Lieu</span></div><span className="text-xs font-bold text-gray-900">{project.location}</span></div></div></div>
+                      
+                      {/* --- SECTION INFORMATIONS MODIFIABLE --- */}
+                      <div className="p-6">
+                          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+                              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
+                              {onUpdateProject && (
+                                  <button 
+                                      onClick={() => setIsEditingInfo(!isEditingInfo)} 
+                                      className={`p-1.5 rounded transition-colors ${isEditingInfo ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-100'}`}
+                                  >
+                                      <Pencil size={12} />
+                                  </button>
+                              )}
+                          </div>
+
+                          <div className="space-y-4">
+                              {isEditingInfo ? (
+                                  <div className="space-y-3 animate-fade-in">
+                                      <div className="space-y-1">
+                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Email Client</label>
+                                          <input type="email" value={editedInfo.clientEmail} onChange={(e) => setEditedInfo({...editedInfo, clientEmail: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
+                                      </div>
+                                      <div className="space-y-1">
+                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Date</label>
+                                          <input type="date" value={editedInfo.date} onChange={(e) => setEditedInfo({...editedInfo, date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
+                                      </div>
+                                      <div className="space-y-1">
+                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Rendu Espéré</label>
+                                          <input type="date" value={editedInfo.expectedDeliveryDate || ''} onChange={(e) => setEditedInfo({...editedInfo, expectedDeliveryDate: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
+                                      </div>
+                                      <div className="space-y-1">
+                                          <label className="text-[10px] font-bold text-gray-400 uppercase">Lieu</label>
+                                          <input type="text" value={editedInfo.location} onChange={(e) => setEditedInfo({...editedInfo, location: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" />
+                                      </div>
+                                      <div className="flex gap-2 pt-2">
+                                          <Button variant="outline" size="sm" onClick={() => setIsEditingInfo(false)} fullWidth>Annuler</Button>
+                                          <Button variant="black" size="sm" onClick={handleSaveInfo} isLoading={isSavingInfo} fullWidth>Enregistrer</Button>
+                                      </div>
+                                  </div>
+                              ) : (
+                                  <>
+                                      {/* MODIFICATION ICI : Email visible entièrement (suppression de truncate) */}
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
+                                      
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><MapPin size={14} /><span className="text-xs font-medium">Lieu</span></div><span className="text-xs font-bold text-gray-900">{project.location}</span></div>
+                                  </>
+                              )}
+                          </div>
+                      </div>
                   </div>
+                  
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="p-6"><div className="flex items-center gap-2 mb-4 text-gray-900 border-b border-gray-100 pb-2"><Lock size={14} className="text-emerald-600"/><h3 className="font-bold text-xs uppercase tracking-wide">Accès Sécurisé</h3></div><div className="space-y-4"><div className="space-y-1.5"><label className="text-[10px] font-bold text-gray-400 uppercase">Mot de passe</label><div className="relative"><input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-10 py-2.5 text-xs font-mono font-medium focus:bg-white focus:border-black outline-none transition-all" placeholder="Mot de passe"/><button onClick={() => onUpdatePassword(password)} className="absolute right-1 top-1 p-1.5 hover:bg-white rounded-md text-gray-400 hover:text-emerald-600 transition-colors"><Check size={14}/></button></div></div><div className="space-y-1.5"><label className="text-[10px] font-bold text-gray-400 uppercase">Lien Client Unique</label><div className="flex gap-2"><div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-[10px] text-gray-600 font-mono truncate select-all">{getClientUrl()}</div><button onClick={() => { navigator.clipboard.writeText(getClientUrl()); setShowCopyFeedback(true); setTimeout(() => setShowCopyFeedback(false), 2000); }} className={`px-3 rounded-lg border transition-all flex items-center justify-center ${showCopyFeedback ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-900'}`}>{showCopyFeedback ? <Check size={14}/> : <Copy size={14}/>}</button></div></div></div></div>
                   </div>
