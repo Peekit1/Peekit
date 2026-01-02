@@ -9,7 +9,6 @@ export const Benefits: React.FC = () => {
       <div className="container mx-auto px-6 max-w-6xl">
         <Reveal>
             <div className="text-center mb-24">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 block">Fonctionnement</span>
                 <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">Deux espaces, une seule fluidité.</h2>
             </div>
         </Reveal>
