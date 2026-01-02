@@ -336,8 +336,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
               {/* TÉLÉCHARGEMENT */}
               <div className="lg:col-span-5 space-y-6">
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col max-h-[600px]"> {/* Hauteur max globale */}
+                      <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4 shrink-0">
                           
                           <h3 className="font-bold text-gray-900 text-sm shrink-0">
                               {totalFiles > 1 ? 'Fichiers disponibles' : 'Fichier disponible'} <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
@@ -363,7 +363,8 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           )}
                       </div>
 
-                      <div className="p-4">
+                      {/* ZONE SCROLLABLE POUR LES FICHIERS */}
+                      <div className="p-4 overflow-y-auto custom-scrollbar" style={{ maxHeight: '320px' }}>
                           {(!project.teasers || project.teasers.length === 0) ? (
                               <div className="py-12 flex flex-col items-center justify-center text-center border border-dashed border-gray-200 rounded-lg">
                                   <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-gray-400"><FileText size={18}/></div>
