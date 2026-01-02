@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from './Button';
@@ -7,7 +6,10 @@ import { AuthNavigationProps } from '../types';
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    <section className="relative pt-44 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-white">
+    // AJUSTEMENTS DES PADDING ICI :
+    // pt-32 (au lieu de 44/48) -> Remonte le contenu vers la navbar
+    // pb-16 (au lieu de 20/32) -> Réduit l'espace avec la section suivante
+    <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden bg-white">
         
         {/* Background Ambient Glows - Monochrome */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gray-100/50 rounded-[100%] blur-3xl -z-10 pointer-events-none"></div>
