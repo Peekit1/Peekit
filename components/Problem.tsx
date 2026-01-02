@@ -12,7 +12,7 @@ export const Problem: React.FC = () => {
             <Reveal>
                 <div className="max-w-3xl">
                     <p className="text-2xl md:text-4xl font-medium text-gray-900 leading-tight tracking-tight">
-                        Aujourd’hui, les créatifs les plus exigeants ne se contentent plus de livrer un résultat final. <br/><br/>
+                        Aujourd’hui, les créatifs ne se contentent plus de livrer un résultat final. <br/><br/>
                         Ils soignent <span className="text-gray-400 italic">l’expérience</span> tout au long du projet.
                     </p>
                     <p className="mt-8 text-lg text-gray-500 font-light">
