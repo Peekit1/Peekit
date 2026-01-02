@@ -35,7 +35,7 @@ export const Problem: React.FC = () => {
                             Chaque projet créatif traverse plusieurs étapes. Certaines sont visibles. D’autres se construisent dans le temps.
                         </p>
                         <p>
-                            Peekit permet de présenter ce chemin de manière claire, continue et maîtrisée — <span className="text-gray-900 font-normal">sans entrer dans les détails techniques, sans exposer vos méthodes.</span>
+                            Peekit permet de présenter ce chemin de manière claire, continue et maîtrisée <span className="text-gray-900 font-normal">sans entrer dans les détails techniques, sans exposer vos méthodes.</span>
                         </p>
                     </div>
                 </Reveal>
