@@ -10,7 +10,6 @@ export const Solution: React.FC = () => {
             
             <Reveal>
                 <div className="space-y-8">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Le Concept</span>
                     <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">Partager une progression, pas une charge mentale.</h2>
                     <p className="text-lg text-gray-500 font-light leading-relaxed">
                         Plutôt que multiplier les messages ou les points ponctuels, Peekit installe une lecture permanente du projet.
