@@ -6,7 +6,12 @@ import { AuthNavigationProps } from '../types';
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    <section className="relative pt-44 pb-32 md:pt-56 md:pb-48 overflow-hidden bg-white">
+    <section className="relative pt-52 pb-12 md:pt-72 md:pb-24 overflow-hidden bg-white">
+      {/* MODIFICATIONS DES ESPACEMENTS (PADDING) :
+         - pt-52 / md:pt-72 : Augmenté (avant 44/56) -> Plus d'espace avec la navbar.
+         - pb-12 / md:pb-24 : Réduit (avant 32/48) -> Moins d'espace avec la section suivante.
+      */}
+      
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
           
