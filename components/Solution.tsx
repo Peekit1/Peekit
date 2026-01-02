@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Reveal } from './Reveal';
 
@@ -28,12 +27,10 @@ export const Solution: React.FC = () => {
                             <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
                             <p className="text-sm font-medium text-gray-900">Une interface pensée pour être simple, lisible et élégante</p>
                         </div>
-                    </div>
-                    
-                    <div className="pt-8 border-t border-gray-100">
-                        <p className="text-sm text-gray-500 italic">
-                            "Vous gardez votre rythme. L’expérience reste fluide."
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
+                            <p className="text-sm font-medium text-gray-900">Vous gardez votre rythme. L’expérience reste fluide.</p>
+                        </div>
                     </div>
                 </div>
             </Reveal>
