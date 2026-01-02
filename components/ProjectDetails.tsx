@@ -209,9 +209,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
     try {
-        const SERVICE_ID = "service_xxxxxxx"; 
-        const TEMPLATE_ID = "template_xxxxxxx"; 
-        const PUBLIC_KEY = "public_xxxxxxx"; 
+        const SERVICE_ID = "service_service_vlelgtd"; 
+        const TEMPLATE_ID = "template_template_mjzqkyl"; 
+        const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
         await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
             to_email: project.clientEmail, client_name: project.clientName, subject: notificationEmail.subject, message: notificationEmail.body, link: clientLink, studio_name: studioName
         }, PUBLIC_KEY);
