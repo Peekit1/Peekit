@@ -87,6 +87,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
+  // Helper pour le cache-busting des images dans la liste
+  const getCoverUrl = (project: Project) => {
+      if (!project.coverImage) return "";
+      return `${project.coverImage}?v=${project.lastUpdate ? project.lastUpdate.replace(/[^a-zA-Z0-9]/g, '') : Date.now()}`;
+  };
+
   return (
     <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         
@@ -117,7 +123,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <Settings size={18} strokeWidth={1.5} className="text-gray-400"/> Paramètres
                 </button>
                 
-                {/* NEW LOCATION: Logout Button after Settings */}
                 <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
                     <LogOut size={18} strokeWidth={1.5} /> Se déconnecter
                 </button>
@@ -188,8 +193,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         >
                                             <div className="flex items-center gap-4 mb-4">
                                                 <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                    {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
-                                                    {project.coverImage ? <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                    {/* MODIF: URL avec cache buster */}
+                                                    {project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
@@ -245,9 +250,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     <td className="py-4 px-6">
                                                       <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                          {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
+                                                          {/* MODIF: URL avec cache buster */}
                                                           {project.coverImage ? (
-                                                            <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" />
+                                                            <img src={getCoverUrl(project)} className="w-full h-full object-cover" />
                                                           ) : (
                                                             <ImageIcon size={18} className="text-gray-300" />
                                                           )}
