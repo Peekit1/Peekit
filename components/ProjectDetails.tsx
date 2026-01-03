@@ -11,7 +11,6 @@ import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '..
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
-// Interface étendue
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
 }
@@ -39,8 +38,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
-  // NOUVEL ÉTAT : Pour forcer le rafraîchissement de l'image
-  const [imageVersion, setImageVersion] = useState(Date.now());
+  // ÉTAT POUR LA PREVISUALISATION LOCALE INSTANTANÉE
+  const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
 
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
@@ -63,12 +62,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialisation d'EmailJS
   useEffect(() => {
-    // REMPLACEZ PAR VOTRE CLÉ PUBLIQUE ICI
     emailjs.init("3l-ZU5KwqK1qV2W1j"); 
   }, []);
 
+  // Réinitialiser la prévisualisation si le projet change (navigation)
+  useEffect(() => {
+    setLocalCoverPreview(null);
+  }, [project.id]);
+
+  // ... (Code des workflows et autres useEffects inchangés) ...
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -183,16 +186,22 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // NOUVELLE FONCTION POUR GÉRER L'UPLOAD DE LA COUVERTURE AVEC REFRESH
+  // GESTION DE LA COUVERTURE AVEC PRÉVISUALISATION
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          
+          // 1. Créer une URL locale pour l'affichage immédiat
+          const objectUrl = URL.createObjectURL(file);
+          setLocalCoverPreview(objectUrl);
+
           try {
-              // On attend que l'upload soit terminé
-              await onUpdateCoverImage(e.target.files[0]);
-              // On met à jour le numéro de version pour forcer le re-rendu de l'image
-              setImageVersion(Date.now());
+              // 2. Lancer l'upload en arrière-plan
+              await onUpdateCoverImage(file);
           } catch (error) {
               console.error("Erreur upload cover:", error);
+              // En cas d'erreur, on annule la prévisualisation
+              setLocalCoverPreview(null);
           }
       }
   };
@@ -258,13 +267,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
 
-  // Helper pour construire l'URL avec le cache buster
-  const getCoverUrl = (url: string) => {
-      if (!url) return "";
-      // On ajoute ?t=timestamp pour que le navigateur recharge l'image
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}t=${imageVersion}`;
-  };
+  // L'image à afficher est soit la locale (si on vient d'uploader), soit celle du serveur
+  const displayImage = localCoverPreview || project.coverImage;
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
@@ -419,11 +423,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {/* MODIFICATION ICI : On utilise la fonction getCoverUrl pour l'URL et on ajoute la key dynamique */}
-                        {project.coverImage ? (
+                        {/* AFFICHE L'IMAGE LOCALE EN PRIORITÉ */}
+                        {displayImage ? (
                             <img 
-                                key={`cover-${imageVersion}`} 
-                                src={getCoverUrl(project.coverImage)} 
+                                key={`cover-${displayImage}`} 
+                                src={displayImage} 
                                 className="w-full h-full object-cover" 
                                 alt="" 
                             />
@@ -434,10 +438,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                           <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter une image'}</button>
                         </div>
                       </div>
-                      {/* MODIFICATION ICI : Appel de handleCoverUpload au lieu de onUpdateCoverImage direct */}
                       <input type="file" ref={coverInputRef} className="hidden" onChange={handleCoverUpload} accept="image/*" />
                       
-                      {/* ... (Reste du code inchangé) ... */}
+                      {/* ... (Reste du fichier identique) ... */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
