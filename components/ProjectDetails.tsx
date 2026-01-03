@@ -39,6 +39,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
+  // NOUVEL ÉTAT : Pour forcer le rafraîchissement de l'image
+  const [imageVersion, setImageVersion] = useState(Date.now());
+
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
 
@@ -180,6 +183,20 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
+  // NOUVELLE FONCTION POUR GÉRER L'UPLOAD DE LA COUVERTURE AVEC REFRESH
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          try {
+              // On attend que l'upload soit terminé
+              await onUpdateCoverImage(e.target.files[0]);
+              // On met à jour le numéro de version pour forcer le re-rendu de l'image
+              setImageVersion(Date.now());
+          } catch (error) {
+              console.error("Erreur upload cover:", error);
+          }
+      }
+  };
+
   const handleOpenNotify = () => {
       if (userPlan === 'discovery') {
           alert("La notification automatique est réservée aux membres Pro.");
@@ -209,20 +226,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   };
 
   const sendNotification = async () => {
-    if (!notificationEmail) {
-        return;
-    }
-    
+    if (!notificationEmail) return;
     setIsSendingNotification(true);
-
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
-
-    // REMPLACEZ PAR VOS VRAIES CLÉS
     const SERVICE_ID = "service_vlelgtd"; 
     const TEMPLATE_ID = "template_mjzqkyl"; 
     const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
-
     const templateParams = {
         to_email: project.clientEmail,
         client_name: project.clientName,
@@ -231,16 +241,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
         link: clientLink,
         studio_name: studioName
     };
-
     try {
-        const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
         setNotifyStep('success');
-        
         setTimeout(() => {
             setIsNotifyModalOpen(false);
             setNotifyStep('choice');
         }, 2500);
-
     } catch (error) {
         console.error('FAILED...', error);
         alert(`Échec de l'envoi : ${JSON.stringify(error)}`);
@@ -251,12 +258,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
 
-  // HELPER POUR FORCER LE RAFRAICHISSEMENT DE L'IMAGE
-  // On utilise project.lastUpdate (qui change à chaque édit) pour créer une URL unique
+  // Helper pour construire l'URL avec le cache buster
   const getCoverUrl = (url: string) => {
       if (!url) return "";
-      // On ajoute un timestamp artificiel basé sur la dernière mise à jour du projet pour casser le cache navigateur
-      return `${url}?v=${project.lastUpdate ? project.lastUpdate.replace(/[^a-zA-Z0-9]/g, '') : Date.now()}`;
+      // On ajoute ?t=timestamp pour que le navigateur recharge l'image
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${imageVersion}`;
   };
 
   return (
@@ -268,11 +275,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           </div>
           <div className="flex items-center gap-3">
                <span className="hidden md:flex items-center gap-2 text-xs font-medium text-gray-500 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100"><Clock size={12}/> MAJ: {project.lastUpdate}</span>
-               
                <div className="h-6 w-px bg-gray-200 mx-2 hidden md:block"></div>
-               
                <button onClick={onViewClientVersion} className="inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-900 transition-colors"><Eye size={12}/> <span className="hidden sm:inline">Vue Client</span></button>
-               
                <button onClick={handleOpenNotify} className={`group relative inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-bold rounded-lg transition-all ${isPro ? 'bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100' : 'bg-gray-50 border border-gray-200 text-gray-400'}`}>
                   <Mail size={12} /> <span className="hidden sm:inline">Notifier par mail</span>
                   {!isPro && <span className="ml-1 text-[8px] bg-gray-200 text-gray-500 px-1 rounded">PRO</span>}
@@ -415,13 +419,10 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {/* MODIFICATION ICI : 
-                            Utilisation de getCoverUrl(project.coverImage) pour forcer le refresh
-                            et ajout de key pour forcer React à re-rendre l'image
-                        */}
+                        {/* MODIFICATION ICI : On utilise la fonction getCoverUrl pour l'URL et on ajoute la key dynamique */}
                         {project.coverImage ? (
                             <img 
-                                key={`${project.coverImage}-${project.lastUpdate}`}
+                                key={`cover-${imageVersion}`} 
                                 src={getCoverUrl(project.coverImage)} 
                                 className="w-full h-full object-cover" 
                                 alt="" 
@@ -433,10 +434,10 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                           <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter une image'}</button>
                         </div>
                       </div>
-                      <input type="file" ref={coverInputRef} className="hidden" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} accept="image/*" />
+                      {/* MODIFICATION ICI : Appel de handleCoverUpload au lieu de onUpdateCoverImage direct */}
+                      <input type="file" ref={coverInputRef} className="hidden" onChange={handleCoverUpload} accept="image/*" />
                       
-                      {/* --- LE RESTE DU FICHIER EST IDENTIQUE --- */}
-                      {/* ... */}
+                      {/* ... (Reste du code inchangé) ... */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
@@ -479,6 +480,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       {isNotifyModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative flex flex-col max-h-[90vh]">
+                  {/* ... (Modale notification inchangée) ... */}
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Mail size={16} /></div>
