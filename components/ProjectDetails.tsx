@@ -251,6 +251,14 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
 
+  // HELPER POUR FORCER LE RAFRAICHISSEMENT DE L'IMAGE
+  // On utilise project.lastUpdate (qui change à chaque édit) pour créer une URL unique
+  const getCoverUrl = (url: string) => {
+      if (!url) return "";
+      // On ajoute un timestamp artificiel basé sur la dernière mise à jour du projet pour casser le cache navigateur
+      return `${url}?v=${project.lastUpdate ? project.lastUpdate.replace(/[^a-zA-Z0-9]/g, '') : Date.now()}`;
+  };
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-sm">
@@ -407,15 +415,28 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
-                        {project.coverImage ? <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" alt="" /> : <ImageIcon size={48} className="text-gray-300" />}
+                        {/* MODIFICATION ICI : 
+                            Utilisation de getCoverUrl(project.coverImage) pour forcer le refresh
+                            et ajout de key pour forcer React à re-rendre l'image
+                        */}
+                        {project.coverImage ? (
+                            <img 
+                                key={`${project.coverImage}-${project.lastUpdate}`}
+                                src={getCoverUrl(project.coverImage)} 
+                                className="w-full h-full object-cover" 
+                                alt="" 
+                            />
+                        ) : (
+                            <ImageIcon size={48} className="text-gray-300" />
+                        )}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter une image'}</button>
                         </div>
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} accept="image/*" />
                       
-                      {/* ... (Reste du code inchangé) ... */}
+                      {/* --- LE RESTE DU FICHIER EST IDENTIQUE --- */}
+                      {/* ... */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
@@ -458,7 +479,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       {isNotifyModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative flex flex-col max-h-[90vh]">
-                  {/* ... (Modale notification inchangée) ... */}
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Mail size={16} /></div>
