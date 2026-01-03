@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './components/Hero';
 import { Problem } from './components/Problem';
@@ -28,6 +28,10 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  
+  // 1. AJOUT : Ref pour suivre la page actuelle sans être piégé par les fermetures (closures) de useEffect
+  const currentPageRef = useRef(currentPage);
+
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
   const [session, setSession] = useState<any>(null);
@@ -41,6 +45,11 @@ function App() {
   const [clientViewProject, setClientViewProject] = useState<Project | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
+
+  // 2. AJOUT : Mettre à jour la ref à chaque changement de page
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   const getErrorMessage = (err: any): string => {
     if (!err) return "Erreur inconnue";
@@ -143,9 +152,19 @@ function App() {
         setUserPlan(plan as UserPlan);
         setStudioName(data.studio_name || '');
         if (data.stages_config) setStageConfig(data.stages_config);
+        
         if (window.location.hash.startsWith('#/v/')) return;
-        if (!data.onboarding_completed) setCurrentPage('onboarding');
-        else if (currentPage === 'home' || currentPage === 'auth') setCurrentPage('dashboard');
+        
+        if (!data.onboarding_completed) {
+            setCurrentPage('onboarding');
+        } else {
+            // 3. CORRECTION : Utilisation de la ref pour vérifier la page actuelle réelle
+            // Si on est déjà dans 'project-details', on ne redirige pas vers 'dashboard'
+            const current = currentPageRef.current;
+            if (current === 'home' || current === 'auth') {
+                setCurrentPage('dashboard');
+            }
+        }
       } else if (!window.location.hash.startsWith('#/v/')) {
         setCurrentPage('onboarding');
       }
