@@ -26,7 +26,17 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const selectedCount = selectedFileIds.length;
   const isAllSelected = totalFiles > 0 && selectedCount === totalFiles;
 
-  // TEXTES AVEC DOUBLE SAUT DE LIGNE (\n\n) POUR LE GRAS AUTOMATIQUE
+  // Fonction simple de hash pour détecter le changement de contenu
+  const simpleHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0;
+    }
+    return hash;
+  };
+
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\n\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification.",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\n\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -35,8 +45,12 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     'delivery': "Préparation des fichiers\nMise à disposition\nFinalisation du projet\n\nLes fichiers sont en cours de préparation pour une livraison complète et soignée."
   };
 
+  // MODIFIÉ : Surveillance de la description pour réinitialiser "Lu"
   useEffect(() => {
-    const noteKey = `peekit_note_read_${project.id}_${project.currentStage}`;
+    const descriptionHash = simpleHash(currentStageConfig.description || '');
+    // La clé inclut maintenant le hash du contenu. Si le contenu change, la clé change => le message réapparaît.
+    const noteKey = `peekit_note_read_${project.id}_${project.currentStage}_${descriptionHash}`;
+    
     const isRead = localStorage.getItem(noteKey) === 'true';
     setHasReadNote(isRead);
 
@@ -47,33 +61,27 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
         setTimeout(() => setIsWelcomeModalOpen(true), 500);
         localStorage.setItem(welcomeKey, 'true');
     }
-  }, [project.id, project.currentStage]);
+  }, [project.id, project.currentStage, currentStageConfig.description]); // Ajout de description aux dépendances
 
   const handleOpenInfo = () => {
     setIsInfoModalOpen(true);
     if (!hasReadNote) {
         setHasReadNote(true);
-        const key = `peekit_note_read_${project.id}_${project.currentStage}`;
+        // On sauvegarde avec la nouvelle clé qui inclut le hash
+        const descriptionHash = simpleHash(currentStageConfig.description || '');
+        const key = `peekit_note_read_${project.id}_${project.currentStage}_${descriptionHash}`;
         localStorage.setItem(key, 'true');
     }
   };
 
-  // FONCTION DE FORMATAGE : Détecte \n\n pour mettre la fin en gras
   const renderFormattedDescription = (text: string) => {
     if (!text) return null;
-    
-    // Sécurisation : on force le double saut de ligne avant les phrases clés si absent
-    let processedText = text.replace(
-      /(\n)(Cette phase|Cette étape|Les fichiers)/g, 
-      '\n\n$2'
-    );
-
+    let processedText = text.replace(/(\n)(Cette phase|Cette étape|Les fichiers)/g, '\n\n$2');
     const parts = processedText.split('\n\n');
     
     if (parts.length > 1) {
       const mainText = parts.slice(0, -1).join('\n\n');
       const boldText = parts[parts.length - 1];
-      
       return (
         <>
           <span className="whitespace-pre-line">{mainText}</span>
@@ -85,17 +93,14 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     return <span className="whitespace-pre-line">{text}</span>;
   };
 
-  // Calcul de la plage (ex: "8 à 11")
   const calculateDeliveryRange = () => {
     if (!project.date || !project.expectedDeliveryDate) return "plusieurs";
     const start = new Date(project.date);
     const end = new Date(project.expectedDeliveryDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-    
     const minWeeks = Math.max(1, diffWeeks - 2);
     const maxWeeks = diffWeeks + 1;
-    
     return `${minWeeks} à ${maxWeeks}`;
   };
   
@@ -111,9 +116,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
   const toggleFileSelection = (id: string) => {
     setSelectedFileIds(prev => 
-      prev.includes(id) 
-        ? prev.filter(fid => fid !== id) 
-        : [...prev, id]
+      prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
     );
   };
 
@@ -130,16 +133,13 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error("Erreur de récupération du fichier");
-      
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = filename || `peekit-file-${id}`;
       document.body.appendChild(link);
       link.click();
-      
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
@@ -153,25 +153,18 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const handleBulkDownload = async () => {
     const files = project.teasers || [];
     if (files.length === 0) return;
-
-    const filesToDownload = selectedCount > 0 
-      ? files.filter(f => selectedFileIds.includes(f.id))
-      : files;
-
+    const filesToDownload = selectedCount > 0 ? files.filter(f => selectedFileIds.includes(f.id)) : files;
     setIsDownloadingAll(true);
-    
     for (const teaser of filesToDownload) {
         await handleDownload(teaser.url, teaser.id, teaser.title);
         await new Promise(resolve => setTimeout(resolve, 800));
     }
-    
     setIsDownloadingAll(false);
     setSelectedFileIds([]);
   };
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20 relative">
-      
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-4">
               <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors bg-white">
@@ -191,17 +184,13 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
       </header>
 
       <div className="max-w-5xl mx-auto p-6 md:p-8 animate-fade-in">
-          
-          {/* 1. PROJECT OVERVIEW CARD */}
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
-              
               {project.coverImage && (
                   <>
                       <img src={project.coverImage} className="absolute inset-0 w-full h-full object-cover z-0" alt="Cover" />
                       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] z-0"></div>
                   </>
               )}
-
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                   <div>
                       <div className="flex items-center gap-3 mb-2">
@@ -219,7 +208,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                   </div>
                   
-                  {/* Status Box */}
                   <div className={`rounded-xl p-5 border w-full md:w-auto min-w-[280px] relative group transition-all hover:shadow-sm ${project.coverImage ? 'bg-white/95 backdrop-blur-md border-white/20 text-gray-900' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex justify-between items-start mb-2">
                           <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Statut Actuel</h3>
@@ -251,63 +239,45 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
               </div>
           </div>
 
-          {/* 2. CADRE DE LIVRAISON */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8 shadow-sm flex items-start gap-4">
               <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
                   <Clock size={20} />
               </div>
               <div className="space-y-1.5">
                   <h3 className="text-sm font-bold text-gray-900">Cadre de livraison</h3>
-                  
-                  <p className="text-xs text-gray-500 leading-relaxed italic">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement sans interrompre le processus.
-                  </p>
-                  
-                  <p className="text-sm text-gray-700 leading-relaxed pt-1">
-                      La livraison intervient généralement entre <span className="font-bold text-gray-900">{deliveryRange} semaines</span>, selon la nature du projet et les étapes créatives nécessaires.
-                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed italic">Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l’avancement sans interrompre le processus.</p>
+                  <p className="text-sm text-gray-700 leading-relaxed pt-1">La livraison intervient généralement entre <span className="font-bold text-gray-900">{deliveryRange} semaines</span>, selon la nature du projet et les étapes créatives nécessaires.</p>
               </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* HISTORIQUE */}
               <div className="lg:col-span-7">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                           <h3 className="font-bold text-gray-900 text-sm">Historique du projet</h3>
                       </div>
-                      
                       <div className="p-6">
                           <div className="relative pl-2 space-y-8">
                               <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gray-100"></div>
-
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
                                   const description = step.content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
-
                                   return (
                                       <div key={step.id} className="relative z-10">
                                           <div className="flex items-start gap-4">
-                                              
                                               <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 relative z-20 ${isDone ? 'bg-gray-900 border-gray-900 text-white' : isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 'bg-white border-gray-200 text-gray-300'}`}>
                                                   {isDone && <Check size={12} strokeWidth={3}/>}
                                                   {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
                                               </div>
-                                              
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
-                                                  
                                                   <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                      
                                                       {isDone && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">Terminé</span>}
                                                       {isCurrent && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">En cours</span>}
                                                   </div>
-
                                                   <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">{step.message}</p>
-
                                                   {description && (
                                                       <button onClick={() => toggleStepDetails(step.id)} className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 hover:text-gray-700 transition-colors uppercase tracking-wide group">
                                                           Comprendre cette étape
@@ -318,7 +288,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                                                   )}
                                               </div>
                                           </div>
-                                          
                                           {isExpanded && description && (
                                               <div className="ml-11 mt-3 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-slide-down">
                                                   <p className="text-xs text-gray-600 leading-relaxed">
@@ -334,27 +303,21 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
               </div>
 
-              {/* TÉLÉCHARGEMENT */}
               <div className="lg:col-span-5 space-y-6">
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col max-h-[600px]"> {/* Hauteur max globale */}
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col max-h-[600px]">
                       <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-4 shrink-0">
-                          
                           <h3 className="font-bold text-gray-900 text-sm shrink-0">
                               {totalFiles > 1 ? 'Fichiers disponibles' : 'Fichier disponible'} <span className="ml-1 text-gray-400 font-normal">({totalFiles})</span>
                           </h3>
-                          
                           {(project.teasers || []).length > 0 && (
                               <div className="flex items-center gap-4">
-                                  
                                   <div className="flex items-center gap-2 cursor-pointer group select-none" onClick={toggleSelectAll} title="Tout sélectionner">
                                       <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors shadow-sm ${isAllSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}>
                                           {isAllSelected && <Check size={10} className="text-white" strokeWidth={3} />}
                                       </div>
                                       <span className="text-[10px] font-bold text-gray-500 group-hover:text-gray-800 uppercase tracking-wide whitespace-nowrap">Tout sélectionner</span>
                                   </div>
-
                                   <div className="h-4 w-px bg-gray-200 hidden sm:block"></div>
-
                                   <button onClick={handleBulkDownload} disabled={isDownloadingAll} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 whitespace-nowrap shadow-sm ${selectedCount > 0 || isAllSelected ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 scale-105' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900'}`}>
                                       {isDownloadingAll ? <Loader2 size={12} className="animate-spin"/> : <ArrowDownToLine size={12}/>}
                                       {isDownloadingAll ? '...' : selectedCount > 0 ? `Télécharger (${selectedCount})` : 'Tout télécharger'}
@@ -362,8 +325,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               </div>
                           )}
                       </div>
-
-                      {/* ZONE SCROLLABLE POUR LES FICHIERS */}
                       <div className="p-4 overflow-y-auto custom-scrollbar" style={{ maxHeight: '320px' }}>
                           {(!project.teasers || project.teasers.length === 0) ? (
                               <div className="py-12 flex flex-col items-center justify-center text-center border border-dashed border-gray-200 rounded-lg">
@@ -394,7 +355,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                           )}
                       </div>
                   </div>
-                  
                   <div className="bg-white rounded-xl border border-gray-200 p-5 text-center shadow-sm">
                       <h3 className="text-xs font-bold text-gray-900 mb-1">Une question ?</h3>
                       <p className="text-[10px] text-gray-500 mb-3">Contactez votre prestataire directement.</p>
@@ -412,7 +372,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 text-balance">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de manière claire&nbsp;et&nbsp;continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire&nbsp;et&nbsp;continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
                       Accéder à votre espace
