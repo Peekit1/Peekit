@@ -142,7 +142,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       await onUpdateStageConfig(newWf);
   };
 
-  // MODIFIÉ : Accepte maintenant string | undefined pour permettre la suppression
   const handleUpdateStepField = (id: string, field: string, value: string | undefined) => {
       const newWf = localWorkflow.map(s => s.id === id ? { ...s, [field]: value } : s);
       setLocalWorkflow(newWf);
@@ -322,7 +321,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                                   <>
                                                       <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court</label><input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none" onClick={(e) => e.stopPropagation()} /></div>
                                                       
-                                                      {/* LOGIQUE D'AJOUT/SUPPRESSION DE LA NOTE DÉTAILLÉE */}
                                                       {typeof step.description === 'string' ? (
                                                           <div className="space-y-1 animate-fade-in">
                                                               <div className="flex items-center justify-between">
@@ -409,18 +407,18 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {project.coverImage ? <img src={project.coverImage} className="w-full h-full object-cover" alt="" /> : <ImageIcon size={48} className="text-gray-300" />}
+                        {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
+                        {project.coverImage ? <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" alt="" /> : <ImageIcon size={48} className="text-gray-300" />}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter une image'}</button>
                         </div>
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={(e) => e.target.files && onUpdateCoverImage(e.target.files[0])} accept="image/*" />
                       
-                      {/* --- SECTION INFORMATIONS (AVEC ÉDITION) --- */}
+                      {/* ... (Reste du code inchangé) ... */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
-                              {/* BOUTON CRAYON POUR ACTIVER L'ÉDITION */}
                               {onUpdateProject && (
                                   <button onClick={() => setIsEditingInfo(!isEditingInfo)} className={`p-1.5 rounded transition-colors ${isEditingInfo ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-100'}`}><Pencil size={12}/></button>
                               )}
@@ -440,7 +438,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                   </div>
                               ) : (
                                   <>
-                                      {/* AFFICHAGE CLASSIQUE (Email en entier) */}
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>
@@ -461,6 +458,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       {isNotifyModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative flex flex-col max-h-[90vh]">
+                  {/* ... (Modale notification inchangée) ... */}
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Mail size={16} /></div>
@@ -468,7 +466,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       </div>
                       <button onClick={() => setIsNotifyModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
                   </div>
-
                   <div className="p-6 overflow-y-auto flex-1">
                       {notifyStep === 'choice' && (
                           <div className="space-y-4 animate-fade-in">
