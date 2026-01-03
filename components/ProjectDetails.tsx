@@ -31,7 +31,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   onDeleteTeaser, 
   onUpdateCoverImage, 
   onNotifyClient,
-  onUpdateProject // INDISPENSABLE
+  onUpdateProject 
 }) => {
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
   const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
@@ -59,6 +59,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialisation d'EmailJS
+  useEffect(() => {
+    // REMPLACEZ PAR VOTRE CLÉ PUBLIQUE ICI
+    emailjs.init("3l-ZU5KwqK1qV2W1j"); 
+  }, []);
 
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
@@ -136,12 +142,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       await onUpdateStageConfig(newWf);
   };
 
-  const handleUpdateStepField = (id: string, field: string, value: string) => {
+  // MODIFIÉ : Accepte maintenant string | undefined pour permettre la suppression
+  const handleUpdateStepField = (id: string, field: string, value: string | undefined) => {
       const newWf = localWorkflow.map(s => s.id === id ? { ...s, [field]: value } : s);
       setLocalWorkflow(newWf);
   };
 
-  // SAUVEGARDE DES INFOS
   const handleSaveInfo = async () => {
       if (!onUpdateProject) return;
       setIsSavingInfo(true);
@@ -204,21 +210,41 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   };
 
   const sendNotification = async () => {
-    if (!notificationEmail) return;
+    if (!notificationEmail) {
+        return;
+    }
+    
     setIsSendingNotification(true);
+
     const baseUrl = window.location.href.split('#')[0]; 
     const clientLink = `${baseUrl}#/v/${project.id}`;
+
+    // REMPLACEZ PAR VOS VRAIES CLÉS
+    const SERVICE_ID = "service_vlelgtd"; 
+    const TEMPLATE_ID = "template_mjzqkyl"; 
+    const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
+
+    const templateParams = {
+        to_email: project.clientEmail,
+        client_name: project.clientName,
+        subject: notificationEmail.subject,
+        message: notificationEmail.body,
+        link: clientLink,
+        studio_name: studioName
+    };
+
     try {
-        const SERVICE_ID = "service_vlelgtd"; 
-        const TEMPLATE_ID = "template_mjzqkyl"; 
-        const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-            to_email: project.clientEmail, client_name: project.clientName, subject: notificationEmail.subject, message: notificationEmail.body, link: clientLink, studio_name: studioName
-        }, PUBLIC_KEY);
+        const response = await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
         setNotifyStep('success');
-        setTimeout(() => setIsNotifyModalOpen(false), 2500);
+        
+        setTimeout(() => {
+            setIsNotifyModalOpen(false);
+            setNotifyStep('choice');
+        }, 2500);
+
     } catch (error) {
-        console.error("Erreur email:", error);
+        console.error('FAILED...', error);
+        alert(`Échec de l'envoi : ${JSON.stringify(error)}`);
     } finally {
         setIsSendingNotification(false);
     }
@@ -235,8 +261,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           </div>
           <div className="flex items-center gap-3">
                <span className="hidden md:flex items-center gap-2 text-xs font-medium text-gray-500 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100"><Clock size={12}/> MAJ: {project.lastUpdate}</span>
+               
                <div className="h-6 w-px bg-gray-200 mx-2 hidden md:block"></div>
+               
                <button onClick={onViewClientVersion} className="inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-900 transition-colors"><Eye size={12}/> <span className="hidden sm:inline">Vue Client</span></button>
+               
                <button onClick={handleOpenNotify} className={`group relative inline-flex items-center justify-center gap-2 h-8 px-3 text-xs font-bold rounded-lg transition-all ${isPro ? 'bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-100' : 'bg-gray-50 border border-gray-200 text-gray-400'}`}>
                   <Mail size={12} /> <span className="hidden sm:inline">Notifier par mail</span>
                   {!isPro && <span className="ml-1 text-[8px] bg-gray-200 text-gray-500 px-1 rounded">PRO</span>}
@@ -292,8 +321,37 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               {isEditing ? (
                                                   <>
                                                       <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court</label><input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none" onClick={(e) => e.stopPropagation()} /></div>
-                                                      <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée</label><textarea value={step.description} onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none min-h-[60px]" onClick={(e) => e.stopPropagation()} /></div>
-                                                      <div className="space-y-1">
+                                                      
+                                                      {/* LOGIQUE D'AJOUT/SUPPRESSION DE LA NOTE DÉTAILLÉE */}
+                                                      {typeof step.description === 'string' ? (
+                                                          <div className="space-y-1 animate-fade-in">
+                                                              <div className="flex items-center justify-between">
+                                                                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée (Message pour le client)</label>
+                                                                  <button 
+                                                                    onClick={() => handleUpdateStepField(step.id, 'description', undefined)}
+                                                                    className="text-[9px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1 uppercase tracking-wider"
+                                                                  >
+                                                                      <Trash2 size={10} /> Supprimer
+                                                                  </button>
+                                                              </div>
+                                                              <textarea 
+                                                                value={step.description} 
+                                                                onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} 
+                                                                className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none min-h-[60px]" 
+                                                                onClick={(e) => e.stopPropagation()} 
+                                                                placeholder="Écrivez votre note ici..."
+                                                              />
+                                                          </div>
+                                                      ) : (
+                                                          <button 
+                                                            onClick={() => handleUpdateStepField(step.id, 'description', "")}
+                                                            className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 font-medium hover:border-gray-400 hover:text-gray-700 flex items-center justify-center gap-2 transition-colors mt-2"
+                                                          >
+                                                              <Plus size={12} /> Ajouter une note détaillée
+                                                          </button>
+                                                      )}
+
+                                                      <div className="space-y-1 mt-3">
                                                           <div className="flex items-center justify-between"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Informations complémentaires {!isPro && <span className="bg-gray-200 text-gray-500 px-1 rounded text-[8px]">PRO</span>}</label></div>
                                                           <textarea value={step.content} onChange={(e) => isPro && handleUpdateStepField(step.id, 'content', e.target.value)} className={`w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-600 outline-none min-h-[80px] ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={(e) => e.stopPropagation()} readOnly={!isPro}/>
                                                       </div>
