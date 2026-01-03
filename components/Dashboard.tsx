@@ -30,6 +30,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
+  // NOUVEL ÉTAT : Cache buster global pour le dashboard
+  const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
+
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
@@ -78,6 +81,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       try {
           if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
           else await onCreateProject(newProject, coverFile);
+          
+          // Mise à jour du cache buster pour forcer le re-rendu des images après modif
+          setDashboardCacheBuster(Date.now());
+
           setIsNewProjectModalOpen(false);
           setEditingProjectId(null);
           setNewProject({ clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: '' });
@@ -87,10 +94,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
-  // Helper pour le cache-busting des images dans la liste
+  // Helper pour l'URL avec cache buster
   const getCoverUrl = (project: Project) => {
       if (!project.coverImage) return "";
-      return `${project.coverImage}?v=${project.lastUpdate ? project.lastUpdate.replace(/[^a-zA-Z0-9]/g, '') : Date.now()}`;
+      // On utilise le cache buster local qui change quand on édite un projet
+      const separator = project.coverImage.includes('?') ? '&' : '?';
+      return `${project.coverImage}${separator}t=${dashboardCacheBuster}`;
   };
 
   return (
@@ -181,7 +190,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         <div className="flex-1">
                             
-                            {/* --- MOBILE VIEW: CARDS (Visible ONLY on mobile) --- */}
+                            {/* --- MOBILE VIEW: CARDS --- */}
                             <div className="md:hidden space-y-4 p-6">
                                 {paginatedProjects.map(project => {
                                     const { label, progress } = getProjectStageInfo(project);
@@ -193,8 +202,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         >
                                             <div className="flex items-center gap-4 mb-4">
                                                 <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                    {/* MODIF: URL avec cache buster */}
-                                                    {project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                    {project.coverImage ? (
+                                                        <img 
+                                                            src={getCoverUrl(project)} 
+                                                            className="w-full h-full object-cover" 
+                                                            key={`cover-${project.id}-${dashboardCacheBuster}`}
+                                                        />
+                                                    ) : (
+                                                        <ImageIcon size={20} className="text-gray-300" />
+                                                    )}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
@@ -238,7 +254,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 })}
                             </div>
 
-                            {/* --- DESKTOP VIEW: TABLE (Visible ONLY on desktop) --- */}
+                            {/* --- DESKTOP VIEW: TABLE --- */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
@@ -250,9 +266,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     <td className="py-4 px-6">
                                                       <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                          {/* MODIF: URL avec cache buster */}
                                                           {project.coverImage ? (
-                                                            <img src={getCoverUrl(project)} className="w-full h-full object-cover" />
+                                                            <img 
+                                                                src={getCoverUrl(project)} 
+                                                                className="w-full h-full object-cover" 
+                                                                key={`cover-table-${project.id}-${dashboardCacheBuster}`} 
+                                                            />
                                                           ) : (
                                                             <ImageIcon size={18} className="text-gray-300" />
                                                           )}
@@ -299,6 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 )}
 
+                {/* ... (Reste du composant identique) ... */}
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
                         {/* ... (Contenu abonnement inchangé) ... */}
