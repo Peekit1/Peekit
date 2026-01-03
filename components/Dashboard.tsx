@@ -9,19 +9,19 @@ import { DashboardProps, Project } from '../types';
 import { Button } from './Button';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  userPlan,
-  studioName,
+  userPlan, 
+  studioName, 
   onLogout, 
   onOpenProject, 
   projects, 
-  hasNotifications,
-  onClearNotifications,
+  hasNotifications, 
+  onClearNotifications, 
   defaultConfig = [], 
-  onCreateProject,
-  onDeleteProject,
-  onEditProject,
-  onUpgradeClick,
-  onDeleteAccount
+  onCreateProject, 
+  onDeleteProject, 
+  onEditProject, 
+  onUpgradeClick, 
+  onDeleteAccount 
 }) => {
   const [currentView, setCurrentView] = useState<'projects' | 'subscription'>('projects');
   const [searchQuery, setSearchQuery] = useState('');
@@ -188,7 +188,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         >
                                             <div className="flex items-center gap-4 mb-4">
                                                 <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                    {project.coverImage ? <img src={project.coverImage} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                    {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
+                                                    {project.coverImage ? <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
@@ -244,8 +245,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                     <td className="py-4 px-6">
                                                       <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                                          {/* --- MODIFICATION ICI : Ajout de la clé (key) pour forcer le refresh --- */}
                                                           {project.coverImage ? (
-                                                            <img src={project.coverImage} className="w-full h-full object-cover" />
+                                                            <img key={project.coverImage} src={project.coverImage} className="w-full h-full object-cover" />
                                                           ) : (
                                                             <ImageIcon size={18} className="text-gray-300" />
                                                           )}
@@ -294,6 +296,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
+                        {/* ... (Contenu abonnement inchangé) ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative overflow-hidden flex flex-col">
                                 <div className="absolute top-6 right-6 px-3 py-1 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Actif</div>
@@ -303,15 +306,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 
                                 {isPro ? (
                                     <div className="mt-auto">
-                                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 w-fit">
-                                            <Check size={14} strokeWidth={3}/>
-                                            <span className="text-xs font-bold uppercase tracking-wider">Projets Illimités</span>
-                                        </div>
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 w-fit">
+                                                <Check size={14} strokeWidth={3}/>
+                                                <span className="text-xs font-bold uppercase tracking-wider">Projets Illimités</span>
+                                            </div>
                                     </div>
                                 ) : (
                                     <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mt-auto">
-                                        <div className="flex justify-between items-center mb-3"><span className="text-xs font-bold text-gray-700">Utilisation projets</span><span className="text-xs font-bold text-gray-900">{projectCount} / {maxProjects}</span></div>
-                                        <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-1000" style={{ width: `${usagePercent}%` }}></div></div>
+                                            <div className="flex justify-between items-center mb-3"><span className="text-xs font-bold text-gray-700">Utilisation projets</span><span className="text-xs font-bold text-gray-900">{projectCount} / {maxProjects}</span></div>
+                                            <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-1000" style={{ width: `${usagePercent}%` }}></div></div>
                                     </div>
                                 )}
                             </div>
@@ -324,17 +327,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             ) : (
                                 <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm flex flex-col justify-between">
                                     <div>
-                                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 border border-emerald-100">
-                                            <ShieldCheck size={24} />
-                                        </div>
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">Support & Sécurité</h3>
-                                        <p className="text-gray-500 text-sm leading-relaxed">
-                                            Votre compte bénéficie du support prioritaire et de la sauvegarde en temps réel de tous vos projets.
-                                        </p>
+                                            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 border border-emerald-100">
+                                                <ShieldCheck size={24} />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-gray-900 mb-2">Support & Sécurité</h3>
+                                            <p className="text-gray-500 text-sm leading-relaxed">
+                                                Votre compte bénéficie du support prioritaire et de la sauvegarde en temps réel de tous vos projets.
+                                            </p>
                                     </div>
                                     <div className="mt-6 pt-6 border-t border-gray-100">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Une question ?</p>
-                                        <a href="#" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">Contacter le support dédié →</a>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Une question ?</p>
+                                            <a href="#" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">Contacter le support dédié →</a>
                                     </div>
                                 </div>
                             )}
@@ -370,6 +373,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <button onClick={() => setIsNewProjectModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-10"><X size={20} /></button>
                         
                         <form onSubmit={handleCreateSubmit} className="p-6 md:p-10">
+                            {/* ... (Formulaire création inchangé) ... */}
                             <div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">
                                 {editingProjectId ? <Pencil size={20} strokeWidth={1.5} /> : <User size={20} strokeWidth={1.5} />}
                             </div>
@@ -504,6 +508,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         )}
 
+        {/* ... (Reste des modales inchangées) ... */}
         {projectToDelete && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-8 text-center animate-slide-up">
