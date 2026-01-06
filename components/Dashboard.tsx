@@ -12,7 +12,7 @@ import { Button } from './Button';
 export const Dashboard: React.FC<DashboardProps> = ({ 
   userPlan, 
   studioName,
-  userEmail, // Nouvelle prop pour l'email
+  userEmail, // New prop for email
   onLogout, 
   onOpenProject, 
   projects, 
@@ -36,22 +36,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
 
-  // MODALES
+  // MODALS
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   
-  // ÉTATS SETTINGS
+  // SETTINGS STATE
   const [settingsTab, setSettingsTab] = useState<'general' | 'workflow' | 'account'>('general');
   const [localStudioName, setLocalStudioName] = useState(studioName);
   const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(defaultConfig);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   
-  // États pour modification Compte
+  // Account Modification State
   const [emailForm, setEmailForm] = useState(userEmail || '');
   const [passwordForm, setPasswordForm] = useState('');
 
-  // ÉTATS PROJETS
+  // PROJECT STATE
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState({
       clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: ''
@@ -63,7 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
 
-  // QUAND ON OUVRE LES SETTINGS, ON CHARGE LES DONNÉES ACTUELLES
+  // LOAD CURRENT DATA WHEN SETTINGS OPEN
   useEffect(() => {
       if (isSettingsModalOpen) {
           setLocalStudioName(studioName);
@@ -80,15 +80,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
               studioName: localStudioName,
               stagesConfig: localWorkflow
           });
-          // Ici, vous pourriez ajouter la logique pour update email/password si l'API le permet via onUpdateProfile
-          // ou via une nouvelle fonction dédiée.
+          // Logic to update email/password could be added here if supported by API
           setIsSettingsModalOpen(false);
       } finally {
           setIsSavingSettings(false);
       }
   };
 
-  // --- LOGIQUE DASHBOARD ---
+  // --- DASHBOARD LOGIC ---
   const isPro = userPlan === 'pro' || userPlan === 'agency';
   const projectCount = projects.length;
   const maxProjects = userPlan === 'discovery' ? 1 : 9999;
@@ -156,7 +155,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         {isMobileSidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setIsMobileSidebarOpen(false)} />}
 
-        {/* SIDEBAR PRINCIPALE */}
+        {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
                 <div className="flex items-center gap-3 cursor-pointer">
@@ -341,7 +340,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <ShieldCheck size={16} /> Compte
                             </button>
                         </nav>
-                        {/* Bouton "Fermer" supprimé ici comme demandé */}
+                        {/* No "Close" button here as requested */}
                     </div>
 
                     {/* CONTENT SETTINGS */}
@@ -355,7 +354,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Studio</label>
                                         <input type="text" value={localStudioName} onChange={(e) => setLocalStudioName(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-bold text-gray-900 outline-none focus:border-black transition-colors"/>
                                     </div>
-                                    {/* Placeholder pour upload logo futur */}
+                                    {/* Placeholder for future logo upload */}
                                     <div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-center text-gray-400 text-sm">Upload de logo bientôt disponible</div>
                                 </div>
                             )}
@@ -414,7 +413,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <div className="space-y-8 max-w-lg">
                                     <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants de connexion.</p></div>
                                     
-                                    {/* Modification Email */}
+                                    {/* Email Modification */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
                                             <Mail size={16} /> Adresse Email
@@ -426,14 +425,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 onChange={(e) => setEmailForm(e.target.value)}
                                                 className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
                                             />
-                                            <Button size="sm" variant="secondary" onClick={() => {/* Logique update email à connecter */}}>Modifier</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => {/* Logic to update email would go here */}}>Modifier</Button>
                                         </div>
                                         <p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p>
                                     </div>
 
                                     <div className="h-px bg-gray-100 w-full"></div>
 
-                                    {/* Modification Mot de passe */}
+                                    {/* Password Modification */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
                                             <Lock size={16} /> Mot de passe
@@ -447,7 +446,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
                                             />
                                             <div className="flex justify-end">
-                                                <Button size="sm" variant="secondary" onClick={() => {/* Logique update password à connecter */}}>Mettre à jour le mot de passe</Button>
+                                                <Button size="sm" variant="secondary" onClick={() => {/* Logic to update password would go here */}}>Mettre à jour le mot de passe</Button>
                                             </div>
                                         </div>
                                     </div>
@@ -473,7 +472,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         )}
 
-        {/* --- AUTRES MODALES (New Project & Delete) restent inchangées --- */}
+        {/* ... (Other modals remain unchanged) ... */}
         {isNewProjectModalOpen && (
             <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fade-in">
                 <div className="flex min-h-full items-center justify-center p-4">
