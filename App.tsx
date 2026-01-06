@@ -28,7 +28,6 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  // Ref pour suivre la page actuelle sans être piégé par les closures
   const currentPageRef = useRef(currentPage);
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -45,7 +44,6 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
 
-  // Mettre à jour la ref à chaque changement de page pour le fix de redirection
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
@@ -54,8 +52,6 @@ function App() {
     if (!err) return "Erreur inconnue";
     if (typeof err === 'string') return err;
     if (err.message && typeof err.message === 'string') return err.message;
-    if (err.error?.message) return err.error.message;
-    if (err.error_description) return err.error_description;
     try { return JSON.stringify(err); } catch (e) { return "Détails de l'erreur indisponibles"; }
   };
 
@@ -157,7 +153,6 @@ function App() {
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
         } else {
-            // Utilisation de la ref pour vérifier la page actuelle réelle
             const current = currentPageRef.current;
             if (current === 'home' || current === 'auth') {
                 setCurrentPage('dashboard');
@@ -249,8 +244,11 @@ function App() {
         const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
         coverUrl = publicUrl;
       }
+      
+      // On utilise la config passée (si c'est un reset) ou la config du profil actuel
       const configToSave = overrideStageConfig || stageConfig;
       const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
+      
       const newProject: any = { 
         user_id: session.user.id, 
         client_name: projectData.clientName, 
@@ -315,6 +313,26 @@ function App() {
       } catch (error: any) { alert('Erreur edition: ' + getErrorMessage(error)); }
   };
 
+  // --- NOUVELLE FONCTION : Gestion des paramètres du profil (Workflow & Nom) ---
+  const handleUpdateProfile = async (updates: { studioName?: string; stagesConfig?: StagesConfiguration }) => {
+    if (!session) return;
+    try {
+        const dbUpdates: any = {};
+        if (updates.studioName) dbUpdates.studio_name = updates.studioName;
+        if (updates.stagesConfig) dbUpdates.stages_config = updates.stagesConfig;
+
+        const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', session.user.id);
+        if (error) throw error;
+
+        // Mise à jour de l'état local
+        if (updates.studioName) setStudioName(updates.studioName);
+        if (updates.stagesConfig) setStageConfig(updates.stagesConfig);
+        
+    } catch (error: any) {
+        alert("Erreur de sauvegarde : " + getErrorMessage(error));
+    }
+  };
+
   const handleUpdateStageConfig = async (newConfig: StagesConfiguration) => {
     if (editingProject) {
         const isolatedConfig = JSON.parse(JSON.stringify(newConfig));
@@ -323,8 +341,8 @@ function App() {
         setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
         await supabase.from('projects').update({ stages_config: isolatedConfig }).eq('id', editingProject.id);
     } else if (session) {
-        setStageConfig(newConfig);
-        await supabase.from('profiles').update({ stages_config: newConfig }).eq('id', session.user.id);
+        // Fallback si jamais appelé hors contexte projet
+        handleUpdateProfile({ stagesConfig: newConfig });
     }
   };
 
@@ -458,45 +476,24 @@ function App() {
 
   if (session && currentPage === 'dashboard') {
     return <Dashboard 
-        userPlan={userPlan} studioName={studioName} onLogout={async () => { await supabase.auth.signOut(); setCurrentPage('home'); }} 
+        userPlan={userPlan} 
+        studioName={studioName} 
+        onLogout={async () => { await supabase.auth.signOut(); setCurrentPage('home'); }} 
         onOpenProject={(project) => { setEditingProject(project); setCurrentPage('project-details'); }} 
         projects={projects} 
         hasNotifications={hasNotifications}
         onClearNotifications={() => setHasNotifications(false)}
-        onUpdateProjects={setProjects} defaultConfig={INITIAL_STAGES_CONFIG}
+        onUpdateProjects={setProjects} 
+        defaultConfig={stageConfig} // On passe la config utilisateur ici, plus INITIAL_STAGES_CONFIG
         onUpgradeClick={() => { setSelectedPlan({ name: "Pro", price: 190, interval: 'annual' }); setCurrentPage('checkout'); }}
-        onCreateProject={handleCreateProject} onDeleteProject={handleDeleteProject} onEditProject={handleEditProject}
+        onCreateProject={handleCreateProject} 
+        onDeleteProject={handleDeleteProject} 
+        onEditProject={handleEditProject}
         onResetStudioConfig={async () => { if(session) { await supabase.from('profiles').update({ stages_config: INITIAL_STAGES_CONFIG }).eq('id', session.user.id); setStageConfig(JSON.parse(JSON.stringify(INITIAL_STAGES_CONFIG))); } }}
         onDeleteAccount={handleDeleteAccount}
+        onUpdateProfile={handleUpdateProfile} // Passe la fonction au Dashboard
       />;
   }
 
   return (
-    <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white font-sans">
-      <StickyHeader onAuthClick={handleAuthNavigation} />
-      <main>
-        <Hero onAuthClick={handleAuthNavigation} />
-        
-        {/* Ajout des séparateurs invisibles pour l'espacement */}
-        <SectionDivider />
-        
-        <Solution />
-        
-        <SectionDivider />
-        
-        <Benefits />
-        
-        <SectionDivider />
-        
-        <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
-
-        <SectionDivider />
-        
-        <FAQ />
-      </main>
-      <Footer onAuthClick={handleAuthNavigation} />
-    </div>
-  );
-}
-
-export default App;
+    <div
