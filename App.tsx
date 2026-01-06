@@ -282,16 +282,22 @@ function App() {
     } catch (error) { console.error('Error deleting project:', error); }
   };
 
+//   ✅ MODIFIED FUNCTION TO FIX IMAGE CACHING
   const handleEditProject = async (projectId: string, projectData: Partial<Project>, coverFile?: File) => {
       try {
           let updates: any = { ...projectData };
+          let newCoverUrl = null;
+
           if (coverFile && session) {
               const fileExt = coverFile.name.split('.').pop();
+              // Use a unique filename or path if possible, but here we keep the path structure
+              // The cache bust will happen on the URL string
               const filePath = `covers/${session.user.id}/${Math.random()}.${fileExt}`;
               const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile);
               if (uploadError) throw uploadError;
               const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
-              updates.cover_image = publicUrl;
+              newCoverUrl = publicUrl;
+              updates.cover_image = newCoverUrl;
           }
           const dbUpdates: any = {};
           if (updates.clientName) dbUpdates.client_name = updates.clientName;
@@ -299,15 +305,42 @@ function App() {
           if (updates.date) dbUpdates.date = updates.date;
           if (updates.location) dbUpdates.location = updates.location;
           if (updates.type) dbUpdates.type = updates.type;
-          if (updates.cover_image) dbUpdates.cover_image = updates.cover_image;
+          
+          if (updates.cover_image) {
+              dbUpdates.cover_image = updates.cover_image;
+          }
+          
           dbUpdates.last_update = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
           if (updates.expectedDeliveryDate) dbUpdates.expected_delivery_date = updates.expectedDeliveryDate;
           
           const { error } = await supabase.from('projects').update(dbUpdates).eq('id', projectId);
           if (error) throw error;
           
-          setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates, lastUpdate: dbUpdates.last_update } : p));
-          if (editingProject?.id === projectId) setEditingProject(prev => prev ? { ...prev, ...updates, lastUpdate: dbUpdates.last_update } : null);
+          // ✅ FORCE UPDATE LOCAL STATE WITH TIMESTAMP TO BUST CACHE
+          const timestamp = Date.now();
+
+          setProjects(prev => prev.map(p => {
+              if (p.id === projectId) {
+                  return { 
+                      ...p, 
+                      ...updates, 
+                      // If a new cover was uploaded, force a URL change with ?t=
+                      coverImage: newCoverUrl ? `${newCoverUrl}?t=${timestamp}` : p.coverImage,
+                      lastUpdate: dbUpdates.last_update 
+                  };
+              }
+              return p;
+          }));
+
+          if (editingProject?.id === projectId) {
+              setEditingProject(prev => prev ? { 
+                  ...prev, 
+                  ...updates, 
+                   // If a new cover was uploaded, force a URL change with ?t=
+                  coverImage: newCoverUrl ? `${newCoverUrl}?t=${timestamp}` : prev.coverImage,
+                  lastUpdate: dbUpdates.last_update 
+              } : null);
+          }
           
       } catch (error: any) { alert('Erreur edition: ' + getErrorMessage(error)); }
   };
