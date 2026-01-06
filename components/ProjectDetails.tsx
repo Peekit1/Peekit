@@ -11,6 +11,29 @@ import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '..
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
+// ✅ CONFIGURATION SÉCURISÉE : Variables d'environnement
+const EMAILJS_CONFIG = {
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+};
+
+// Vérification de la configuration
+const isEmailJSConfigured = () => {
+  const { serviceId, templateId, publicKey } = EMAILJS_CONFIG;
+  if (!serviceId || !templateId || !publicKey) {
+    console.error(
+      '❌ Configuration EmailJS manquante.',
+      '\nVérifiez votre fichier .env.local :',
+      '\n- VITE_EMAILJS_SERVICE_ID',
+      '\n- VITE_EMAILJS_TEMPLATE_ID',
+      '\n- VITE_EMAILJS_PUBLIC_KEY'
+    );
+    return false;
+  }
+  return true;
+};
+
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
 }
@@ -62,16 +85,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    emailjs.init("3l-ZU5KwqK1qV2W1j"); 
-  }, []);
+  // Note: Le useEffect emailjs.init a été supprimé car on passe la clé publique directement dans send()
 
   // Réinitialiser la prévisualisation si le projet change (navigation)
   useEffect(() => {
     setLocalCoverPreview(null);
   }, [project.id]);
 
-  // ... (Code des workflows et autres useEffects inchangés) ...
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
     'culling': "Sélection des images\nAffinage de la série\nChoix des moments clés\nCette étape permet de construire une sélection cohérente avant le travail créatif.",
@@ -186,21 +206,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // GESTION DE LA COUVERTURE AVEC PRÉVISUALISATION
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
-          
-          // 1. Créer une URL locale pour l'affichage immédiat
           const objectUrl = URL.createObjectURL(file);
           setLocalCoverPreview(objectUrl);
 
           try {
-              // 2. Lancer l'upload en arrière-plan
               await onUpdateCoverImage(file);
           } catch (error) {
               console.error("Erreur upload cover:", error);
-              // En cas d'erreur, on annule la prévisualisation
               setLocalCoverPreview(null);
           }
       }
@@ -234,40 +249,62 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
+  // ✅ FONCTION SENDNOTIFICATION MISE À JOUR
   const sendNotification = async () => {
     if (!notificationEmail) return;
+
+    // Vérifier la configuration
+    if (!isEmailJSConfigured()) {
+        alert('⚠️ Configuration email manquante. Vérifiez vos variables d\'environnement.');
+        return;
+    }
+
     setIsSendingNotification(true);
-    const baseUrl = window.location.href.split('#')[0]; 
-    const clientLink = `${baseUrl}#/v/${project.id}`;
-    const SERVICE_ID = "service_vlelgtd"; 
-    const TEMPLATE_ID = "template_mjzqkyl"; 
-    const PUBLIC_KEY = "3l-ZU5KwqK1qV2W1j"; 
-    const templateParams = {
-        to_email: project.clientEmail,
-        client_name: project.clientName,
-        subject: notificationEmail.subject,
-        message: notificationEmail.body,
-        link: clientLink,
-        studio_name: studioName
-    };
+
     try {
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+        const baseUrl = window.location.href.split('#')[0];
+        const clientLink = `${baseUrl}#/v/${project.id}`;
+        
+        const templateParams = {
+            to_email: project.clientEmail,
+            client_name: project.clientName,
+            subject: notificationEmail.subject,
+            message: notificationEmail.body,
+            link: clientLink,
+            studio_name: studioName
+        };
+
+        console.log('📧 Envoi de l\'email...');
+        
+        const response = await emailjs.send(
+            EMAILJS_CONFIG.serviceId!,
+            EMAILJS_CONFIG.templateId!,
+            templateParams,
+            EMAILJS_CONFIG.publicKey!
+        );
+
+        console.log('✅ Email envoyé avec succès:', response);
+        
         setNotifyStep('success');
         setTimeout(() => {
             setIsNotifyModalOpen(false);
             setNotifyStep('choice');
         }, 2500);
+
     } catch (error) {
-        console.error('FAILED...', error);
-        alert(`Échec de l'envoi : ${JSON.stringify(error)}`);
+        console.error('❌ Erreur lors de l\'envoi:', error);
+        
+        if (error instanceof Error) {
+            alert(`Erreur lors de l'envoi de l'email: ${error.message}`);
+        } else {
+            alert('Erreur inconnue lors de l\'envoi de l\'email');
+        }
     } finally {
         setIsSendingNotification(false);
     }
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
-
-  // L'image à afficher est soit la locale (si on vient d'uploader), soit celle du serveur
   const displayImage = localCoverPreview || project.coverImage;
 
   return (
@@ -440,7 +477,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={handleCoverUpload} accept="image/*" />
                       
-                      {/* ... (Reste du fichier identique) ... */}
                       <div className="p-6">
                           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                               <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Informations</h3>
@@ -483,7 +519,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       {isNotifyModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
               <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-slide-up relative flex flex-col max-h-[90vh]">
-                  {/* ... (Modale notification inchangée) ... */}
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Mail size={16} /></div>
