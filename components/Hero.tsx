@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Calendar, ImageIcon, Pencil, Trash2, Search, Filter, Download } from 'lucide-react';
+import { ArrowRight, Calendar, ImageIcon, Pencil, Trash2, Search, Filter } from 'lucide-react';
 import { Button } from './Button';
 import { Reveal } from './Reveal';
 import { AuthNavigationProps, Project, StagesConfiguration } from '../types';
@@ -17,9 +17,7 @@ const MOCK_STAGES_CONFIG: StagesConfiguration = [
 // Fonction pour simuler la progression
 const getProjectStageInfo = (project: Partial<Project>) => {
     const activeConfig = MOCK_STAGES_CONFIG;
-    // On simule une étape en fonction de l'ID pour varier les barres
     const stages = ['secured', 'culling', 'editing', 'export', 'delivery'];
-    // On force des étapes variées pour la démo
     const stageIndex = parseInt(project.id || '0') % stages.length; 
     const currentStageId = stages[stageIndex];
     
@@ -71,7 +69,9 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
     <section className="relative pt-52 pb-24 md:pt-72 md:pb-40 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-24">
+        
+        {/* Ajustement de la marge : mb-12 sur mobile, mb-24 sur desktop */}
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-24">
           
           <Reveal delay={0}>
             <h1 
@@ -106,12 +106,11 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
           </Reveal>
         </div>
 
-        {/* --- RÉPLIQUE DU DASHBOARD --- */}
-        <Reveal delay={400} className="relative z-10 perspective-1000">
+        {/* --- RÉPLIQUE DU DASHBOARD (Masquée sur mobile via 'hidden md:block') --- */}
+        <Reveal delay={400} className="hidden md:block relative z-10 perspective-1000">
             {/* Halo lumineux arrière */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-blue-400/10 blur-[100px] -z-10 rounded-full"></div>
             
-            {/* MODIFICATION ICI: max-w-7xl au lieu de max-w-6xl pour élargir le dashboard */}
             <div className="max-w-7xl mx-auto transform transition-all hover:-translate-y-2 duration-700 ease-out">
                 {/* Cadre de la fenêtre */}
                 <div className="bg-white border border-gray-200/80 rounded-3xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-black/5">
