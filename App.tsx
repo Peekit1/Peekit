@@ -496,4 +496,30 @@ function App() {
   }
 
   return (
-    <div
+    <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white font-sans">
+      <StickyHeader onAuthClick={handleAuthNavigation} />
+      <main>
+        <Hero onAuthClick={handleAuthNavigation} />
+        
+        <SectionDivider />
+        
+        <Solution />
+        
+        <SectionDivider />
+        
+        <Benefits />
+        
+        <SectionDivider />
+        
+        <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
+
+        <SectionDivider />
+        
+        <FAQ />
+      </main>
+      <Footer onAuthClick={handleAuthNavigation} />
+    </div>
+  );
+}
+
+export default App;
