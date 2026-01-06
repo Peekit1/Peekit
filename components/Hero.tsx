@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Calendar, ImageIcon, Pencil, Trash2, Search, Filter } from 'lucide-react';
+import { ArrowRight, Calendar, ImageIcon, Pencil, Search, Filter } from 'lucide-react';
 import { Button } from './Button';
 import { Reveal } from './Reveal';
 import { AuthNavigationProps, Project, StagesConfiguration } from '../types';
@@ -66,17 +66,17 @@ const MOCK_PROJECTS: Partial<Project>[] = [
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    'md:pb-24' au lieu de 'md:pb-40' pour remonter le bas
+    // CORRECTION ICI : Suppression du texte invalide et application des classes de padding réduites
     <section className="relative pt-40 pb-16 md:pt-60 md:pb-24 overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/60">
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         
         {/* TITRE ET APPEL À L'ACTION */}
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-24">
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-16">
           
           <Reveal delay={0}>
             <h1 
-              className="text-3xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tighter mb-10 leading-[1.2] sm:leading-[1.1]"
+              className="text-3xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tighter mb-8 leading-[1.2] sm:leading-[1.1]"
               style={{ textWrap: 'balance' }} 
             >
               Offrez une expérience aussi soignée que votre travail.
@@ -84,7 +84,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
           </Reveal>
           
           <Reveal delay={200}>
-            <p className="text-lg sm:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            <p className="text-lg sm:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
               Peekit transforme le suivi d’un projet créatif en une expérience fluide, élégante et professionnelle <span className="text-gray-900">sans changer votre manière de créer.</span>
             </p>
           </Reveal>
@@ -110,11 +110,11 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
         {/* --- RÉPLIQUE DU DASHBOARD (Masquée sur mobile) --- */}
         <Reveal delay={400} className="hidden md:block relative z-10 perspective-1000">
             {/* Halo lumineux arrière */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-blue-400/10 blur-[100px] -z-10 rounded-full"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-blue-400/20 blur-[120px] -z-10 rounded-full opacity-60"></div>
             
             <div className="max-w-7xl mx-auto transform transition-all hover:-translate-y-2 duration-700 ease-out">
                 {/* Cadre de la fenêtre */}
-                <div className="bg-white border border-gray-200/80 rounded-3xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-black/5">
+                <div className="bg-white border border-gray-100 rounded-3xl shadow-2xl shadow-blue-900/10 overflow-hidden ring-1 ring-black/5">
                     
                     {/* Barre de titre / Navigation Dashboard */}
                     <div className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-6">
@@ -215,7 +215,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
       </div>
 
       {/* --- TRANSITION DOUCE (FONDU) VERS LA SECTION SUIVANTE --- */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-20"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-20"></div>
 
     </section>
   );
