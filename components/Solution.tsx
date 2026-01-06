@@ -3,13 +3,17 @@ import { Reveal } from './Reveal';
 
 export const Solution: React.FC = () => {
   return (
-    // MODIFICATIONS :
-    // - Remplacement de 'bg-gray-50' par 'bg-white'
-    // - Suppression de 'border-y border-gray-100' (les traits de démarcation)
-    // - Ajustement du padding (py-24) pour l'équilibre
-    <section className="py-24 bg-white">
+    // MODIFICATION ICI : 
+    // py-12 pour mobile (48px)
+    // md:py-24 pour desktop (96px, conservation de l'espace d'origine)
+    <section className="py-12 md:py-24 bg-white">
       <div className="container mx-auto px-6 max-w-5xl">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+        
+        {/* MODIFICATION ICI :
+            gap-10 (40px) sur mobile pour éviter un grand vide entre le texte et la carte
+            lg:gap-20 (80px) sur desktop pour l'aération
+        */}
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             
             <Reveal>
                 <div className="space-y-8">
