@@ -11,20 +11,20 @@ import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '..
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
-// ✅ CONFIGURATION SÉCURISÉE : Variables d'environnement
+// ✅ SECURE CONFIGURATION: Environment Variables
 const EMAILJS_CONFIG = {
   serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
   templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
 };
 
-// Vérification de la configuration
+// Check configuration
 const isEmailJSConfigured = () => {
   const { serviceId, templateId, publicKey } = EMAILJS_CONFIG;
   if (!serviceId || !templateId || !publicKey) {
     console.error(
-      '❌ Configuration EmailJS manquante.',
-      '\nVérifiez votre fichier .env.local :',
+      '❌ EmailJS Configuration missing.',
+      '\nCheck your .env.local file:',
       '\n- VITE_EMAILJS_SERVICE_ID',
       '\n- VITE_EMAILJS_TEMPLATE_ID',
       '\n- VITE_EMAILJS_PUBLIC_KEY'
@@ -61,13 +61,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
-  // ÉTAT POUR LA PREVISUALISATION LOCALE INSTANTANÉE
+  // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
 
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
 
-  // ÉTATS D'ÉDITION DES INFOS
+  // INFO EDITING STATES
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
       clientEmail: project.clientEmail,
@@ -85,9 +85,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Note: Le useEffect emailjs.init a été supprimé car on passe la clé publique directement dans send()
+  // Note: The useEffect emailjs.init has been removed as we pass the public key directly in send()
 
-  // Réinitialiser la prévisualisation si le projet change (navigation)
+  // Reset preview if project changes (navigation)
   useEffect(() => {
     setLocalCoverPreview(null);
   }, [project.id]);
@@ -249,11 +249,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
-  // ✅ FONCTION SENDNOTIFICATION MISE À JOUR
+  // ✅ UPDATED SENDNOTIFICATION FUNCTION
   const sendNotification = async () => {
     if (!notificationEmail) return;
 
-    // Vérifier la configuration
+    // Check configuration
     if (!isEmailJSConfigured()) {
         alert('⚠️ Configuration email manquante. Vérifiez vos variables d\'environnement.');
         return;
