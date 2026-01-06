@@ -86,9 +86,11 @@ export const Pricing: React.FC<PricingProps> = ({ onSelectPlan, onAuthClick }) =
   };
 
   return (
-    <section id="pricing" className="py-32 bg-gray-50/50 border-b border-gray-200">
+    // MODIFICATION ICI : py-12 pour mobile, md:py-24 pour desktop (au lieu de py-32)
+    <section id="pricing" className="py-12 md:py-24 bg-gray-50/50 border-b border-gray-200">
       <div className="container mx-auto px-6 max-w-6xl">
-        <div className="text-center mb-16">
+        {/* MODIFICATION ICI : mb-10 pour mobile, md:mb-16 pour desktop */}
+        <div className="text-center mb-10 md:mb-16">
             <Reveal>
                 <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-6 tracking-tighter">Simple. Flexible. Sans engagement.</h2>
                 <p className="text-gray-500 max-w-xl mx-auto mb-8 font-light leading-relaxed">
