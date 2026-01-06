@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { Reveal } from './Reveal';
 
 const faqs = [
@@ -28,44 +28,59 @@ const faqs = [
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  const toggleFAQ = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
   return (
-    <section className="py-24 bg-white">
-      <div className="container mx-auto px-6 max-w-3xl">
+    <section className="py-24 bg-white" id="faq">
+      <div className="container mx-auto px-6 max-w-4xl">
         
         <Reveal>
-            <div className="text-center mb-16 space-y-4">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Questions fréquentes</h2>
-                <p className="text-gray-500">Tout ce que vous devez savoir pour commencer sereinement.</p>
+            <div className="text-center mb-20 space-y-6">
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tighter" style={{ fontFamily: 'Gabarito, sans-serif' }}>
+                    Questions fréquentes
+                </h2>
+                <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">
+                    Nous avons compilé les réponses aux questions les plus courantes pour vous aider à démarrer.
+                </p>
             </div>
         </Reveal>
 
-        <div className="space-y-4">
+        <div className="border-t border-gray-100">
           {faqs.map((faq, index) => (
-            <Reveal key={index} delay={index * 100}>
-                <div className="border border-gray-100 rounded-2xl bg-white overflow-hidden transition-all duration-300 hover:border-gray-200 hover:shadow-sm">
-                <button
-                    onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                    className="w-full flex items-center justify-between p-6 text-left"
-                >
-                    <span className="font-bold text-gray-900">{faq.question}</span>
-                    <span className={`ml-6 p-2 rounded-full bg-gray-50 text-gray-900 transition-transform duration-300 ${openIndex === index ? 'rotate-180 bg-gray-100' : ''}`}>
-                        {openIndex === index ? <Minus size={14} /> : <Plus size={14} />}
-                    </span>
-                </button>
-                <div 
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}
-                >
-                    <p className="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
-                    {faq.answer}
-                    </p>
-                </div>
+            <Reveal key={index} delay={index * 50}>
+                <div className="border-b border-gray-100 group">
+                    <button
+                        onClick={() => toggleFAQ(index)}
+                        className="w-full flex items-center justify-between py-8 text-left transition-colors hover:bg-gray-50/50 px-2 cursor-pointer outline-none"
+                    >
+                        {/* La question */}
+                        <span className="text-lg md:text-xl font-medium text-gray-900 pr-8 leading-snug">
+                            {faq.question}
+                        </span>
+                        
+                        {/* Le bouton rond avec la flèche */}
+                        <div className={`shrink-0 w-10 h-10 rounded-full bg-black flex items-center justify-center text-white transition-transform duration-500 ease-out ${openIndex === index ? 'rotate-90' : 'rotate-0'}`}>
+                            <ArrowUpRight size={20} strokeWidth={2} />
+                        </div>
+                    </button>
+                    
+                    {/* La réponse qui se déroule */}
+                    <div 
+                        className={`overflow-hidden transition-all duration-500 ease-in-out ${openIndex === index ? 'max-h-48 opacity-100 pb-8' : 'max-h-0 opacity-0'}`}
+                    >
+                        <p className="text-gray-500 leading-relaxed pr-16 pl-2 text-base">
+                            {faq.answer}
+                        </p>
+                    </div>
                 </div>
             </Reveal>
           ))}
         </div>
 
         <Reveal delay={600}>
-            <div className="mt-12 text-center">
+            <div className="mt-20 text-center">
                 <p className="text-sm text-gray-400">
                     Vous avez une autre question ? <a href="mailto:support@peekit.io" className="text-gray-900 font-bold underline underline-offset-4 hover:text-black transition-colors">Écrivez-nous</a>
                 </p>
