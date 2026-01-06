@@ -1,14 +1,15 @@
-
 import React from 'react';
 import { User, Eye, Smartphone, Settings } from 'lucide-react';
 import { Reveal } from './Reveal';
 
 export const Benefits: React.FC = () => {
   return (
-    <section className="py-32 bg-white">
+    // MODIFICATION ICI : py-12 pour mobile, md:py-24 pour desktop
+    <section className="py-12 md:py-24 bg-white">
       <div className="container mx-auto px-6 max-w-6xl">
         <Reveal>
-            <div className="text-center mb-24">
+            {/* MODIFICATION ICI : mb-12 pour mobile, md:mb-20 pour desktop (réduit vs mb-24) */}
+            <div className="text-center mb-12 md:mb-20">
                 <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">Deux espaces, une seule fluidité.</h2>
             </div>
         </Reveal>
