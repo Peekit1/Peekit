@@ -35,25 +35,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
-  // ✅ CACHE BUSTER STATE: Used to force image refresh
+  // ✅ SOLUTION DU PROBLÈME : Ce nombre change force le rechargement des images
   const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
 
-  // MODALS
+  // Force le rechargement des images à chaque fois que la liste des projets change (ex: retour d'une édition)
+  useEffect(() => {
+      setDashboardCacheBuster(Date.now());
+  }, [projects]);
+
+  // MODALES
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   
-  // SETTINGS STATE
+  // ÉTATS SETTINGS
   const [settingsTab, setSettingsTab] = useState<'general' | 'workflow' | 'account'>('general');
   const [localStudioName, setLocalStudioName] = useState(studioName);
   const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(defaultConfig);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   
-  // Account Modification State
+  // États pour modification Compte
   const [emailForm, setEmailForm] = useState(userEmail || '');
   const [passwordForm, setPasswordForm] = useState('');
 
-  // PROJECT STATE
+  // ÉTATS PROJETS
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState({
       clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: ''
@@ -65,7 +70,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
 
-  // Update local state when modal opens
   useEffect(() => {
       if (isSettingsModalOpen) {
           setLocalStudioName(studioName);
@@ -88,7 +92,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       }
   };
 
-  // --- DASHBOARD LOGIC ---
   const isPro = userPlan === 'pro' || userPlan === 'agency';
   const projectCount = projects.length;
   const maxProjects = userPlan === 'discovery' ? 1 : 9999;
@@ -138,7 +141,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
           else await onCreateProject(newProject, coverFile);
           
-          // ✅ UPDATE CACHE BUSTER AFTER SUBMIT
           setDashboardCacheBuster(Date.now()); 
 
           setIsNewProjectModalOpen(false);
@@ -150,10 +152,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
 
-  // ✅ HELPER FUNCTION FOR IMAGE URLS WITH CACHE BUSTING
+  // ✅ FONCTION CORRIGÉE : Ajoute toujours un timestamp pour contourner le cache
   const getCoverUrl = (project: Project) => {
       if (!project.coverImage) return "";
-      // If it's a base64 string (local preview sometimes), return as is
+      // Si c'est déjà une data URL (base64), on la retourne telle quelle
       if (project.coverImage.startsWith('data:')) return project.coverImage;
       
       const separator = project.coverImage.includes('?') ? '&' : '?';
@@ -164,7 +166,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         {isMobileSidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setIsMobileSidebarOpen(false)} />}
 
-        {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
                 <div className="flex items-center gap-3 cursor-pointer">
@@ -199,7 +200,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </aside>
 
-        {/* MAIN CONTENT */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
             <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-3 md:gap-4">
@@ -294,7 +294,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* VUE ABONNEMENT */}
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
-                        {/* ... (Existing subscription content) ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative overflow-hidden flex flex-col">
                                 <div className="absolute top-6 right-6 px-3 py-1 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Actif</div>
@@ -329,7 +328,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </main>
 
-        {/* SETTINGS MODAL */}
+        {/* SETTINGS, NEW PROJECT, DELETE MODALS... */}
+        {/* ... (Code des modales inchangé, mais gardé dans le fichier complet si vous copiez tout) ... */}
         {isSettingsModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white w-full max-w-4xl h-[600px] rounded-2xl shadow-2xl flex overflow-hidden animate-slide-up">
@@ -338,214 +338,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2"><Settings size={20}/> Paramètres</h3>
                         </div>
                         <nav className="flex-1 p-4 space-y-1">
-                            <button onClick={() => setSettingsTab('general')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'general' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <User size={16} /> Général
-                            </button>
-                            <button onClick={() => setSettingsTab('workflow')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'workflow' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <Briefcase size={16} /> Workflow par défaut
-                            </button>
-                            <button onClick={() => setSettingsTab('account')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'account' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <ShieldCheck size={16} /> Compte
-                            </button>
+                            <button onClick={() => setSettingsTab('general')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'general' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}><User size={16} /> Général</button>
+                            <button onClick={() => setSettingsTab('workflow')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'workflow' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}><Briefcase size={16} /> Workflow par défaut</button>
+                            <button onClick={() => setSettingsTab('account')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'account' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}><ShieldCheck size={16} /> Compte</button>
                         </nav>
                     </div>
-
                     <div className="flex-1 flex flex-col bg-white">
                         <div className="flex-1 overflow-y-auto p-8">
-                            {settingsTab === 'general' && (
-                                <div className="space-y-6 max-w-lg">
-                                    <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Identité du Studio</h2><p className="text-gray-500 text-sm">Comment vos clients voient votre marque.</p></div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Studio</label>
-                                        <input type="text" value={localStudioName} onChange={(e) => setLocalStudioName(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-bold text-gray-900 outline-none focus:border-black transition-colors"/>
-                                    </div>
-                                    <div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-center text-gray-400 text-sm">Upload de logo bientôt disponible</div>
-                                </div>
-                            )}
-
-                            {settingsTab === 'workflow' && (
-                                <div className="space-y-6">
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-gray-900 mb-1">Workflow par défaut</h2>
-                                        <p className="text-gray-500 text-sm">Ces étapes seront appliquées automatiquement à chaque <strong>nouveau</strong> projet.</p>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        {localWorkflow.map((stage, index) => (
-                                            <div key={stage.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg group">
-                                                <GripVertical size={16} className="text-gray-300 cursor-move" />
-                                                <div className="flex-1 grid grid-cols-12 gap-3">
-                                                    <div className="col-span-6">
-                                                        <label className="text-[9px] font-bold text-gray-400 uppercase">Nom de l'étape</label>
-                                                        <input type="text" value={stage.label} onChange={(e) => {
-                                                            const newWorkflow = [...localWorkflow];
-                                                            newWorkflow[index].label = e.target.value;
-                                                            setLocalWorkflow(newWorkflow);
-                                                        }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-medium"/>
-                                                    </div>
-                                                    <div className="col-span-3">
-                                                        <label className="text-[9px] font-bold text-gray-400 uppercase">Min Jours</label>
-                                                        <input type="number" value={stage.minDays} onChange={(e) => {
-                                                            const newWorkflow = [...localWorkflow];
-                                                            newWorkflow[index].minDays = parseInt(e.target.value) || 0;
-                                                            setLocalWorkflow(newWorkflow);
-                                                        }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm"/>
-                                                    </div>
-                                                    <div className="col-span-3">
-                                                        <label className="text-[9px] font-bold text-gray-400 uppercase">Max Jours</label>
-                                                        <input type="number" value={stage.maxDays} onChange={(e) => {
-                                                            const newWorkflow = [...localWorkflow];
-                                                            newWorkflow[index].maxDays = parseInt(e.target.value) || 0;
-                                                            setLocalWorkflow(newWorkflow);
-                                                        }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm"/>
-                                                    </div>
-                                                </div>
-                                                <button onClick={() => {
-                                                    const newWorkflow = localWorkflow.filter((_, i) => i !== index);
-                                                    setLocalWorkflow(newWorkflow);
-                                                }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-md transition-colors"><Trash2 size={16}/></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Button variant="secondary" onClick={() => {
-                                        setLocalWorkflow([...localWorkflow, { id: `custom-${Date.now()}`, label: 'Nouvelle étape', minDays: 1, maxDays: 3, message: 'En cours' }]);
-                                    }} size="sm" className="w-full border-dashed border-gray-300 text-gray-500 hover:text-black hover:border-gray-400">+ Ajouter une étape</Button>
-                                </div>
-                            )}
-
-                            {settingsTab === 'account' && (
-                                <div className="space-y-8 max-w-lg">
-                                    <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants de connexion.</p></div>
-                                    
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
-                                            <Mail size={16} /> Adresse Email
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <input 
-                                                type="email" 
-                                                value={emailForm} 
-                                                onChange={(e) => setEmailForm(e.target.value)}
-                                                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
-                                            />
-                                            <Button size="sm" variant="secondary" onClick={() => {}}>Modifier</Button>
-                                        </div>
-                                        <p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 w-full"></div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
-                                            <Lock size={16} /> Mot de passe
-                                        </div>
-                                        <div className="space-y-3">
-                                            <input 
-                                                type="password" 
-                                                placeholder="Nouveau mot de passe"
-                                                value={passwordForm}
-                                                onChange={(e) => setPasswordForm(e.target.value)}
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
-                                            />
-                                            <div className="flex justify-end">
-                                                <Button size="sm" variant="secondary" onClick={() => {}}>Mettre à jour le mot de passe</Button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="h-px bg-gray-100 w-full"></div>
-
-                                    <div className="pt-2">
-                                        <h3 className="font-bold text-red-600 mb-2">Zone de danger</h3>
-                                        <p className="text-xs text-gray-500 mb-4">La suppression est définitive.</p>
-                                        <Button variant="danger" size="sm" onClick={() => setIsDeleteAccountModalOpen(true)}>Supprimer mon compte</Button>
-                                    </div>
-                                </div>
-                            )}
+                            {settingsTab === 'general' && (<div className="space-y-6 max-w-lg"><div><h2 className="text-2xl font-bold text-gray-900 mb-1">Identité du Studio</h2><p className="text-gray-500 text-sm">Comment vos clients voient votre marque.</p></div><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Studio</label><input type="text" value={localStudioName} onChange={(e) => setLocalStudioName(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-bold text-gray-900 outline-none focus:border-black transition-colors"/></div><div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-center text-gray-400 text-sm">Upload de logo bientôt disponible</div></div>)}
+                            {settingsTab === 'workflow' && (<div className="space-y-6"><div><h2 className="text-2xl font-bold text-gray-900 mb-1">Workflow par défaut</h2><p className="text-gray-500 text-sm">Ces étapes seront appliquées automatiquement à chaque <strong>nouveau</strong> projet.</p></div><div className="space-y-3">{localWorkflow.map((stage, index) => (<div key={stage.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg group"><GripVertical size={16} className="text-gray-300 cursor-move" /><div className="flex-1 grid grid-cols-12 gap-3"><div className="col-span-6"><label className="text-[9px] font-bold text-gray-400 uppercase">Nom de l'étape</label><input type="text" value={stage.label} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].label = e.target.value; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm font-medium"/></div><div className="col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase">Min Jours</label><input type="number" value={stage.minDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].minDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm"/></div><div className="col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase">Max Jours</label><input type="number" value={stage.maxDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].maxDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-sm"/></div></div><button onClick={() => { const newWorkflow = localWorkflow.filter((_, i) => i !== index); setLocalWorkflow(newWorkflow); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-md transition-colors"><Trash2 size={16}/></button></div>))}</div><Button variant="secondary" onClick={() => { setLocalWorkflow([...localWorkflow, { id: `custom-${Date.now()}`, label: 'Nouvelle étape', minDays: 1, maxDays: 3, message: 'En cours' }]); }} size="sm" className="w-full border-dashed border-gray-300 text-gray-500 hover:text-black hover:border-gray-400">+ Ajouter une étape</Button></div>)}
+                            {settingsTab === 'account' && (<div className="space-y-8 max-w-lg"><div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants de connexion.</p></div><div className="space-y-4"><div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Mail size={16} /> Adresse Email</div><div className="flex gap-3"><input type="email" value={emailForm} onChange={(e) => setEmailForm(e.target.value)} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/><Button size="sm" variant="secondary" onClick={() => {}}>Modifier</Button></div><p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p></div><div className="h-px bg-gray-100 w-full"></div><div className="space-y-4"><div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Lock size={16} /> Mot de passe</div><div className="space-y-3"><input type="password" placeholder="Nouveau mot de passe" value={passwordForm} onChange={(e) => setPasswordForm(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/><div className="flex justify-end"><Button size="sm" variant="secondary" onClick={() => {}}>Mettre à jour le mot de passe</Button></div></div></div><div className="h-px bg-gray-100 w-full"></div><div className="pt-2"><h3 className="font-bold text-red-600 mb-2">Zone de danger</h3><p className="text-xs text-gray-500 mb-4">La suppression est définitive.</p><Button variant="danger" size="sm" onClick={() => setIsDeleteAccountModalOpen(true)}>Supprimer mon compte</Button></div></div>)}
                         </div>
-
-                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                            <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button>
-                            <Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button>
-                        </div>
+                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button><Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button></div>
                     </div>
                 </div>
             </div>
         )}
-
-        {/* ... (Other modals for new project and delete account) ... */}
-        {isNewProjectModalOpen && (
-            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fade-in">
-                <div className="flex min-h-full items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-slide-up relative">
-                        <button onClick={() => setIsNewProjectModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-10"><X size={20} /></button>
-                        
-                        <form onSubmit={handleCreateSubmit} className="p-6 md:p-10">
-                            <div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">
-                                {editingProjectId ? <Pencil size={20} strokeWidth={1.5} /> : <User size={20} strokeWidth={1.5} />}
-                            </div>
-                            
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
-                                {editingProjectId ? 'Modifier le projet' : 'Initialisons votre projet'}
-                            </h2>
-                            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-                                {editingProjectId ? 'Mettez à jour les informations du client et les délais.' : 'Ajoutez un projet pour voir la magie opérer sur Peekit.'}
-                            </p>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Client</label>
-                                    <input autoFocus type="text" required value={newProject.clientName} onChange={(e) => setNewProject({...newProject, clientName: e.target.value})} placeholder="Ex: Sophie & Marc" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Email de contact</label>
-                                    <input type="email" required value={newProject.clientEmail} onChange={(e) => setNewProject({...newProject, clientEmail: e.target.value})} placeholder="email@client.com" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label><input type="date" required value={newProject.date} onChange={(e) => setNewProject({...newProject, date: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div>
-                                    <div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Lieu</label><input type="text" value={newProject.location} onChange={(e) => setNewProject({...newProject, location: e.target.value})} placeholder="Ville" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label><select value={newProject.type} onChange={(e) => setNewProject({...newProject, type: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"><option value="Mariage">Mariage</option><option value="Shooting Mode">Shooting Mode</option><option value="Vidéo Publicitaire">Vidéo Publicitaire</option><option value="Identité Visuelle">Identité Visuelle</option><option value="Corporate">Corporate</option></select></div>
-                                    <div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Rendu Estimé</label><input type="date" value={newProject.expectedDeliveryDate} onChange={(e) => setNewProject({...newProject, expectedDeliveryDate: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div>
-                                </div>
-                                <div className="pt-2"><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Image de couverture</label><div className="relative group/cover"><input type="file" id="cover-upload" className="hidden" onChange={(e) => setCoverFile(e.target.files ? e.target.files[0] : undefined)} accept="image/*"/><label htmlFor="cover-upload" className="flex items-center gap-3 w-full h-11 px-3 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"><Camera size={18} className="text-gray-400" /><span className="text-xs font-bold text-gray-500 truncate">{coverFile ? coverFile.name : 'Choisir une image...'}</span></label></div></div>
-                            </div>
-
-                            <div className="mt-10 flex gap-4">
-                                <Button type="button" variant="secondary" onClick={() => setIsNewProjectModalOpen(false)} fullWidth className="h-11">Annuler</Button>
-                                <Button type="submit" variant="black" fullWidth isLoading={newProjectLoading} className="h-11 shadow-lg shadow-black/10">{editingProjectId ? 'Enregistrer' : 'Créer le projet'}</Button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {projectToDelete && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-8 text-center animate-slide-up">
-                    <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6"><Trash2 size={24} /></div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Supprimer le projet ?</h3>
-                    <p className="text-sm text-gray-500 mb-8 leading-relaxed">Toutes les données et fichiers associés seront définitivement supprimés.</p>
-                    <div className="flex gap-4"><Button variant="secondary" onClick={() => setProjectToDelete(null)} fullWidth className="h-11">Annuler</Button><Button variant="danger" onClick={() => { if (projectToDelete) onDeleteProject(projectToDelete); setProjectToDelete(null); }} fullWidth className="h-11 border-red-100 text-red-600">Supprimer</Button></div>
-                </div>
-            </div>
-        )}
-
-        {isDeleteAccountModalOpen && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in">
-                <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 text-center animate-slide-up relative">
-                    <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100 shadow-sm"><AlertTriangle size={32} /></div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Supprimer votre compte ?</h3>
-                    <p className="text-sm text-gray-500 mb-8 leading-relaxed px-4">Cette action est <strong className="text-gray-900">irréversible</strong>. Tous vos projets, teasers et données de studio seront effacés définitivement.</p>
-                    <div className="flex flex-col gap-3">
-                        <Button variant="danger" fullWidth className="h-12 !bg-red-600 !text-white !border-transparent hover:!bg-red-700 font-bold shadow-lg shadow-red-200" onClick={async () => { await onDeleteAccount(); setIsDeleteAccountModalOpen(false); }}>Oui, supprimer définitivement</Button>
-                        <Button variant="secondary" fullWidth className="h-12 font-bold" onClick={() => setIsDeleteAccountModalOpen(false)}>Annuler</Button>
-                    </div>
-                </div>
-            </div>
-        )}
+        {isNewProjectModalOpen && (<div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fade-in"><div className="flex min-h-full items-center justify-center p-4"><div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-slide-up relative"><button onClick={() => setIsNewProjectModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-10"><X size={20} /></button><form onSubmit={handleCreateSubmit} className="p-6 md:p-10"><div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">{editingProjectId ? <Pencil size={20} strokeWidth={1.5} /> : <User size={20} strokeWidth={1.5} />}</div><h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">{editingProjectId ? 'Modifier le projet' : 'Initialisons votre projet'}</h2><p className="text-gray-500 mb-8 text-sm leading-relaxed">{editingProjectId ? 'Mettez à jour les informations du client et les délais.' : 'Ajoutez un projet pour voir la magie opérer sur Peekit.'}</p><div className="space-y-4"><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Client</label><input autoFocus type="text" required value={newProject.clientName} onChange={(e) => setNewProject({...newProject, clientName: e.target.value})} placeholder="Ex: Sophie & Marc" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Email de contact</label><input type="email" required value={newProject.clientEmail} onChange={(e) => setNewProject({...newProject, clientEmail: e.target.value})} placeholder="email@client.com" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label><input type="date" required value={newProject.date} onChange={(e) => setNewProject({...newProject, date: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Lieu</label><input type="text" value={newProject.location} onChange={(e) => setNewProject({...newProject, location: e.target.value})} placeholder="Ville" className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label><select value={newProject.type} onChange={(e) => setNewProject({...newProject, type: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"><option value="Mariage">Mariage</option><option value="Shooting Mode">Shooting Mode</option><option value="Vidéo Publicitaire">Vidéo Publicitaire</option><option value="Identité Visuelle">Identité Visuelle</option><option value="Corporate">Corporate</option></select></div><div><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Rendu Estimé</label><input type="date" value={newProject.expectedDeliveryDate} onChange={(e) => setNewProject({...newProject, expectedDeliveryDate: e.target.value})} className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"/></div></div><div className="pt-2"><label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Image de couverture</label><div className="relative group/cover"><input type="file" id="cover-upload" className="hidden" onChange={(e) => setCoverFile(e.target.files ? e.target.files[0] : undefined)} accept="image/*"/><label htmlFor="cover-upload" className="flex items-center gap-3 w-full h-11 px-3 bg-gray-50 border border-gray-200 border-dashed rounded-md cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-all"><Camera size={18} className="text-gray-400" /><span className="text-xs font-bold text-gray-500 truncate">{coverFile ? coverFile.name : 'Choisir une image...'}</span></label></div></div></div><div className="mt-10 flex gap-4"><Button type="button" variant="secondary" onClick={() => setIsNewProjectModalOpen(false)} fullWidth className="h-11">Annuler</Button><Button type="submit" variant="black" fullWidth isLoading={newProjectLoading} className="h-11 shadow-lg shadow-black/10">{editingProjectId ? 'Enregistrer' : 'Créer le projet'}</Button></div></form></div></div></div>)}
+        {projectToDelete && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-white w-full max-w-sm rounded-xl shadow-2xl p-8 text-center animate-slide-up"><div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6"><Trash2 size={24} /></div><h3 className="font-bold text-gray-900 text-lg mb-2">Supprimer le projet ?</h3><p className="text-sm text-gray-500 mb-8 leading-relaxed">Toutes les données et fichiers associés seront définitivement supprimés.</p><div className="flex gap-4"><Button variant="secondary" onClick={() => setProjectToDelete(null)} fullWidth className="h-11">Annuler</Button><Button variant="danger" onClick={() => { if (projectToDelete) onDeleteProject(projectToDelete); setProjectToDelete(null); }} fullWidth className="h-11 border-red-100 text-red-600">Supprimer</Button></div></div></div>)}
+        {isDeleteAccountModalOpen && (<div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-fade-in"><div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 text-center animate-slide-up relative"><div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100 shadow-sm"><AlertTriangle size={32} /></div><h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Supprimer votre compte ?</h3><p className="text-sm text-gray-500 mb-8 leading-relaxed px-4">Cette action est <strong className="text-gray-900">irréversible</strong>. Tous vos projets, teasers et données de studio seront effacés définitivement.</p><div className="flex flex-col gap-3"><Button variant="danger" fullWidth className="h-12 !bg-red-600 !text-white !border-transparent hover:!bg-red-700 font-bold shadow-lg shadow-red-200" onClick={async () => { await onDeleteAccount(); setIsDeleteAccountModalOpen(false); }}>Oui, supprimer définitivement</Button><Button variant="secondary" fullWidth className="h-12 font-bold" onClick={() => setIsDeleteAccountModalOpen(false)}>Annuler</Button></div></div></div>)}
     </div>
   );
 };
