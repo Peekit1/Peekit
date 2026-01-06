@@ -111,7 +111,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
-  // ✅ LOGIQUE DE NAVIGATION CORRIGÉE
+  // ✅ LOGIQUE DE NAVIGATION CORRIGÉE (Sans confirmation)
   const handleStageClick = async (clickedStepId: string) => {
       if (editingStepId) return; // Bloque si on est en train d'éditer le texte
       
@@ -120,11 +120,10 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
       // Cas 1 : Revenir en arrière (Clic sur une étape passée)
       if (clickedIndex < currentStageIndex) {
-          if (confirm("Voulez-vous revenir à cette étape précédente ?")) {
-             setLoadingStageId(clickedStepId);
-             await onUpdateStage(clickedStepId);
-             setLoadingStageId(null);
-          }
+          // MODIFICATION : Plus de 'confirm', on applique directement
+          setLoadingStageId(clickedStepId);
+          await onUpdateStage(clickedStepId);
+          setLoadingStageId(null);
           return;
       }
 
@@ -140,7 +139,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           return;
       }
 
-      // Cas 3 : Clic sur une étape future (non adjacente) -> Généralement interdit, on ne fait rien
+      // Cas 3 : Clic sur une étape future (non adjacente) -> Interdit
   };
 
   const getProgress = () => {
