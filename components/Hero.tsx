@@ -66,7 +66,8 @@ const MOCK_PROJECTS: Partial<Project>[] = [
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    <section className="relative pt-52 pb-24 md:pt-72 md:pb-40 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
+    'md:pb-24' au lieu de 'md:pb-40' pour remonter le bas
+    <section className="relative pt-40 pb-16 md:pt-60 md:pb-24 overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/60">
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         
