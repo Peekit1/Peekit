@@ -3,13 +3,19 @@ import { Reveal } from './Reveal';
 
 export const Solution: React.FC = () => {
   return (
-    <section className="py-32 bg-gray-50 border-y border-gray-100">
+    // MODIFICATIONS :
+    // - Remplacement de 'bg-gray-50' par 'bg-white'
+    // - Suppression de 'border-y border-gray-100' (les traits de démarcation)
+    // - Ajustement du padding (py-24) pour l'équilibre
+    <section className="py-24 bg-white">
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="grid lg:grid-cols-2 gap-20 items-center">
             
             <Reveal>
                 <div className="space-y-8">
-                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">Partager une progression, pas une charge mentale.</h2>
+                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter">
+                        Partager une progression, pas une charge mentale.
+                    </h2>
                     <p className="text-lg text-gray-500 font-light leading-relaxed">
                         Plutôt que multiplier les messages ou les points ponctuels, Peekit installe une lecture permanente du projet.
                     </p>
@@ -17,7 +23,10 @@ export const Solution: React.FC = () => {
             </Reveal>
 
             <Reveal delay={200}>
-                <div className="bg-white p-10 rounded-3xl border border-gray-200 shadow-sm space-y-8">
+                {/* Comme le fond est blanc, on donne du relief à cette carte 
+                    avec une ombre douce (shadow-xl) et une bordure très légère (border-gray-100).
+                */}
+                <div className="bg-white p-10 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/40 space-y-8">
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
