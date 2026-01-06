@@ -3,7 +3,8 @@ import {
   Search, Plus, LayoutGrid, CreditCard, LogOut, Settings,
   Trash2, Pencil, Calendar, X, Menu,
   ChevronLeft, ChevronRight, Bell, Check, Download, Zap,
-  Receipt, ShieldCheck, User, Camera, AlertTriangle, Image as ImageIcon
+  Receipt, ShieldCheck, User, Camera, AlertTriangle, Image as ImageIcon,
+  Briefcase, Clock, CheckCircle2
 } from 'lucide-react';
 import { DashboardProps, Project } from '../types';
 import { Button } from './Button';
@@ -30,13 +31,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
-  // Cache buster pour forcer le rafraîchissement des images
+  // Cache buster pour rafraîchir les images quand on les modifie
   const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
 
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  
   const [newProject, setNewProject] = useState({
       clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: ''
   });
@@ -51,6 +53,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const projectCount = projects.length;
   const maxProjects = userPlan === 'discovery' ? 1 : 9999;
   const usagePercent = Math.min((projectCount / maxProjects) * 100, 100);
+
+  // --- FONCTION DE FORMATAGE DE DATE (Ajout) ---
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    // Si c'est déjà du texte (ex: mock data "14 juin 2025"), on le garde
+    if (dateString.match(/[a-zA-Z]/)) return dateString;
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+
+    return new Intl.DateTimeFormat('fr-FR', { 
+        day: '2-digit', 
+        month: 'long', 
+        year: 'numeric' 
+    }).format(date);
+  };
+
+  // --- STATS CALCULATIONS (Amélioration) ---
+  const activeProjectsCount = projects.filter(p => {
+      const activeConfig = p.stagesConfig || defaultConfig;
+      const lastStepId = activeConfig.length > 0 ? activeConfig[activeConfig.length - 1].id : null;
+      return p.currentStage !== lastStepId;
+  }).length;
+
+  const completedProjectsCount = projects.length - activeProjectsCount;
 
   const getProjectStageInfo = (project: Project) => {
       const activeConfig = project.stagesConfig || defaultConfig;
@@ -82,7 +109,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
           else await onCreateProject(newProject, coverFile);
           
-          setDashboardCacheBuster(Date.now()); // Force image refresh
+          setDashboardCacheBuster(Date.now()); 
 
           setIsNewProjectModalOpen(false);
           setEditingProjectId(null);
@@ -108,29 +135,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
-                <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white shadow-sm"><span className="font-bold text-xs">P</span></div>
-                     <span className="font-brand text-2xl tracking-tight text-gray-900">Peekit</span>
+                <div className="flex items-center gap-3 cursor-pointer">
+                     {/* Logo harmonisé avec la Landing Page */}
+                     <span className="text-2xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: 'Gabarito, sans-serif' }}>Peekit</span>
                 </div>
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-900"><X size={20} /></button>
             </div>
 
-            <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-4">
+            <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-8">
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3">Menu</div>
-                <button onClick={() => { setCurrentView('projects'); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentView === 'projects' ? 'bg-gray-50 text-gray-900 border border-gray-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
-                    <LayoutGrid size={18} strokeWidth={1.5} className={currentView === 'projects' ? "text-gray-900" : "text-gray-400"} /> Tableau de bord
+                
+                <button onClick={() => { setCurrentView('projects'); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'projects' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
+                    <LayoutGrid size={18} strokeWidth={2} className={currentView === 'projects' ? "text-gray-900" : "text-gray-400"} /> Tableau de bord
                 </button>
-                <button onClick={() => { setCurrentView('subscription'); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentView === 'subscription' ? 'bg-gray-50 text-gray-900 border border-gray-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
-                    <CreditCard size={18} strokeWidth={1.5} className={currentView === 'subscription' ? "text-gray-900" : "text-gray-400"} /> Abonnement
+                <button onClick={() => { setCurrentView('subscription'); setIsMobileSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${currentView === 'subscription' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
+                    <CreditCard size={18} strokeWidth={2} className={currentView === 'subscription' ? "text-gray-900" : "text-gray-400"} /> Abonnement
                 </button>
                 
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-3 mt-8">Outils</div>
                 <button onClick={() => { setIsSettingsModalOpen(true); setIsMobileSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                    <Settings size={18} strokeWidth={1.5} className="text-gray-400"/> Paramètres
+                    <Settings size={18} strokeWidth={2} className="text-gray-400"/> Paramètres
                 </button>
                 
                 <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
-                    <LogOut size={18} strokeWidth={1.5} /> Se déconnecter
+                    <LogOut size={18} strokeWidth={2} /> Se déconnecter
                 </button>
             </nav>
 
@@ -147,23 +175,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* MAIN CONTENT */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-            <header className="h-16 md:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-20">
+            <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-3 md:gap-4">
                     <button onClick={() => setIsMobileSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg"><Menu size={20} /></button>
-                    <h2 className="text-lg md:text-xl font-bold text-gray-900 tracking-tight truncate">{currentView === 'projects' ? 'Projets' : 'Abonnement & Factures'}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight truncate" style={{ fontFamily: 'Gabarito, sans-serif' }}>
+                        {currentView === 'projects' ? 'Tableau de bord' : 'Abonnement & Factures'}
+                    </h2>
                 </div>
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
                     {currentView === 'projects' && (
                         <>
                             <div className="relative group hidden sm:block">
                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm w-48 lg:w-64 focus:w-60 lg:focus:w-80 transition-all outline-none focus:border-gray-300"/>
+                                <input type="text" placeholder="Rechercher un projet..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm w-48 lg:w-64 focus:w-60 lg:focus:w-80 transition-all outline-none focus:border-gray-400 focus:bg-white"/>
                             </div>
                             <div className="h-6 w-px bg-gray-200 mx-1 hidden md:block"></div>
-                            <button onClick={onClearNotifications} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 bg-white relative">
+                            <button onClick={onClearNotifications} className="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 bg-white relative hover:shadow-sm transition-all">
                                 <Bell size={18} />{hasNotifications && <span className="absolute top-2.5 right-3 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>}
                             </button>
-                            <Button variant="black" size="md" onClick={() => { setEditingProjectId(null); setIsNewProjectModalOpen(true); }} className="gap-2 px-3 md:px-4 !h-9 md:!h-10 shadow-lg shadow-black/5"><Plus size={16} /> <span className="hidden md:inline">Créer un projet</span></Button>
+                            <Button variant="black" size="md" onClick={() => { setEditingProjectId(null); setIsNewProjectModalOpen(true); }} className="gap-2 px-4 !h-10 shadow-lg shadow-black/10 !rounded-full"><Plus size={16} /> <span className="hidden md:inline">Nouveau projet</span></Button>
                         </>
                     )}
                 </div>
@@ -171,150 +201,201 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="flex-1 overflow-auto p-4 md:p-8 pb-24">
                 {currentView === 'projects' && (
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-[600px]">
+                    <div className="max-w-7xl mx-auto space-y-6">
                         
-                        {/* FILTERS BAR */}
-                        <div className="md:p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gray-50/30 p-4">
-                            <div className="relative w-full lg:w-80">
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Filtrer..." className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-black transition-all font-medium"/>
+                        {/* --- STATS CARDS (Ajout) --- */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3 text-gray-500 mb-2">
+                                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><Briefcase size={14} /></div>
+                                    <span className="text-xs font-bold uppercase tracking-wide">Total Projets</span>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">{projects.length}</div>
                             </div>
-                            <div className="flex items-center gap-3 overflow-x-auto pb-2 lg:pb-0">
-                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2.5 outline-none focus:border-black cursor-pointer shadow-sm"><option value="all">Status: Tous</option><option value="active">En cours</option><option value="completed">Terminés</option></select>
-                                <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2.5 outline-none focus:border-black cursor-pointer shadow-sm"><option value="all">Type: Tous</option>{availableTypes.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3 text-gray-500 mb-2">
+                                    <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg"><Clock size={14} /></div>
+                                    <span className="text-xs font-bold uppercase tracking-wide">En cours</span>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">{activeProjectsCount}</div>
+                            </div>
+                            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-3 text-gray-500 mb-2">
+                                    <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg"><CheckCircle2 size={14} /></div>
+                                    <span className="text-xs font-bold uppercase tracking-wide">Terminés</span>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">{completedProjectsCount}</div>
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-dashed border-gray-200 flex flex-col justify-center items-center text-center">
+                                <span className="text-xs text-gray-400 font-medium">Capacité stockage</span>
+                                <span className="text-sm font-bold text-gray-600 mt-1">{usagePercent.toFixed(0)}% utilisé</span>
                             </div>
                         </div>
 
-                        <div className="flex-1">
+                        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-[500px]">
                             
-                            {/* --- MOBILE VIEW: CARDS --- */}
-                            <div className="md:hidden space-y-4 p-6">
-                                {paginatedProjects.map(project => {
-                                    const { label, progress } = getProjectStageInfo(project);
-                                    return (
-                                        <div 
-                                            key={project.id} 
-                                            onClick={() => onOpenProject(project)} 
-                                            className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
-                                        >
-                                            <div className="flex items-center gap-4 mb-4">
-                                                <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                    {project.coverImage ? (
-                                                        <img 
-                                                            src={getCoverUrl(project)} 
-                                                            className="w-full h-full object-cover" 
-                                                            key={`cover-card-${project.id}-${dashboardCacheBuster}`}
-                                                        />
-                                                    ) : (
-                                                        <ImageIcon size={20} className="text-gray-300" />
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
-                                                    <div className="text-xs text-gray-500 truncate">{project.clientEmail}</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span>
-                                                <span className="text-[10px] text-gray-400 flex items-center gap-1"><Calendar size={10}/> {project.date}</span>
-                                            </div>
-
-                                            <div className="mb-4">
-                                                <div className="flex justify-between items-end mb-1.5">
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-                                                    <span className="text-xs font-bold text-gray-900">{progress}%</span>
-                                                </div>
-                                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-black rounded-full" style={{ width: `${progress}%` }}></div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex justify-end gap-2 pt-3 border-t border-gray-50">
-                                                <button onClick={(e) => { 
-                                                    e.stopPropagation(); 
-                                                    setEditingProjectId(project.id); 
-                                                    setNewProject({
-                                                        clientName: project.clientName,
-                                                        clientEmail: project.clientEmail,
-                                                        date: project.date,
-                                                        location: project.location,
-                                                        type: project.type,
-                                                        expectedDeliveryDate: project.expectedDeliveryDate || ''
-                                                    }); 
-                                                    setIsNewProjectModalOpen(true); 
-                                                }} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600"><Pencil size={14}/></button>
-                                                <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
+                            {/* FILTERS BAR */}
+                            <div className="p-4 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div className="relative w-full lg:w-64 md:hidden">
+                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Filtrer..." className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none focus:border-black transition-all font-medium"/>
+                                </div>
+                                <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 no-scrollbar ml-auto">
+                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-black cursor-pointer shadow-sm hover:bg-gray-50"><option value="all">Status: Tous</option><option value="active">En cours</option><option value="completed">Terminés</option></select>
+                                    <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg px-3 py-2 outline-none focus:border-black cursor-pointer shadow-sm hover:bg-gray-50"><option value="all">Type: Tous</option>{availableTypes.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                                </div>
                             </div>
 
-                            {/* --- DESKTOP VIEW: TABLE --- */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead><tr className="border-b border-gray-100 bg-gray-50/50"><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Client</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th><th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24"></th></tr></thead>
-                                    <tbody>
-                                        {paginatedProjects.map(project => {
-                                            const { label, progress } = getProjectStageInfo(project);
-                                            return (
-                                                <tr key={project.id} onClick={() => onOpenProject(project)} className="group hover:bg-gray-50/50 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
-                                                    <td className="py-4 px-6">
-                                                      <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                          {project.coverImage ? (
-                                                            <img 
-                                                                src={getCoverUrl(project)} 
-                                                                className="w-full h-full object-cover" 
-                                                                key={`cover-table-${project.id}-${dashboardCacheBuster}`}
-                                                            />
-                                                          ) : (
-                                                            <ImageIcon size={18} className="text-gray-300" />
-                                                          )}
+                            <div className="flex-1">
+                                
+                                {/* --- MOBILE VIEW: CARDS --- */}
+                                <div className="md:hidden space-y-4 p-4">
+                                    {paginatedProjects.map(project => {
+                                        const { label, progress } = getProjectStageInfo(project);
+                                        return (
+                                            <div 
+                                                key={project.id} 
+                                                onClick={() => onOpenProject(project)} 
+                                                className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
+                                            >
+                                                <div className="flex items-center gap-4 mb-4">
+                                                    <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                                        {project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" key={`cover-card-${project.id}-${dashboardCacheBuster}`} /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div>
+                                                        <div className="text-xs text-gray-500 truncate">{project.clientEmail}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span>
+                                                    {/* FORMATAGE DATE APPLIQUÉ */}
+                                                    <span className="text-[10px] text-gray-400 flex items-center gap-1"><Calendar size={10}/> {formatDate(project.date)}</span>
+                                                </div>
+
+                                                <div className="mb-4">
+                                                    <div className="flex justify-between items-end mb-1.5">
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
+                                                        <span className="text-xs font-bold text-gray-900">{progress}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-black rounded-full" style={{ width: `${progress}%` }}></div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-end gap-2 pt-3 border-t border-gray-50">
+                                                    <button onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        setEditingProjectId(project.id); 
+                                                        setNewProject({
+                                                            clientName: project.clientName,
+                                                            clientEmail: project.clientEmail,
+                                                            date: project.date,
+                                                            location: project.location,
+                                                            type: project.type,
+                                                            expectedDeliveryDate: project.expectedDeliveryDate || ''
+                                                        }); 
+                                                        setIsNewProjectModalOpen(true); 
+                                                    }} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600"><Pencil size={14}/></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                {/* --- DESKTOP VIEW: TABLE --- */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-gray-100 bg-gray-50/40">
+                                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-8">Client</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Détails</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avancement</th>
+                                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest w-24 pr-8"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paginatedProjects.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={4} className="py-20 text-center">
+                                                        <div className="flex flex-col items-center justify-center opacity-40">
+                                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4"><Briefcase size={24}/></div>
+                                                            <p className="text-sm font-medium text-gray-900">Aucun projet trouvé</p>
+                                                            <p className="text-xs text-gray-500">Commencez par créer votre premier projet</p>
                                                         </div>
-                                                        <div>
-                                                          <div className="font-bold text-gray-900 text-sm">{project.clientName}</div>
-                                                          <div className="text-xs text-gray-500">{project.clientEmail}</div>
-                                                        </div>
-                                                      </div>
                                                     </td>
-                                                    <td className="py-4 px-6"><div className="space-y-1"><span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase">{project.type}</span><div className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar size={12}/> {project.date}</div></div></td>
-                                                    <td className="py-4 px-6"><div className="w-full max-w-[180px]"><div className="flex justify-between items-end mb-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span><span className="text-xs font-bold text-gray-900">{progress}%</span></div><div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div></div></td>
-                                                    <td className="py-4 px-6 text-right"><div className="flex items-center justify-end gap-2">
-                                                        <button onClick={(e) => { 
-                                                            e.stopPropagation(); 
-                                                            setEditingProjectId(project.id); 
-                                                            setNewProject({
-                                                                clientName: project.clientName,
-                                                                clientEmail: project.clientEmail,
-                                                                date: project.date,
-                                                                location: project.location,
-                                                                type: project.type,
-                                                                expectedDeliveryDate: project.expectedDeliveryDate || ''
-                                                            }); 
-                                                            setIsNewProjectModalOpen(true); 
-                                                        }} className="p-2 border border-gray-200 rounded-lg hover:bg-white transition-colors"><Pencil size={14}/></button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
-                                                    </div></td>
                                                 </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                            ) : (
+                                                paginatedProjects.map(project => {
+                                                    const { label, progress } = getProjectStageInfo(project);
+                                                    return (
+                                                        <tr key={project.id} onClick={() => onOpenProject(project)} className="group hover:bg-gray-50/60 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                                                            <td className="py-4 px-6 pl-8">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                                                                {project.coverImage ? (
+                                                                    <img 
+                                                                        src={getCoverUrl(project)} 
+                                                                        className="w-full h-full object-cover" 
+                                                                        key={`cover-table-${project.id}-${dashboardCacheBuster}`}
+                                                                    />
+                                                                ) : (
+                                                                    <ImageIcon size={18} className="text-gray-300" />
+                                                                )}
+                                                                </div>
+                                                                <div>
+                                                                <div className="font-bold text-gray-900 text-sm">{project.clientName}</div>
+                                                                <div className="text-xs text-gray-500">{project.clientEmail}</div>
+                                                                </div>
+                                                            </div>
+                                                            </td>
+                                                            <td className="py-4 px-6">
+                                                                <div className="space-y-1">
+                                                                    <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase border border-gray-200">{project.type}</span>
+                                                                    {/* FORMATAGE DATE APPLIQUÉ */}
+                                                                    <div className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar size={12}/> {formatDate(project.date)}</div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-4 px-6"><div className="w-full max-w-[200px]"><div className="flex justify-between items-end mb-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span><span className="text-xs font-bold text-gray-900">{progress}%</span></div><div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div></div></td>
+                                                            <td className="py-4 px-6 text-right pr-8"><div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    setEditingProjectId(project.id); 
+                                                                    setNewProject({
+                                                                        clientName: project.clientName,
+                                                                        clientEmail: project.clientEmail,
+                                                                        date: project.date,
+                                                                        location: project.location,
+                                                                        type: project.type,
+                                                                        expectedDeliveryDate: project.expectedDeliveryDate || ''
+                                                                    }); 
+                                                                    setIsNewProjectModalOpen(true); 
+                                                                }} className="p-2 border border-gray-200 rounded-lg hover:bg-white bg-gray-50 transition-colors text-gray-600"><Pencil size={14}/></button>
+                                                                <button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 bg-gray-50 text-red-600 transition-colors"><Trash2 size={14}/></button>
+                                                            </div></td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-2xl mt-auto">
-                            <div className="text-xs text-gray-500 font-medium">Page {page} / {totalPages}</div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"><ChevronLeft size={16} /></button>
-                                <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"><ChevronRight size={16} /></button>
+                            <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-white rounded-b-2xl mt-auto">
+                                <div className="text-xs text-gray-500 font-medium pl-2">Page {page} / {totalPages}</div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"><ChevronLeft size={16} /></button>
+                                    <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"><ChevronRight size={16} /></button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* VUE ABONNEMENT (Identique à votre code original + ajustements graphiques) */}
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
