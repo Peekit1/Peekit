@@ -85,8 +85,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Note: The useEffect emailjs.init has been removed as we pass the public key directly in send()
-
   // Reset preview if project changes (navigation)
   useEffect(() => {
     setLocalCoverPreview(null);
@@ -206,17 +204,17 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ HANDLER UPLOAD COVER (avec mise à jour immédiate)
+  // ✅ GESTION UPLOAD COVER AVEC PREVIEW IMMÉDIATE
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
-          const objectUrl = URL.createObjectURL(file);
           
-          // 1. Mise à jour immédiate de la preview locale
+          // 1. Création d'une URL locale immédiate pour l'affichage
+          const objectUrl = URL.createObjectURL(file);
           setLocalCoverPreview(objectUrl);
 
           try {
-              // 2. Upload vers le serveur
+              // 2. Envoi au serveur (le parent mettra à jour l'URL réelle plus tard)
               await onUpdateCoverImage(file);
           } catch (error) {
               console.error("Erreur upload cover:", error);
@@ -253,11 +251,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
-  // ✅ FONCTION SENDNOTIFICATION MISE À JOUR
   const sendNotification = async () => {
     if (!notificationEmail) return;
 
-    // Vérifier la configuration
     if (!isEmailJSConfigured()) {
         alert('⚠️ Configuration email manquante. Vérifiez vos variables d\'environnement.');
         return;
@@ -278,16 +274,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
             studio_name: studioName
         };
 
-        console.log('📧 Envoi de l\'email...');
-        
         const response = await emailjs.send(
             EMAILJS_CONFIG.serviceId!,
             EMAILJS_CONFIG.templateId!,
             templateParams,
             EMAILJS_CONFIG.publicKey!
         );
-
-        console.log('✅ Email envoyé avec succès:', response);
         
         setNotifyStep('success');
         setTimeout(() => {
@@ -309,7 +301,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
-  // Affiche l'image locale si elle existe (upload récent), sinon celle du projet
+  
+  // Utilise l'URL locale si on vient d'uploader, sinon l'URL serveur
   const displayImage = localCoverPreview || project.coverImage;
 
   return (
@@ -465,7 +458,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {/* AFFICHE L'IMAGE LOCALE EN PRIORITÉ */}
+                        {/* ✅ AJOUT DE LA CLÉ UNIQUE ICI POUR FORCER LE RECHARGEMENT */}
                         {displayImage ? (
                             <img 
                                 key={`cover-${displayImage}`} 
