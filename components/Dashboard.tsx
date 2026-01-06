@@ -12,7 +12,7 @@ import { Button } from './Button';
 export const Dashboard: React.FC<DashboardProps> = ({ 
   userPlan, 
   studioName,
-  userEmail, // New prop for email
+  userEmail,
   onLogout, 
   onOpenProject, 
   projects, 
@@ -34,6 +34,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [typeFilter, setTypeFilter] = useState<string>('all');
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  
+  // ✅ CACHE BUSTER STATE: Used to force image refresh
   const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
 
   // MODALS
@@ -63,7 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
 
-  // LOAD CURRENT DATA WHEN SETTINGS OPEN
+  // Update local state when modal opens
   useEffect(() => {
       if (isSettingsModalOpen) {
           setLocalStudioName(studioName);
@@ -80,7 +82,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
               studioName: localStudioName,
               stagesConfig: localWorkflow
           });
-          // Logic to update email/password could be added here if supported by API
           setIsSettingsModalOpen(false);
       } finally {
           setIsSavingSettings(false);
@@ -136,7 +137,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       try {
           if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
           else await onCreateProject(newProject, coverFile);
+          
+          // ✅ UPDATE CACHE BUSTER AFTER SUBMIT
           setDashboardCacheBuster(Date.now()); 
+
           setIsNewProjectModalOpen(false);
           setEditingProjectId(null);
           setNewProject({ clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: '' });
@@ -145,8 +149,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
+
+  // ✅ HELPER FUNCTION FOR IMAGE URLS WITH CACHE BUSTING
   const getCoverUrl = (project: Project) => {
       if (!project.coverImage) return "";
+      // If it's a base64 string (local preview sometimes), return as is
+      if (project.coverImage.startsWith('data:')) return project.coverImage;
+      
       const separator = project.coverImage.includes('?') ? '&' : '?';
       return `${project.coverImage}${separator}t=${dashboardCacheBuster}`;
   };
@@ -244,7 +253,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             <div key={project.id} onClick={() => onOpenProject(project)} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden">
                                                 <div className="flex items-center gap-4 mb-4">
                                                     <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                                        {project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-gray-300" />}
+                                                        {project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" key={`cover-card-${project.id}-${dashboardCacheBuster}`} /> : <ImageIcon size={20} className="text-gray-300" />}
                                                     </div>
                                                     <div className="min-w-0"><div className="font-bold text-gray-900 text-sm truncate">{project.clientName}</div><div className="text-xs text-gray-500 truncate">{project.clientEmail}</div></div>
                                                 </div>
@@ -263,7 +272,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 const { label, progress } = getProjectStageInfo(project);
                                                 return (
                                                     <tr key={project.id} onClick={() => onOpenProject(project)} className="group hover:bg-gray-50/60 cursor-pointer transition-colors border-b border-gray-50 last:border-0">
-                                                        <td className="py-4 px-6 pl-8"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">{project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover"/> : <ImageIcon size={18} className="text-gray-300" />}</div><div><div className="font-bold text-gray-900 text-sm">{project.clientName}</div><div className="text-xs text-gray-500">{project.clientEmail}</div></div></div></td>
+                                                        <td className="py-4 px-6 pl-8"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center shadow-sm">{project.coverImage ? <img src={getCoverUrl(project)} className="w-full h-full object-cover" key={`cover-table-${project.id}-${dashboardCacheBuster}`} /> : <ImageIcon size={18} className="text-gray-300" />}</div><div><div className="font-bold text-gray-900 text-sm">{project.clientName}</div><div className="text-xs text-gray-500">{project.clientEmail}</div></div></div></td>
                                                         <td className="py-4 px-6"><div className="space-y-1"><span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 uppercase border border-gray-200">{project.type}</span><div className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar size={12}/> {formatDate(project.date)}</div></div></td>
                                                         <td className="py-4 px-6"><div className="w-full max-w-[200px]"><div className="flex justify-between items-end mb-1.5"><span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span><span className="text-xs font-bold text-gray-900">{progress}%</span></div><div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div></div></td>
                                                         <td className="py-4 px-6 text-right pr-8"><div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={(e) => { e.stopPropagation(); setEditingProjectId(project.id); setNewProject({ clientName: project.clientName, clientEmail: project.clientEmail, date: project.date, location: project.location, type: project.type, expectedDeliveryDate: project.expectedDeliveryDate || '' }); setIsNewProjectModalOpen(true); }} className="p-2 border border-gray-200 rounded-lg hover:bg-white bg-gray-50 text-gray-600"><Pencil size={14}/></button><button onClick={(e) => { e.stopPropagation(); setProjectToDelete(project.id); }} className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 bg-gray-50 text-red-600"><Trash2 size={14}/></button></div></td>
@@ -285,6 +294,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* VUE ABONNEMENT */}
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
+                        {/* ... (Existing subscription content) ... */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative overflow-hidden flex flex-col">
                                 <div className="absolute top-6 right-6 px-3 py-1 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Actif</div>
@@ -319,12 +329,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </main>
 
-        {/* --- MODALE PARAMÈTRES AVANCÉE --- */}
+        {/* SETTINGS MODAL */}
         {isSettingsModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
                 <div className="bg-white w-full max-w-4xl h-[600px] rounded-2xl shadow-2xl flex overflow-hidden animate-slide-up">
-                    
-                    {/* SIDEBAR SETTINGS */}
                     <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
                         <div className="p-6 border-b border-gray-200">
                             <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2"><Settings size={20}/> Paramètres</h3>
@@ -340,13 +348,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <ShieldCheck size={16} /> Compte
                             </button>
                         </nav>
-                        {/* No "Close" button here as requested */}
                     </div>
 
-                    {/* CONTENT SETTINGS */}
                     <div className="flex-1 flex flex-col bg-white">
                         <div className="flex-1 overflow-y-auto p-8">
-                            
                             {settingsTab === 'general' && (
                                 <div className="space-y-6 max-w-lg">
                                     <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Identité du Studio</h2><p className="text-gray-500 text-sm">Comment vos clients voient votre marque.</p></div>
@@ -354,7 +359,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Studio</label>
                                         <input type="text" value={localStudioName} onChange={(e) => setLocalStudioName(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-bold text-gray-900 outline-none focus:border-black transition-colors"/>
                                     </div>
-                                    {/* Placeholder for future logo upload */}
                                     <div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-center text-gray-400 text-sm">Upload de logo bientôt disponible</div>
                                 </div>
                             )}
@@ -413,7 +417,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <div className="space-y-8 max-w-lg">
                                     <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants de connexion.</p></div>
                                     
-                                    {/* Email Modification */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
                                             <Mail size={16} /> Adresse Email
@@ -425,14 +428,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 onChange={(e) => setEmailForm(e.target.value)}
                                                 className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
                                             />
-                                            <Button size="sm" variant="secondary" onClick={() => {/* Logic to update email would go here */}}>Modifier</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => {}}>Modifier</Button>
                                         </div>
                                         <p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p>
                                     </div>
 
                                     <div className="h-px bg-gray-100 w-full"></div>
 
-                                    {/* Password Modification */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
                                             <Lock size={16} /> Mot de passe
@@ -446,7 +448,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
                                             />
                                             <div className="flex justify-end">
-                                                <Button size="sm" variant="secondary" onClick={() => {/* Logic to update password would go here */}}>Mettre à jour le mot de passe</Button>
+                                                <Button size="sm" variant="secondary" onClick={() => {}}>Mettre à jour le mot de passe</Button>
                                             </div>
                                         </div>
                                     </div>
@@ -462,7 +464,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             )}
                         </div>
 
-                        {/* FOOTER SAVE */}
                         <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
                             <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button>
                             <Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button>
@@ -472,7 +473,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         )}
 
-        {/* ... (Other modals remain unchanged) ... */}
+        {/* ... (Other modals for new project and delete account) ... */}
         {isNewProjectModalOpen && (
             <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-fade-in">
                 <div className="flex min-h-full items-center justify-center p-4">
