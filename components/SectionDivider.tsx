@@ -2,7 +2,8 @@ import React from 'react';
 
 export const SectionDivider: React.FC = () => {
   return (
-    // Simple espace blanc de 120px (h-32) pour aérer sans couper
-    <div className="w-full h-24 md:h-32 bg-white"></div>
+    // On réduit la hauteur à h-8 (32px) sur mobile et h-12 (48px) sur ordi
+    // Cela garde une petite respiration sans créer un grand vide.
+    <div className="w-full h-8 md:h-12 bg-white"></div>
   );
 };
