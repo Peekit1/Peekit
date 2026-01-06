@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './components/Hero';
-import { Problem } from './components/Problem';
+// Import Problem supprimé
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
-// La ligne import ClientLove a été supprimée ici
 import { Pricing } from './components/Pricing';
 import { Footer } from './components/Footer';
 import { StickyHeader } from './components/StickyHeader';
@@ -28,8 +27,6 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  
-  // 1. AJOUT : Ref pour suivre la page actuelle sans être piégé par les fermetures (closures) de useEffect
   const currentPageRef = useRef(currentPage);
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -46,7 +43,6 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
 
-  // 2. AJOUT : Mettre à jour la ref à chaque changement de page
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
@@ -158,8 +154,6 @@ function App() {
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
         } else {
-            // 3. CORRECTION : Utilisation de la ref pour vérifier la page actuelle réelle
-            // Si on est déjà dans 'project-details', on ne redirige pas vers 'dashboard'
             const current = currentPageRef.current;
             if (current === 'home' || current === 'auth') {
                 setCurrentPage('dashboard');
@@ -305,12 +299,15 @@ function App() {
           if (updates.location) dbUpdates.location = updates.location;
           if (updates.type) dbUpdates.type = updates.type;
           if (updates.cover_image) dbUpdates.cover_image = updates.cover_image;
+          dbUpdates.last_update = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
           if (updates.expectedDeliveryDate) dbUpdates.expected_delivery_date = updates.expectedDeliveryDate;
           
           const { error } = await supabase.from('projects').update(dbUpdates).eq('id', projectId);
           if (error) throw error;
-          setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates } : p));
-          if (editingProject?.id === projectId) setEditingProject(prev => prev ? { ...prev, ...updates } : null);
+          
+          setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates, lastUpdate: dbUpdates.last_update } : p));
+          if (editingProject?.id === projectId) setEditingProject(prev => prev ? { ...prev, ...updates, lastUpdate: dbUpdates.last_update } : null);
+          
       } catch (error: any) { alert('Erreur edition: ' + getErrorMessage(error)); }
   };
 
@@ -451,7 +448,6 @@ function App() {
         onDeleteTeaser={handleDeleteTeaser}
         onUpdateCoverImage={async (file) => await handleEditProject(editingProject.id, {}, file)}
         onNotifyClient={handleNotifyClient}
-        // AJOUT: La fonction pour modifier les informations du projet
         onUpdateProject={async (id, data) => await handleEditProject(id, data)}
       />;
   }
@@ -476,8 +472,7 @@ function App() {
       <StickyHeader onAuthClick={handleAuthNavigation} />
       <main>
         <Hero onAuthClick={handleAuthNavigation} />
-        {/* ClientLove supprimé ici */}
-        <Problem />
+        {/* Section Problem supprimée ici */}
         <Solution />
         <Benefits />
         <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
