@@ -32,43 +32,42 @@ const MOCK_PROJECTS: Partial<Project>[] = [
     { 
         id: '1', clientName: 'Sophie & Marc', clientEmail: 'mariage.sm@email.com', type: 'Mariage', 
         date: '14 juin 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1511285560982-1351cdeb9821?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '2', clientName: 'Studio Sartori', clientEmail: 'contact@sartori.com', type: 'Shooting Mode', 
         date: '28 mai 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '3', clientName: 'TechSolutions Inc.', clientEmail: 'compta@techsol.io', type: 'Corporate', 
         date: '15 mai 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '4', clientName: 'Julie Dubois', clientEmail: 'julie.d@outlook.fr', type: 'Identité Visuelle', 
         date: '02 mai 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1626785774573-4b799314346d?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '5', clientName: 'Restaurant L’Olivier', clientEmail: 'chef@lolivier.fr', type: 'Vidéo Publicitaire', 
         date: '20 avril 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '6', clientName: 'Emma & Lucas', clientEmail: 'el.wedding@gmail.com', type: 'Mariage', 
         date: '10 avril 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80&w=100&h=100' 
     },
     { 
         id: '7', clientName: 'Alpine Sport', clientEmail: 'marketing@alpine.com', type: 'Shooting Mode', 
         date: '05 avril 2025', 
-        coverImage: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&q=80&w=100&h=100' 
+        coverImage: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=100&h=100' 
     },
 ];
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    // AJUSTEMENT PADDING: pb-24 md:pb-40 pour laisser la place au dashboard entier sans le couper
     <section className="relative pt-52 pb-24 md:pt-72 md:pb-40 overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50/40">
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
@@ -112,7 +111,8 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
             {/* Halo lumineux arrière */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-blue-400/10 blur-[100px] -z-10 rounded-full"></div>
             
-            <div className="max-w-6xl mx-auto transform transition-all hover:-translate-y-2 duration-700 ease-out">
+            {/* MODIFICATION ICI: max-w-7xl au lieu de max-w-6xl pour élargir le dashboard */}
+            <div className="max-w-7xl mx-auto transform transition-all hover:-translate-y-2 duration-700 ease-out">
                 {/* Cadre de la fenêtre */}
                 <div className="bg-white border border-gray-200/80 rounded-3xl shadow-2xl shadow-slate-200/50 overflow-hidden ring-1 ring-black/5">
                     
