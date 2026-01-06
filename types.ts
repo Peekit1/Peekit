@@ -52,20 +52,19 @@ export interface AuthNavigationProps {
 export interface DashboardProps {
   userPlan: UserPlan;
   studioName: string;
+  userEmail?: string; // <--- NOUVELLE PROP AJOUTÉE
   onLogout: () => void;
   onOpenProject: (project: Project) => void;
   projects: Project[];
   hasNotifications: boolean;
   onClearNotifications: () => void;
-  // onUpdateProjects est souvent passé par le setState du parent
-  onUpdateProjects: (projects: Project[]) => void; 
+  onUpdateProjects: (projects: Project[]) => void;
   defaultConfig: StagesConfiguration;
   onCreateProject: (project: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => Promise<void>;
   onDeleteProject: (projectId: string) => void;
   onEditProject: (projectId: string, data: Partial<Project>, coverFile?: File) => Promise<void>;
   onUpgradeClick: () => void;
   onDeleteAccount: () => Promise<void>;
-  onResetStudioConfig: () => Promise<void>;
-  // La nouvelle fonction pour les settings :
   onUpdateProfile: (updates: { studioName?: string; stagesConfig?: StagesConfiguration }) => Promise<void>;
+  onResetStudioConfig: () => Promise<void>;
 }
