@@ -22,13 +22,7 @@ const EMAILJS_CONFIG = {
 const isEmailJSConfigured = () => {
   const { serviceId, templateId, publicKey } = EMAILJS_CONFIG;
   if (!serviceId || !templateId || !publicKey) {
-    console.error(
-      '❌ EmailJS Configuration missing.',
-      '\nCheck your .env.local file:',
-      '\n- VITE_EMAILJS_SERVICE_ID',
-      '\n- VITE_EMAILJS_TEMPLATE_ID',
-      '\n- VITE_EMAILJS_PUBLIC_KEY'
-    );
+    console.error('❌ EmailJS Configuration missing.');
     return false;
   }
   return true;
@@ -117,25 +111,36 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
-  // ✅ MODIFICATION ICI : Logique pour passer à l'étape suivante en cliquant sur l'actuelle
+  // ✅ LOGIQUE DE NAVIGATION CORRIGÉE
   const handleStageClick = async (clickedStepId: string) => {
-      if (editingStepId) return;
+      if (editingStepId) return; // Bloque si on est en train d'éditer le texte
       
-      // 1. On vérifie si l'étape cliquée est bien l'étape EN COURS
-      // Si on clique sur une étape déjà faite ou future, on ne fait rien (sauf si on est en mode édition, géré plus haut)
-      if (clickedStepId !== project.currentStage) return;
+      const clickedIndex = stageConfig.findIndex(s => s.id === clickedStepId);
+      if (clickedIndex === -1) return;
 
-      // 2. On trouve l'index de cette étape dans la config
-      const currentIndex = stageConfig.findIndex(s => s.id === clickedStepId);
-
-      // 3. Si ce n'est pas la dernière étape, on déclenche le passage à la SUIVANTE
-      if (currentIndex !== -1 && currentIndex < stageConfig.length - 1) {
-          const nextStep = stageConfig[currentIndex + 1];
-          
-          setLoadingStageId(nextStep.id); // On affiche le chargement sur la nouvelle étape
-          await onUpdateStage(nextStep.id); // On met à jour le projet avec l'ID de la suivante
-          setLoadingStageId(null);
+      // Cas 1 : Revenir en arrière (Clic sur une étape passée)
+      if (clickedIndex < currentStageIndex) {
+          if (confirm("Voulez-vous revenir à cette étape précédente ?")) {
+             setLoadingStageId(clickedStepId);
+             await onUpdateStage(clickedStepId);
+             setLoadingStageId(null);
+          }
+          return;
       }
+
+      // Cas 2 : Avancer (Clic sur l'étape ACTUELLE pour passer à la suivante)
+      if (clickedStepId === project.currentStage) {
+          // Si ce n'est pas la dernière étape
+          if (clickedIndex < stageConfig.length - 1) {
+              const nextStep = stageConfig[clickedIndex + 1];
+              setLoadingStageId(nextStep.id);
+              await onUpdateStage(nextStep.id);
+              setLoadingStageId(null);
+          }
+          return;
+      }
+
+      // Cas 3 : Clic sur une étape future (non adjacente) -> Généralement interdit, on ne fait rien
   };
 
   const getProgress = () => {
@@ -218,17 +223,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ GESTION UPLOAD COVER AVEC PREVIEW IMMÉDIATE
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
-          
-          // 1. Création d'une URL locale immédiate pour l'affichage
           const objectUrl = URL.createObjectURL(file);
           setLocalCoverPreview(objectUrl);
-
           try {
-              // 2. Envoi au serveur (le parent mettra à jour l'URL réelle plus tard)
               await onUpdateCoverImage(file);
           } catch (error) {
               console.error("Erreur upload cover:", error);
@@ -269,7 +269,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
     if (!notificationEmail) return;
 
     if (!isEmailJSConfigured()) {
-        alert('⚠️ Configuration email manquante. Vérifiez vos variables d\'environnement.');
+        alert('⚠️ Configuration email manquante.');
         return;
     }
 
@@ -288,7 +288,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
             studio_name: studioName
         };
 
-        const response = await emailjs.send(
+        await emailjs.send(
             EMAILJS_CONFIG.serviceId!,
             EMAILJS_CONFIG.templateId!,
             templateParams,
@@ -303,20 +303,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi:', error);
-        
-        if (error instanceof Error) {
-            alert(`Erreur lors de l'envoi de l'email: ${error.message}`);
-        } else {
-            alert('Erreur inconnue lors de l\'envoi de l\'email');
-        }
+        alert('Erreur lors de l\'envoi de l\'email');
     } finally {
         setIsSendingNotification(false);
     }
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
-  
-  // Utilise l'URL locale si on vient d'uploader, sinon l'URL serveur
   const displayImage = localCoverPreview || project.coverImage;
 
   return (
@@ -345,7 +338,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                           <div>
                             <div className="flex items-center gap-2"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3></div>
-                            <p className="text-xs text-gray-500 mt-0.5">Cliquez sur l'étape <strong>en cours</strong> pour valider et passer à la suivante.</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Cliquez sur une étape pour naviguer.</p>
                           </div>
                           <div className="flex items-center gap-2"><span className="text-xl font-bold text-gray-900 font-mono">{getProgress()}%</span></div>
                       </div>
@@ -358,43 +351,49 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               const isLastStep = index === localWorkflow.length - 1;
                               
-                              // ✅ MODIFICATION ICI : Gestion du curseur et du style interactif
-                              // Seule l'étape courante est cliquable (cursor-pointer)
-                              const isInteractive = isCurrent && !isEditing;
+                              // Est-ce qu'on peut cliquer sur cette étape pour naviguer ?
+                              const isNavigable = !isEditing && (isDone || isCurrent);
 
                               return (
                                   <div 
                                     key={step.id} 
-                                    onClick={() => handleStageClick(step.id)} 
-                                    className={`group px-6 py-4 flex flex-col transition-all select-none 
-                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg cursor-default' : ''} 
-                                        ${!isEditing && isInteractive ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'cursor-default'}
+                                    className={`group flex flex-col transition-all select-none relative
+                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''} 
                                         ${!isEditing && isCurrent && isLastStep ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : ''}
                                     `}
                                   >
-                                      <div className="flex items-center gap-4 pointer-events-none">
+                                      {/* ZONE CLICABLE PRINCIPALE (NAVIGATION) */}
+                                      <div 
+                                        onClick={() => isNavigable && handleStageClick(step.id)}
+                                        className={`px-6 py-4 flex items-center gap-4 ${isNavigable ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'cursor-default'}`}
+                                      >
                                           <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isCurrent && isLastStep ? 'bg-emerald-600 border-emerald-600 text-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
                                               {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full transition-colors"></div>}
                                           </div>
-                                          <div className="flex-1 min-w-0 pointer-events-auto">
+                                          
+                                          <div className="flex-1 min-w-0">
                                               {isEditing ? (
                                                   <input autoFocus value={step.label} onChange={(e) => handleUpdateStepField(step.id, 'label', e.target.value)} className="w-full bg-transparent text-sm font-bold text-gray-900 outline-none border-b border-gray-300 pb-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') saveWorkflow(); if (e.key === 'Escape') cancelWorkflowEdit(); }}/>
                                               ) : (
-                                                  <div className="flex items-center justify-between pointer-events-none">
+                                                  <div className="flex items-center justify-between">
                                                       <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
                                                       {isCurrent && <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "Valider cette étape"}</span>}
                                                   </div>
                                               )}
                                           </div>
-                                          {isPro && !isEditing && (
-                                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                                                  <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-1.5 text-gray-400 hover:text-black hover:bg-white rounded border border-transparent hover:border-gray-200"><Pencil size={14}/></button>
-                                                  <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
-                                              </div>
-                                          )}
                                       </div>
+
+                                      {/* BOUTONS D'ÉDITION SÉPARÉS (Absolu à droite pour éviter le conflit de clic) */}
+                                      {isPro && !isEditing && (
+                                          <div className="absolute right-2 top-3 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                              <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-2 text-gray-400 hover:text-black hover:bg-white rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm"><Pencil size={14}/></button>
+                                              <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
+                                          </div>
+                                      )}
+
+                                      {/* ZONE D'ÉDITION (Message, Description...) */}
                                       {(isCurrent || isEditing) && (
-                                          <div className="mt-3 ml-10 space-y-3 animate-fade-in pointer-events-auto">
+                                          <div className="px-6 pb-4 ml-10 space-y-3 animate-fade-in">
                                               {isEditing ? (
                                                   <>
                                                       <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court</label><input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none" onClick={(e) => e.stopPropagation()} /></div>
@@ -402,29 +401,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                                       {typeof step.description === 'string' ? (
                                                           <div className="space-y-1 animate-fade-in">
                                                               <div className="flex items-center justify-between">
-                                                                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée (Message pour le client)</label>
-                                                                  <button 
-                                                                    onClick={() => handleUpdateStepField(step.id, 'description', undefined)}
-                                                                    className="text-[9px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1 uppercase tracking-wider"
-                                                                  >
-                                                                      <Trash2 size={10} /> Supprimer
-                                                                  </button>
+                                                                  <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Note détaillée</label>
+                                                                  <button onClick={() => handleUpdateStepField(step.id, 'description', undefined)} className="text-[9px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1 uppercase tracking-wider"><Trash2 size={10} /> Supprimer</button>
                                                               </div>
-                                                              <textarea 
-                                                                value={step.description} 
-                                                                onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} 
-                                                                className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none min-h-[60px]" 
-                                                                onClick={(e) => e.stopPropagation()} 
-                                                                placeholder="Écrivez votre note ici..."
-                                                              />
+                                                              <textarea value={step.description} onChange={(e) => handleUpdateStepField(step.id, 'description', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none min-h-[60px]" onClick={(e) => e.stopPropagation()} placeholder="Écrivez votre note ici..."/>
                                                           </div>
                                                       ) : (
-                                                          <button 
-                                                            onClick={() => handleUpdateStepField(step.id, 'description', "")}
-                                                            className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 font-medium hover:border-gray-400 hover:text-gray-700 flex items-center justify-center gap-2 transition-colors mt-2"
-                                                          >
-                                                              <Plus size={12} /> Ajouter une note détaillée
-                                                          </button>
+                                                          <button onClick={() => handleUpdateStepField(step.id, 'description', "")} className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 font-medium hover:border-gray-400 hover:text-gray-700 flex items-center justify-center gap-2 transition-colors mt-2"><Plus size={12} /> Ajouter une note détaillée</button>
                                                       )}
 
                                                       <div className="space-y-1 mt-3">
@@ -485,7 +468,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
-                        {/* ✅ AJOUT DE LA CLÉ UNIQUE ICI POUR FORCER LE RECHARGEMENT */}
                         {displayImage ? (
                             <img 
                                 key={`cover-${displayImage}`} 
