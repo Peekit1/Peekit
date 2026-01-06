@@ -60,6 +60,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
+  
+  // ✅ NOUVEL ÉTAT POUR LE MENU MOBILE
+  const [openMenuStepId, setOpenMenuStepId] = useState<string | null>(null);
 
   // INFO EDITING STATES
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -111,25 +114,20 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
-  // ✅ LOGIQUE DE NAVIGATION CORRIGÉE (Sans confirmation)
   const handleStageClick = async (clickedStepId: string) => {
-      if (editingStepId) return; // Bloque si on est en train d'éditer le texte
+      if (editingStepId) return; 
       
       const clickedIndex = stageConfig.findIndex(s => s.id === clickedStepId);
       if (clickedIndex === -1) return;
 
-      // Cas 1 : Revenir en arrière (Clic sur une étape passée)
       if (clickedIndex < currentStageIndex) {
-          // MODIFICATION : Plus de 'confirm', on applique directement
           setLoadingStageId(clickedStepId);
           await onUpdateStage(clickedStepId);
           setLoadingStageId(null);
           return;
       }
 
-      // Cas 2 : Avancer (Clic sur l'étape ACTUELLE pour passer à la suivante)
       if (clickedStepId === project.currentStage) {
-          // Si ce n'est pas la dernière étape
           if (clickedIndex < stageConfig.length - 1) {
               const nextStep = stageConfig[clickedIndex + 1];
               setLoadingStageId(nextStep.id);
@@ -138,8 +136,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           }
           return;
       }
-
-      // Cas 3 : Clic sur une étape future (non adjacente) -> Interdit
   };
 
   const getProgress = () => {
@@ -313,6 +309,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
+      {/* OVERLAY FERMETURE MENU MOBILE */}
+      {openMenuStepId && <div className="fixed inset-0 z-40" onClick={() => setOpenMenuStepId(null)} />}
+
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
               <button onClick={onBack} className="h-8 flex items-center justify-center gap-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors bg-white px-3"><ArrowLeft size={16}/><span className="hidden md:inline text-xs font-bold text-gray-600">Retour</span></button>
@@ -349,8 +348,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               const isLastStep = index === localWorkflow.length - 1;
-                              
-                              // Est-ce qu'on peut cliquer sur cette étape pour naviguer ?
                               const isNavigable = !isEditing && (isDone || isCurrent);
 
                               return (
@@ -374,20 +371,52 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               {isEditing ? (
                                                   <input autoFocus value={step.label} onChange={(e) => handleUpdateStepField(step.id, 'label', e.target.value)} className="w-full bg-transparent text-sm font-bold text-gray-900 outline-none border-b border-gray-300 pb-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') saveWorkflow(); if (e.key === 'Escape') cancelWorkflowEdit(); }}/>
                                               ) : (
-                                                  <div className="flex items-center justify-between">
+                                                  <div className="flex items-center justify-between pr-8 md:pr-0">
                                                       <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
-                                                      {isCurrent && <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "Valider cette étape"}</span>}
+                                                      {isCurrent && <span className={`hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "Valider cette étape"}</span>}
+                                                      {isCurrent && <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Terminé" : "Valider"}</span>}
                                                   </div>
                                               )}
                                           </div>
                                       </div>
 
-                                      {/* BOUTONS D'ÉDITION SÉPARÉS (Absolu à droite pour éviter le conflit de clic) */}
+                                      {/* BOUTONS D'ÉDITION SÉPARÉS */}
                                       {isPro && !isEditing && (
-                                          <div className="absolute right-2 top-3 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                              <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-2 text-gray-400 hover:text-black hover:bg-white rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm"><Pencil size={14}/></button>
-                                              <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
-                                          </div>
+                                          <>
+                                              {/* VERSION BUREAU : AU SURVOL */}
+                                              <div className="hidden md:flex absolute right-2 top-3 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-2 text-gray-400 hover:text-black hover:bg-white rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm"><Pencil size={14}/></button>
+                                                  <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
+                                              </div>
+
+                                              {/* VERSION MOBILE : MENU "..." */}
+                                              <div className="md:hidden absolute right-2 top-3">
+                                                  <button 
+                                                    onClick={(e) => { e.stopPropagation(); setOpenMenuStepId(openMenuStepId === step.id ? null : step.id); }} 
+                                                    className="p-1.5 text-gray-400 hover:text-gray-900 rounded-lg active:bg-gray-100"
+                                                  >
+                                                      <MoreHorizontal size={18} />
+                                                  </button>
+                                                  
+                                                  {/* MENU DÉROULANT MOBILE */}
+                                                  {openMenuStepId === step.id && (
+                                                      <div className="absolute right-0 top-8 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fade-in origin-top-right">
+                                                          <button 
+                                                            onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); setOpenMenuStepId(null); }} 
+                                                            className="w-full text-left px-4 py-3 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                          >
+                                                              <Pencil size={12} /> Modifier
+                                                          </button>
+                                                          <button 
+                                                            onClick={(e) => { handleDeleteStep(step.id, e); setOpenMenuStepId(null); }} 
+                                                            className="w-full text-left px-4 py-3 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-50"
+                                                          >
+                                                              <Trash2 size={12} /> Supprimer
+                                                          </button>
+                                                      </div>
+                                                  )}
+                                              </div>
+                                          </>
                                       )}
 
                                       {/* ZONE D'ÉDITION (Message, Description...) */}
