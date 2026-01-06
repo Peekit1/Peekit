@@ -4,14 +4,15 @@ import {
   Trash2, Pencil, Calendar, X, Menu,
   ChevronLeft, ChevronRight, Bell, Check, Download, Zap,
   Receipt, ShieldCheck, User, Camera, AlertTriangle, Image as ImageIcon,
-  Briefcase, Clock, CheckCircle2, GripVertical, Save 
+  Briefcase, Clock, CheckCircle2, GripVertical, Save, Mail, Lock
 } from 'lucide-react';
 import { DashboardProps, Project, StagesConfiguration } from '../types';
 import { Button } from './Button';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   userPlan, 
-  studioName, 
+  studioName,
+  userEmail, // Nouvelle prop pour l'email
   onLogout, 
   onOpenProject, 
   projects, 
@@ -24,8 +25,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpgradeClick, 
   onDeleteAccount,
   onUpdateProfile,
-  onResetStudioConfig, // Ajouté pour éviter les erreurs de props manquantes
-  onUpdateProjects     // Ajouté pour éviter les erreurs de props manquantes
+  onResetStudioConfig,
+  onUpdateProjects
 }) => {
   const [currentView, setCurrentView] = useState<'projects' | 'subscription'>('projects');
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,6 +46,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [localStudioName, setLocalStudioName] = useState(studioName);
   const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(defaultConfig);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  
+  // États pour modification Compte
+  const [emailForm, setEmailForm] = useState(userEmail || '');
+  const [passwordForm, setPasswordForm] = useState('');
 
   // ÉTATS PROJETS
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -63,8 +68,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       if (isSettingsModalOpen) {
           setLocalStudioName(studioName);
           setLocalWorkflow(JSON.parse(JSON.stringify(defaultConfig))); 
+          setEmailForm(userEmail || '');
+          setPasswordForm('');
       }
-  }, [isSettingsModalOpen, studioName, defaultConfig]);
+  }, [isSettingsModalOpen, studioName, defaultConfig, userEmail]);
 
   const handleSaveSettings = async () => {
       setIsSavingSettings(true);
@@ -73,6 +80,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               studioName: localStudioName,
               stagesConfig: localWorkflow
           });
+          // Ici, vous pourriez ajouter la logique pour update email/password si l'API le permet via onUpdateProfile
+          // ou via une nouvelle fonction dédiée.
           setIsSettingsModalOpen(false);
       } finally {
           setIsSavingSettings(false);
@@ -147,7 +156,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="fixed inset-0 flex bg-[#F9FAFB] font-sans text-gray-900 overflow-hidden">
         {isMobileSidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity" onClick={() => setIsMobileSidebarOpen(false)} />}
 
-        {/* SIDEBAR */}
+        {/* SIDEBAR PRINCIPALE */}
         <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static ${isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
             <div className="h-20 flex items-center px-6 justify-between lg:justify-start">
                 <div className="flex items-center gap-3 cursor-pointer">
@@ -182,7 +191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </aside>
 
-        {/* MAIN */}
+        {/* MAIN CONTENT */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
             <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-20">
                 <div className="flex items-center gap-3 md:gap-4">
@@ -196,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <>
                             <div className="relative group hidden sm:block">
                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm w-48 lg:w-64 focus:w-60 lg:focus:w-80 transition-all outline-none focus:border-gray-400 focus:bg-white"/>
+                                <input type="text" placeholder="Rechercher un projet..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm w-48 lg:w-64 focus:w-60 lg:focus:w-80 transition-all outline-none focus:border-gray-400 focus:bg-white"/>
                             </div>
                             <button onClick={onClearNotifications} className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 bg-white relative hover:shadow-sm transition-all">
                                 <Bell size={18} />{hasNotifications && <span className="absolute top-2.5 right-3 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>}
@@ -277,12 +286,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* VUE ABONNEMENT */}
                 {currentView === 'subscription' && (
                     <div className="max-w-5xl mx-auto space-y-10 pb-10">
-                        <div className="bg-gray-50 p-8 rounded-3xl border border-gray-200 text-center">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">Gestion de l'abonnement</h3>
-                            <p className="text-gray-500 mb-6">Gérez votre plan et vos factures.</p>
-                            <Button variant="black" onClick={onUpgradeClick}>Voir les plans</Button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative overflow-hidden flex flex-col">
+                                <div className="absolute top-6 right-6 px-3 py-1 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Actif</div>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Offre Actuelle</h3>
+                                <h2 className="text-3xl font-bold text-gray-900 capitalize mb-2">Plan {userPlan === 'discovery' ? 'Découverte' : (userPlan.charAt(0).toUpperCase() + userPlan.slice(1))}</h2>
+                                <p className="text-sm text-gray-500 mb-8">Vous gérez vos projets avec Peekit {userPlan === 'discovery' ? 'Découverte' : userPlan}.</p>
+                                {isPro ? (
+                                    <div className="mt-auto"><div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 w-fit"><Check size={14} strokeWidth={3}/><span className="text-xs font-bold uppercase tracking-wider">Projets Illimités</span></div></div>
+                                ) : (
+                                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mt-auto"><div className="flex justify-between items-center mb-3"><span className="text-xs font-bold text-gray-700">Utilisation projets</span><span className="text-xs font-bold text-gray-900">{projectCount} / {maxProjects}</span></div><div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-black rounded-full transition-all duration-1000" style={{ width: `${usagePercent}%` }}></div></div></div>
+                                )}
+                            </div>
+                            {!isPro ? (
+                                <div className="bg-gray-900 rounded-3xl p-8 text-white flex flex-col justify-between shadow-xl shadow-black/10">
+                                    <div><Zap size={24} className="text-yellow-400 mb-4"/><h3 className="text-xl font-bold mb-2">Passez au niveau supérieur</h3><p className="text-gray-400 text-sm leading-relaxed mb-6">Débloquez les projets illimités, la personnalisation avancée et les notifications IA.</p></div>
+                                    <Button variant="secondary" fullWidth onClick={onUpgradeClick} className="h-12 font-bold">Accéder au Plan Pro</Button>
+                                </div>
+                            ) : (
+                                <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm flex flex-col justify-between">
+                                    <div><div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 border border-emerald-100"><ShieldCheck size={24} /></div><h3 className="text-xl font-bold text-gray-900 mb-2">Support & Sécurité</h3><p className="text-gray-500 text-sm leading-relaxed">Votre compte bénéficie du support prioritaire et de la sauvegarde en temps réel de tous vos projets.</p></div>
+                                    <div className="mt-6 pt-6 border-t border-gray-100"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Une question ?</p><a href="#" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">Contacter le support dédié →</a></div>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex justify-center"><Button variant="danger" onClick={() => setIsDeleteAccountModalOpen(true)} className="text-red-600 bg-red-50 border-red-100 hover:bg-red-100">Supprimer mon compte</Button></div>
+                        <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
+                            <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><Receipt size={16} className="text-gray-400"/> Historique de facturation</h3></div>
+                            <div className="divide-y divide-gray-50">{[{ date: '01 Oct 2024', amount: '19.00€', status: 'Payé', ref: 'INV-003' }, { date: '01 Sept 2024', amount: '19.00€', status: 'Payé', ref: 'INV-002' }].map((inv, i) => (<div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"><div className="flex items-center gap-4"><div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><Receipt size={14}/></div><div><div className="text-sm font-bold text-gray-900">Facture #{inv.ref}</div><div className="text-xs text-gray-500">{inv.date}</div></div></div><div className="flex items-center gap-6"><div className="text-sm font-bold text-gray-900">{inv.amount}</div><div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold uppercase">{inv.status}</div><button className="text-gray-300 hover:text-black"><Download size={16}/></button></div></div>))}</div>
+                        </div>
+                        <div className="pt-8 flex justify-center"><Button onClick={() => setIsDeleteAccountModalOpen(true)} variant="danger" className="h-10 px-8 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all text-xs font-bold rounded-lg shadow-sm">Supprimer mon compte</Button></div>
                     </div>
                 )}
             </div>
@@ -309,9 +341,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 <ShieldCheck size={16} /> Compte
                             </button>
                         </nav>
-                        <div className="p-4 border-t border-gray-200">
-                            <Button variant="outline" fullWidth onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button>
-                        </div>
+                        {/* Bouton "Fermer" supprimé ici comme demandé */}
                     </div>
 
                     {/* CONTENT SETTINGS */}
@@ -381,10 +411,50 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             )}
 
                             {settingsTab === 'account' && (
-                                <div className="space-y-6 max-w-lg">
-                                    <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité</h2><p className="text-gray-500 text-sm">Gérez vos accès et la suppression de vos données.</p></div>
-                                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200"><div className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Email</div><div className="font-medium text-gray-900">votre-email@exemple.com</div></div>
-                                    <div className="pt-6 border-t border-gray-100">
+                                <div className="space-y-8 max-w-lg">
+                                    <div><h2 className="text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants de connexion.</p></div>
+                                    
+                                    {/* Modification Email */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                            <Mail size={16} /> Adresse Email
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <input 
+                                                type="email" 
+                                                value={emailForm} 
+                                                onChange={(e) => setEmailForm(e.target.value)}
+                                                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
+                                            />
+                                            <Button size="sm" variant="secondary" onClick={() => {/* Logique update email à connecter */}}>Modifier</Button>
+                                        </div>
+                                        <p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p>
+                                    </div>
+
+                                    <div className="h-px bg-gray-100 w-full"></div>
+
+                                    {/* Modification Mot de passe */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide">
+                                            <Lock size={16} /> Mot de passe
+                                        </div>
+                                        <div className="space-y-3">
+                                            <input 
+                                                type="password" 
+                                                placeholder="Nouveau mot de passe"
+                                                value={passwordForm}
+                                                onChange={(e) => setPasswordForm(e.target.value)}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"
+                                            />
+                                            <div className="flex justify-end">
+                                                <Button size="sm" variant="secondary" onClick={() => {/* Logique update password à connecter */}}>Mettre à jour le mot de passe</Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-gray-100 w-full"></div>
+
+                                    <div className="pt-2">
                                         <h3 className="font-bold text-red-600 mb-2">Zone de danger</h3>
                                         <p className="text-xs text-gray-500 mb-4">La suppression est définitive.</p>
                                         <Button variant="danger" size="sm" onClick={() => setIsDeleteAccountModalOpen(true)}>Supprimer mon compte</Button>
@@ -395,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         {/* FOOTER SAVE */}
                         <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                            <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Annuler</Button>
+                            <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button>
                             <Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button>
                         </div>
                     </div>
