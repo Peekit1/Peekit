@@ -245,7 +245,6 @@ function App() {
         coverUrl = publicUrl;
       }
       
-      // On utilise la config passée (si c'est un reset) ou la config du profil actuel
       const configToSave = overrideStageConfig || stageConfig;
       const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
       
@@ -313,7 +312,6 @@ function App() {
       } catch (error: any) { alert('Erreur edition: ' + getErrorMessage(error)); }
   };
 
-  // --- NOUVELLE FONCTION : Gestion des paramètres du profil (Workflow & Nom) ---
   const handleUpdateProfile = async (updates: { studioName?: string; stagesConfig?: StagesConfiguration }) => {
     if (!session) return;
     try {
@@ -324,7 +322,6 @@ function App() {
         const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', session.user.id);
         if (error) throw error;
 
-        // Mise à jour de l'état local
         if (updates.studioName) setStudioName(updates.studioName);
         if (updates.stagesConfig) setStageConfig(updates.stagesConfig);
         
@@ -341,7 +338,6 @@ function App() {
         setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
         await supabase.from('projects').update({ stages_config: isolatedConfig }).eq('id', editingProject.id);
     } else if (session) {
-        // Fallback si jamais appelé hors contexte projet
         handleUpdateProfile({ stagesConfig: newConfig });
     }
   };
@@ -478,20 +474,21 @@ function App() {
     return <Dashboard 
         userPlan={userPlan} 
         studioName={studioName} 
+        userEmail={session.user.email} // PASSAGE DE L'EMAIL ICI
         onLogout={async () => { await supabase.auth.signOut(); setCurrentPage('home'); }} 
         onOpenProject={(project) => { setEditingProject(project); setCurrentPage('project-details'); }} 
         projects={projects} 
         hasNotifications={hasNotifications}
         onClearNotifications={() => setHasNotifications(false)}
         onUpdateProjects={setProjects} 
-        defaultConfig={stageConfig} // On passe la config utilisateur ici, plus INITIAL_STAGES_CONFIG
+        defaultConfig={stageConfig} 
         onUpgradeClick={() => { setSelectedPlan({ name: "Pro", price: 190, interval: 'annual' }); setCurrentPage('checkout'); }}
         onCreateProject={handleCreateProject} 
         onDeleteProject={handleDeleteProject} 
         onEditProject={handleEditProject}
         onResetStudioConfig={async () => { if(session) { await supabase.from('profiles').update({ stages_config: INITIAL_STAGES_CONFIG }).eq('id', session.user.id); setStageConfig(JSON.parse(JSON.stringify(INITIAL_STAGES_CONFIG))); } }}
         onDeleteAccount={handleDeleteAccount}
-        onUpdateProfile={handleUpdateProfile} // Passe la fonction au Dashboard
+        onUpdateProfile={handleUpdateProfile} 
       />;
   }
 
