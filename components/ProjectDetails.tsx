@@ -117,11 +117,25 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   
-  const handleStageClick = async (id: string) => {
+  // ✅ MODIFICATION ICI : Logique pour passer à l'étape suivante en cliquant sur l'actuelle
+  const handleStageClick = async (clickedStepId: string) => {
       if (editingStepId) return;
-      setLoadingStageId(id);
-      await onUpdateStage(id);
-      setLoadingStageId(null);
+      
+      // 1. On vérifie si l'étape cliquée est bien l'étape EN COURS
+      // Si on clique sur une étape déjà faite ou future, on ne fait rien (sauf si on est en mode édition, géré plus haut)
+      if (clickedStepId !== project.currentStage) return;
+
+      // 2. On trouve l'index de cette étape dans la config
+      const currentIndex = stageConfig.findIndex(s => s.id === clickedStepId);
+
+      // 3. Si ce n'est pas la dernière étape, on déclenche le passage à la SUIVANTE
+      if (currentIndex !== -1 && currentIndex < stageConfig.length - 1) {
+          const nextStep = stageConfig[currentIndex + 1];
+          
+          setLoadingStageId(nextStep.id); // On affiche le chargement sur la nouvelle étape
+          await onUpdateStage(nextStep.id); // On met à jour le projet avec l'ID de la suivante
+          setLoadingStageId(null);
+      }
   };
 
   const getProgress = () => {
@@ -331,7 +345,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                           <div>
                             <div className="flex items-center gap-2"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3></div>
-                            <p className="text-xs text-gray-500 mt-0.5">Cliquez sur une étape pour l'activer ou la modifier.</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Cliquez sur l'étape <strong>en cours</strong> pour valider et passer à la suivante.</p>
                           </div>
                           <div className="flex items-center gap-2"><span className="text-xl font-bold text-gray-900 font-mono">{getProgress()}%</span></div>
                       </div>
@@ -343,11 +357,24 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               const isEditing = editingStepId === step.id;
                               const isLoading = loadingStageId === step.id && project.currentStage !== step.id;
                               const isLastStep = index === localWorkflow.length - 1;
+                              
+                              // ✅ MODIFICATION ICI : Gestion du curseur et du style interactif
+                              // Seule l'étape courante est cliquable (cursor-pointer)
+                              const isInteractive = isCurrent && !isEditing;
+
                               return (
-                                  <div key={step.id} onClick={() => handleStageClick(step.id)} className={`group px-6 py-4 flex flex-col transition-all cursor-pointer select-none ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''} ${!isEditing && isCurrent && isLastStep ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : 'hover:bg-gray-50 active:bg-gray-100'}`}>
+                                  <div 
+                                    key={step.id} 
+                                    onClick={() => handleStageClick(step.id)} 
+                                    className={`group px-6 py-4 flex flex-col transition-all select-none 
+                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg cursor-default' : ''} 
+                                        ${!isEditing && isInteractive ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'cursor-default'}
+                                        ${!isEditing && isCurrent && isLastStep ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : ''}
+                                    `}
+                                  >
                                       <div className="flex items-center gap-4 pointer-events-none">
                                           <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isCurrent && isLastStep ? 'bg-emerald-600 border-emerald-600 text-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
-                                              {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full group-hover:bg-gray-400 transition-colors"></div>}
+                                              {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full transition-colors"></div>}
                                           </div>
                                           <div className="flex-1 min-w-0 pointer-events-auto">
                                               {isEditing ? (
@@ -355,7 +382,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               ) : (
                                                   <div className="flex items-center justify-between pointer-events-none">
                                                       <span className={`text-sm font-bold ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
-                                                      {isCurrent && <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "Étape active"}</span>}
+                                                      {isCurrent && <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "Valider cette étape"}</span>}
                                                   </div>
                                               )}
                                           </div>
