@@ -4,6 +4,7 @@ import { Hero } from './components/Hero';
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
 import { Pricing } from './components/Pricing';
+import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { StickyHeader } from './components/StickyHeader';
 import { AuthPage } from './components/AuthPage';
@@ -13,7 +14,7 @@ import { ClientTrackingPage } from './components/ClientTrackingPage';
 import { ClientAccessGate } from './components/ClientAccessGate';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { ProjectDetails } from './components/ProjectDetails';
-import { SectionDivider } from './components/SectionDivider'; // Assurez-vous que ce fichier existe bien
+import { SectionDivider } from './components/SectionDivider';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser, WorkflowStep, NotificationType } from './types';
 import { supabase } from './supabaseClient';
 
@@ -27,6 +28,7 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  // Ref pour suivre la page actuelle sans être piégé par les closures
   const currentPageRef = useRef(currentPage);
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -43,6 +45,7 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
 
+  // Mettre à jour la ref à chaque changement de page pour le fix de redirection
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
@@ -154,6 +157,7 @@ function App() {
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
         } else {
+            // Utilisation de la ref pour vérifier la page actuelle réelle
             const current = currentPageRef.current;
             if (current === 'home' || current === 'auth') {
                 setCurrentPage('dashboard');
@@ -473,7 +477,7 @@ function App() {
       <main>
         <Hero onAuthClick={handleAuthNavigation} />
         
-        {/* Ajout du séparateur pour une transition fluide */}
+        {/* Ajout des séparateurs invisibles pour l'espacement */}
         <SectionDivider />
         
         <Solution />
@@ -485,6 +489,10 @@ function App() {
         <SectionDivider />
         
         <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
+
+        <SectionDivider />
+        
+        <FAQ />
       </main>
       <Footer onAuthClick={handleAuthNavigation} />
     </div>
