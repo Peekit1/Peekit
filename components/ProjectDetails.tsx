@@ -58,6 +58,9 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+  
+  // ✅ Nouvel état pour la modale de suppression
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false); 
    
   // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
@@ -222,21 +225,23 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ LOGIQUE DE SUPPRESSION DE TOUS LES ÉLÉMENTS
-  const handleDeleteAllMedia = async () => {
+  // ✅ 1. Clic sur le bouton "Tout supprimer" : Ouvre la modale
+  const handleDeleteAllMediaClick = () => {
       if (!project.teasers || project.teasers.length === 0) return;
+      setIsDeleteAllModalOpen(true);
+  };
+
+  // ✅ 2. Confirmation dans la modale : Supprime vraiment
+  const confirmDeleteAll = async () => {
+      setIsDeleteAllModalOpen(false);
       
-      if (window.confirm("Êtes-vous sûr de vouloir supprimer TOUTES les images et vidéos ?")) {
-          // Si une fonction de suppression globale est fournie via props
-          if (onDeleteAllTeasers) {
-              await onDeleteAllTeasers();
-          } else {
-             // Fallback : on supprime un par un (moins optimisé mais fonctionne sans modif backend)
-             // Idéalement, implémentez onDeleteAllTeasers dans le parent
-             for (const teaser of project.teasers) {
-                 await onDeleteTeaser(teaser.id);
-             }
-          }
+      if (onDeleteAllTeasers) {
+          await onDeleteAllTeasers();
+      } else {
+         // Fallback si pas de prop globale
+         for (const teaser of project.teasers) {
+             await onDeleteTeaser(teaser.id);
+         }
       }
   };
 
@@ -405,7 +410,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               {isEditing ? (
                                                   <input autoFocus value={step.label} onChange={(e) => handleUpdateStepField(step.id, 'label', e.target.value)} className="w-full bg-transparent text-sm font-bold text-gray-900 outline-none border-b border-gray-300 pb-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') saveWorkflow(); if (e.key === 'Escape') cancelWorkflowEdit(); }}/>
                                               ) : (
-                                                  // ✅ FIX OVERLAP: AJOUT DE md:pr-20 pour que le texte s'arrête avant les boutons absolus
+                                                  // ✅ FIX OVERLAP: AJOUT DE md:pr-24 pour que le texte s'arrête avant les boutons absolus
                                                   <div className="flex items-center justify-between pr-8 md:pr-24">
                                                       <span className={`text-sm font-bold truncate ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
                                                       
@@ -506,7 +511,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                           <div className="flex items-center gap-3">
                               {/* ✅ BOUTON TOUT SUPPRIMER */}
                               {(project.teasers || []).length > 0 && (
-                                <button onClick={handleDeleteAllMedia} className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
+                                <button onClick={handleDeleteAllMediaClick} className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
                                     <Trash2 size={10} /> Tout supprimer
                                 </button>
                               )}
@@ -658,6 +663,37 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       {notifyStep === 'success' && (
                           <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in"><div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6"><Check size={32} strokeWidth={3}/></div><h3 className="text-xl font-bold text-gray-900 mb-2">Email prêt !</h3><p className="text-sm text-gray-500 font-medium">Le brouillon a été transmis à votre messagerie pour {project.clientEmail}.</p></div>
                       )}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* ✅ MODALE DE CONFIRMATION DE SUPPRESSION (Nouvelle intégration) */}
+      {isDeleteAllModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slide-up p-6">
+                  <div className="flex flex-col items-center text-center">
+                      <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
+                          <AlertTriangle size={24} />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">Tout supprimer ?</h3>
+                      <p className="text-sm text-gray-500 mb-6 font-medium leading-relaxed">
+                          Cette action est irréversible. Toutes les images et vidéos de ce projet seront définitivement effacées.
+                      </p>
+                      <div className="flex gap-3 w-full">
+                          <button 
+                              onClick={() => setIsDeleteAllModalOpen(false)} 
+                              className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                              Annuler
+                          </button>
+                          <button 
+                              onClick={confirmDeleteAll} 
+                              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 shadow-sm transition-colors flex items-center justify-center gap-2"
+                          >
+                              <Trash2 size={16} /> Supprimer
+                          </button>
+                      </div>
                   </div>
               </div>
           </div>
