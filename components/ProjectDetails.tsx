@@ -206,13 +206,17 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
+  // ✅ HANDLER UPLOAD COVER (avec mise à jour immédiate)
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           const file = e.target.files[0];
           const objectUrl = URL.createObjectURL(file);
+          
+          // 1. Mise à jour immédiate de la preview locale
           setLocalCoverPreview(objectUrl);
 
           try {
+              // 2. Upload vers le serveur
               await onUpdateCoverImage(file);
           } catch (error) {
               console.error("Erreur upload cover:", error);
@@ -249,11 +253,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       setNotificationEmail({ ...notificationEmail, [field]: value });
   };
 
-  // ✅ UPDATED SENDNOTIFICATION FUNCTION
+  // ✅ FONCTION SENDNOTIFICATION MISE À JOUR
   const sendNotification = async () => {
     if (!notificationEmail) return;
 
-    // Check configuration
+    // Vérifier la configuration
     if (!isEmailJSConfigured()) {
         alert('⚠️ Configuration email manquante. Vérifiez vos variables d\'environnement.');
         return;
@@ -305,6 +309,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
+  // Affiche l'image locale si elle existe (upload récent), sinon celle du projet
   const displayImage = localCoverPreview || project.coverImage;
 
   return (
