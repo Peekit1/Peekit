@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Hero } from './components/Hero';
-// Import Problem supprimé
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
 import { Pricing } from './components/Pricing';
@@ -27,6 +26,7 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  // Ref pour suivre la page actuelle sans être piégé par les closures
   const currentPageRef = useRef(currentPage);
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -43,6 +43,7 @@ function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
 
+  // Mettre à jour la ref à chaque changement de page
   useEffect(() => {
     currentPageRef.current = currentPage;
   }, [currentPage]);
@@ -154,6 +155,7 @@ function App() {
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
         } else {
+            // Utilisation de la ref pour vérifier la page actuelle réelle
             const current = currentPageRef.current;
             if (current === 'home' || current === 'auth') {
                 setCurrentPage('dashboard');
@@ -472,7 +474,7 @@ function App() {
       <StickyHeader onAuthClick={handleAuthNavigation} />
       <main>
         <Hero onAuthClick={handleAuthNavigation} />
-        {/* Section Problem supprimée ici */}
+        {/* Section Problem supprimée */}
         <Solution />
         <Benefits />
         <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
