@@ -70,7 +70,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         
-        {/* Ajustement de la marge : mb-12 sur mobile, mb-24 sur desktop */}
+        {/* TITRE ET APPEL À L'ACTION */}
         <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-24">
           
           <Reveal delay={0}>
@@ -106,7 +106,7 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
           </Reveal>
         </div>
 
-        {/* --- RÉPLIQUE DU DASHBOARD (Masquée sur mobile via 'hidden md:block') --- */}
+        {/* --- RÉPLIQUE DU DASHBOARD (Masquée sur mobile) --- */}
         <Reveal delay={400} className="hidden md:block relative z-10 perspective-1000">
             {/* Halo lumineux arrière */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-blue-400/10 blur-[100px] -z-10 rounded-full"></div>
@@ -212,6 +212,10 @@ export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
             </div>
         </Reveal>
       </div>
+
+      {/* --- TRANSITION DOUCE (FONDU) VERS LA SECTION SUIVANTE --- */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/60 to-transparent pointer-events-none z-20"></div>
+
     </section>
   );
 };
