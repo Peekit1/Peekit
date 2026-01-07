@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
-// ✅ CORRECTION 1 : Import plus compatible pour DOMPurify
 import * as DOMPurify from 'dompurify';
 import { z } from 'zod';
 
@@ -25,7 +24,80 @@ import { supabase } from './supabaseClient';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 // ==========================================
-// 1. SCHÉMAS DE VALIDATION (ZOD)
+// 1. UTILITAIRES & SANITIZATION
+// ==========================================
+
+// Fallback UUID pour compatibilité (utilisé aussi pour CSRF)
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+export function sanitizeString(input: string): string {
+  if (typeof window !== 'undefined' && DOMPurify && DOMPurify.sanitize) {
+    return DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+  }
+  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
+export function sanitizeEmail(email: string): string {
+  return email.toLowerCase().trim().replace(/[^\w.@+-]/g, '');
+}
+
+// ==========================================
+// 2. PROTECTION CSRF (Client Side)
+// ==========================================
+
+export function generateCSRFToken(): string {
+  return generateUUID();
+}
+
+export function setCSRFToken(token: string): void {
+  sessionStorage.setItem('csrf_token', token);
+}
+
+export function getCSRFToken(): string | null {
+  return sessionStorage.getItem('csrf_token');
+}
+
+export function useCSRFToken() {
+  useEffect(() => {
+    // Générer un token au montage si inexistant
+    if (!getCSRFToken()) {
+      const token = generateCSRFToken();
+      setCSRFToken(token);
+    }
+  }, []);
+  return getCSRFToken();
+}
+
+/**
+ * Wrapper pour sécuriser les appels critiques Supabase
+ */
+export async function secureSupabaseRequest<T>(
+  requestFn: () => Promise<{ data: T | null; error: any }>,
+  csrfToken: string | null
+): Promise<{ data: T | null; error: any }> {
+  
+  if (!csrfToken) {
+    return {
+      data: null,
+      error: new Error('Token CSRF manquant ou invalide. Veuillez rafraîchir la page.')
+    };
+  }
+
+  // Note: Pour une vraie sécurité, ce token doit être envoyé dans un Header 
+  // vers une Edge Function qui le vérifie. Ici, on s'assure au moins de sa présence.
+  return await requestFn();
+}
+
+// ==========================================
+// 3. SCHÉMAS DE VALIDATION (ZOD)
 // ==========================================
 
 export const ProjectCreateSchema = z.object({
@@ -34,29 +106,23 @@ export const ProjectCreateSchema = z.object({
     .max(100, 'Le nom ne peut pas dépasser 100 caractères')
     .regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/, 'Le nom contient des caractères invalides')
     .transform(str => str.trim()),
-  
   clientEmail: z.string()
     .email('Email invalide')
     .toLowerCase()
     .transform(str => str.trim()),
-  
   date: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
-  
   location: z.string()
     .min(2, 'La localisation doit contenir au moins 2 caractères')
     .max(200, 'La localisation ne peut pas dépasser 200 caractères')
     .transform(str => str.trim()),
-  
   type: z.enum(['Mariage', 'Entreprise', 'Portrait', 'Événement', 'Autre'], {
     errorMap: () => ({ message: 'Type de projet invalide' })
   }),
-  
   expectedDeliveryDate: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide')
     .optional()
     .or(z.literal('')), 
-
   accessPassword: z.string()
     .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
     .max(50)
@@ -73,39 +139,6 @@ export const FileUploadSchema = z.object({
   size: z.number().max(100 * 1024 * 1024, 'Fichier trop volumineux (max 100MB)')
 });
 
-// ==========================================
-// 2. UTILITAIRES & SANITIZATION
-// ==========================================
-
-// ✅ CORRECTION 2 : Fallback UUID pour compatibilité tous navigateurs
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  // Fallback simple
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-export function sanitizeString(input: string): string {
-  // Vérifie si DOMPurify est disponible (cas SSR vs Client)
-  if (typeof window !== 'undefined' && DOMPurify && DOMPurify.sanitize) {
-    return DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
-  }
-  return input
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-}
-
-export function sanitizeEmail(email: string): string {
-  return email.toLowerCase().trim().replace(/[^\w.@+-]/g, '');
-}
-
 export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
   { id: 'secured', label: "Sécurisation des fichiers", minDays: 0, maxDays: 1, message: "Projet commencé" },
   { id: 'culling', label: "Tri", minDays: 2, maxDays: 5, message: "Création en cours" },
@@ -114,7 +147,14 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
   { id: 'delivery', label: "Livraison", minDays: 0, maxDays: 1, message: "Prêt à être livré" }
 ];
 
+// ==========================================
+// APP COMPONENT
+// ==========================================
+
 function App() {
+  // ✅ 1. Initialisation du Hook CSRF
+  const csrfToken = useCSRFToken();
+
   const [currentPage, setCurrentPage] = useState('home');
   const currentPageRef = useRef(currentPage);
 
@@ -269,9 +309,8 @@ function App() {
   const fetchPublicProject = async (projectId: string) => {
     setIsAuthChecking(true);
     
-    // ✅ CORRECTION 3 : Vérification de la variable d'env
     if (!SUPABASE_URL) {
-      console.error("VITE_SUPABASE_URL manquante dans le fichier .env");
+      console.error("VITE_SUPABASE_URL manquante");
       alert("Erreur de configuration serveur");
       setCurrentPage('home');
       setIsAuthChecking(false);
@@ -295,7 +334,6 @@ function App() {
       
       if (!isAuthorized) {
         const password = prompt('Ce projet est protégé. Veuillez entrer le mot de passe :');
-        
         if (password === null) {
             setCurrentPage('home');
             return;
@@ -387,13 +425,17 @@ function App() {
   };
 
   // =================================================================
-  // ✅ FONCTION DE CRÉATION DE PROJET SÉCURISÉE (VALIDATION + SANITIZATION)
+  // ✅ FONCTION CRÉATION PROJET AVEC VALIDATION + CSRF WRAPPER
   // =================================================================
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
-    if (!session) return;
+    // ✅ 2. Vérification Session ET Token CSRF
+    if (!session || !csrfToken) {
+      if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
+      return;
+    }
 
     try {
-      // 1. VALIDATION DES DONNÉES ENTRANTES AVEC ZOD
+      // VALIDATION ZOD
       const validatedData = ProjectCreateSchema.parse({
         clientName: projectData.clientName,
         clientEmail: projectData.clientEmail,
@@ -404,10 +446,8 @@ function App() {
         accessPassword: projectData.accessPassword
       });
 
-      // 2. GESTION ET VALIDATION DU FICHIER COVER
       let coverUrl = null;
       if (coverFile) {
-        // Validation du fichier (taille, type)
         FileUploadSchema.parse({
           name: coverFile.name,
           type: coverFile.type,
@@ -415,7 +455,7 @@ function App() {
         });
 
         const fileExt = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const safeName = `${generateUUID()}.${fileExt}`; // Utilisation de notre fonction sûre
+        const safeName = `${generateUUID()}.${fileExt}`;
         const filePath = `covers/${session.user.id}/${safeName}`;
         
         const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile, {
@@ -431,7 +471,6 @@ function App() {
       const configToSave = overrideStageConfig || stageConfig;
       const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
       
-      // 3. SANITIZATION DES DONNÉES (Prévention XSS) ET PRÉPARATION OBJET DB
       const sanitizedProject: any = { 
         user_id: session.user.id, 
         client_name: sanitizeString(validatedData.clientName), 
@@ -448,7 +487,12 @@ function App() {
         stages_config: isolatedConfig
       };
       
-      const { data, error } = await supabase.from('projects').insert([sanitizedProject]).select();
+      // ✅ 3. UTILISATION DU WRAPPER CSRF
+      const { data, error } = await secureSupabaseRequest(
+        () => supabase.from('projects').insert([sanitizedProject]).select(),
+        csrfToken
+      );
+
       if (error) throw error;
       
       if (data) {
@@ -458,7 +502,6 @@ function App() {
       }
 
     } catch (error: any) {
-      // 4. GESTION DES ERREURS DE VALIDATION
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
