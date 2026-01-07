@@ -6,20 +6,18 @@ import {
   AlertCircle, RefreshCcw, CheckCircle2, Circle, Eye, Mail,
   Copy, Globe, Flag, Sparkles, ShieldCheck, GitBranch, X, Send,
   Zap, MessageSquareText, AlertTriangle, StickyNote, GripVertical, ChevronRight as ChevronRightIcon, Image as ImageIcon,
-  Dice5 // ✅ Import de l'icône dé pour le mot de passe
+  Dice5
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '../types';
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
-// ✅ SECURE CONFIGURATION: Environment Variables
 const EMAILJS_CONFIG = {
   serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
   templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
 };
 
-// Check configuration
 const isEmailJSConfigured = () => {
   const { serviceId, templateId, publicKey } = EMAILJS_CONFIG;
   if (!serviceId || !templateId || !publicKey) {
@@ -31,7 +29,6 @@ const isEmailJSConfigured = () => {
 
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
-    // ✅ Ajout de la prop pour tout supprimer
     onDeleteAllTeasers?: () => Promise<void>; 
 }
 
@@ -48,7 +45,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   onUpdatePassword, 
   onUploadTeasers, 
   onDeleteTeaser, 
-  onDeleteAllTeasers, // ✅ Récupération de la fonction
+  onDeleteAllTeasers,
   onUpdateCoverImage, 
   onNotifyClient,
   onUpdateProject 
@@ -59,19 +56,15 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
-  // ✅ Nouvel état pour la modale de suppression
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false); 
    
-  // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
 
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
    
-  // ✅ NOUVEL ÉTAT POUR LE MENU MOBILE
   const [openMenuStepId, setOpenMenuStepId] = useState<string | null>(null);
 
-  // INFO EDITING STATES
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
       clientEmail: project.clientEmail,
@@ -89,24 +82,18 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset preview if project changes (navigation)
   useEffect(() => {
     setLocalCoverPreview(null);
   }, [project.id]);
 
-  // ✅ 1. FONCTION DE FORMATAGE POUR L'AFFICHAGE VISUEL SEULEMENT
+  // ✅ FONCTION POUR FORMATER LA DATE EN FRANÇAIS (VISUEL UNIQUEMENT)
   const formatDisplayDate = (dateString: string | undefined) => {
     if (!dateString) return '—';
-    // Si la date est déjà formatée (contient des lettres), on la laisse telle quelle
     if (dateString.match(/[a-zA-Z]/)) return dateString;
-    
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    
     return new Intl.DateTimeFormat('fr-FR', { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
+        day: 'numeric', month: 'long', year: 'numeric' 
     }).format(date);
   };
 
@@ -241,20 +228,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ 2. Clic sur le bouton "Tout supprimer" : Ouvre la modale
   const handleDeleteAllMediaClick = () => {
       if (!project.teasers || project.teasers.length === 0) return;
       setIsDeleteAllModalOpen(true);
   };
 
-  // ✅ 3. Confirmation dans la modale : Supprime vraiment
   const confirmDeleteAll = async () => {
       setIsDeleteAllModalOpen(false);
-      
       if (onDeleteAllTeasers) {
           await onDeleteAllTeasers();
       } else {
-         // Fallback si pas de prop globale
          for (const teaser of project.teasers) {
              await onDeleteTeaser(teaser.id);
          }
@@ -275,7 +258,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ LOGIQUE GÉNÉRATEUR DE MOT DE PASSE
   const generateRandomPassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
     const length = 12;
@@ -316,18 +298,14 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const sendNotification = async () => {
     if (!notificationEmail) return;
-
     if (!isEmailJSConfigured()) {
         alert('⚠️ Configuration email manquante.');
         return;
     }
-
     setIsSendingNotification(true);
-
     try {
         const baseUrl = window.location.href.split('#')[0];
         const clientLink = `${baseUrl}#/v/${project.id}`;
-        
         const templateParams = {
             to_email: project.clientEmail,
             client_name: project.clientName,
@@ -336,20 +314,17 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
             link: clientLink,
             studio_name: studioName
         };
-
         await emailjs.send(
             EMAILJS_CONFIG.serviceId!,
             EMAILJS_CONFIG.templateId!,
             templateParams,
             EMAILJS_CONFIG.publicKey!
         );
-        
         setNotifyStep('success');
         setTimeout(() => {
             setIsNotifyModalOpen(false);
             setNotifyStep('choice');
         }, 2500);
-
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi:', error);
         alert('Erreur lors de l\'envoi de l\'email');
@@ -363,7 +338,6 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
-      {/* OVERLAY FERMETURE MENU MOBILE */}
       {openMenuStepId && <div className="fixed inset-0 z-40" onClick={() => setOpenMenuStepId(null)} />}
 
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-sm">
@@ -386,7 +360,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-8 space-y-8">
                   {/* WORKFLOW SECTION */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                           <div>
                             <div className="flex items-center gap-2"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3></div>
@@ -512,13 +486,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
                           <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><FileImage size={16} className="text-gray-400"/>Fichiers & Teasers</h3>
                           <div className="flex items-center gap-3">
-                              {/* ✅ BOUTON TOUT SUPPRIMER */}
                               {(project.teasers || []).length > 0 && (
                                 <button onClick={handleDeleteAllMediaClick} className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
                                     <Trash2 size={10} /> Tout supprimer
                                 </button>
                               )}
-
                               {isUploading && <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 animate-pulse"><Loader2 size={12} className="animate-spin"/> Upload en cours...</div>}
                               <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{(project.teasers || []).length} {userPlan === 'discovery' ? '/ 3' : ''}</span>
                           </div>
