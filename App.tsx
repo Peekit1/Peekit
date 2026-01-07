@@ -531,7 +531,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION ROBUSTE ET FIX "READING '0'"
+  // ✅ CREATE PROJECT BLINDÉ (Correction finale de l'erreur "reading '0'")
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -570,12 +570,11 @@ function App() {
         coverUrl = publicUrl;
       }
       
-      // FIX CRITIQUE: On s'assure d'avoir une config par défaut si tout le reste échoue
       const configToSave = overrideStageConfig || stageConfig || INITIAL_STAGES_CONFIG;
       const isolatedConfig = configToSave ? JSON.parse(JSON.stringify(configToSave)) : [];
       
-      // On vérifie que isolatedConfig est bien un tableau valide et contient des éléments avant de lire l'index [0]
-      const firstStageId = (Array.isArray(isolatedConfig) && isolatedConfig.length > 0 && isolatedConfig[0]?.id) 
+      // Sécurité max : on vérifie que isolatedConfig[0] existe ET qu'il a un ID
+      const firstStageId = (Array.isArray(isolatedConfig) && isolatedConfig.length > 0 && isolatedConfig[0] && isolatedConfig[0].id) 
             ? isolatedConfig[0].id 
             : 'secured';
 
@@ -587,7 +586,7 @@ function App() {
         location: sanitizeString(validatedData.location), 
         type: validatedData.type, 
         cover_image: coverUrl, 
-        current_stage: firstStageId, // Utilisation de la variable sécurisée
+        current_stage: firstStageId, 
         last_update: "À l'instant", 
         expected_delivery_date: validatedData.expectedDeliveryDate || null, 
         access_password: validatedData.accessPassword || null,
@@ -602,13 +601,18 @@ function App() {
 
       if (error) throw error;
       
-      // On vérifie que 'data' est un tableau valide et qu'il contient au moins un élément
+      // Sécurité max sur le retour de Supabase
       if (data && Array.isArray(data) && data.length > 0) {
-        const newProjMapped = mapProjectsFromDB(data)[0];
-        setProjects(prev => [newProjMapped, ...prev]);
+        const mappedProjects = mapProjectsFromDB(data);
+        // On vérifie que le mapping a bien retourné quelque chose avant de lire [0]
+        if (mappedProjects && mappedProjects.length > 0) {
+            const newProjMapped = mappedProjects[0];
+            setProjects(prev => [newProjMapped, ...prev]);
+        } else {
+            // Fallback si mapping échoue (rare)
+            await fetchProjects(session.user.id);
+        }
       } else {
-        // Si Supabase ne renvoie rien (arrive parfois avec les policies RLS)
-        // On recharge la liste complète pour être sûr d'avoir le projet
         await fetchProjects(session.user.id);
       }
 
@@ -617,11 +621,13 @@ function App() {
       }
 
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
+      console.error("Erreur complète création:", error); // Pour le debug console
+      
+      // Sécurité sur l'erreur Zod qui pouvait aussi causer le "reading '0'"
+      if (error instanceof z.ZodError && error.errors && error.errors.length > 0) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
       } else {
-        console.error("Erreur complète:", error);
         alert('Erreur création: ' + getErrorMessage(error));
       }
     }
@@ -822,11 +828,9 @@ function App() {
       } catch (error) { console.error("Delete failed:", error); }
   };
 
-  // ✅ FIX HANDLE ONBOARDING COMPLETE
   const handleOnboardingComplete = async (name: string, firstProject: Project) => {
     if (!session) return;
     setStudioName(name);
-    // 1. Mise à jour du profil avec les configs par défaut
     await supabase.from('profiles').upsert({ 
         id: session.user.id, 
         studio_name: name, 
@@ -837,8 +841,7 @@ function App() {
     });
     
     await fetchProfile(session.user.id);
-    
-    // 2. Création du projet en forçant l'usage de INITIAL_STAGES_CONFIG pour éviter le undefined
+    // On passe explicitement la config par défaut
     await handleCreateProject(firstProject, undefined, INITIAL_STAGES_CONFIG);
   };
 
