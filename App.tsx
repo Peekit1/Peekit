@@ -340,6 +340,9 @@ function App() {
   };
 
   const mapProjectsFromDB = (data: any[]): Project[] => {
+    // Sécurité supplémentaire : si data est null/undefined, renvoyer un tableau vide
+    if (!data) return [];
+    
     return data.map(p => {
         let effectiveConfig = INITIAL_STAGES_CONFIG;
         if (p.stages_config && Array.isArray(p.stages_config) && p.stages_config.length > 0) {
@@ -528,7 +531,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT (CORRIGÉ : VÉRIFICATION STRICTE)
+  // ✅ CREATE PROJECT AVEC VALIDATION ROBUSTE
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -586,20 +589,21 @@ function App() {
         stages_config: isolatedConfig
       };
       
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([sanitizedProject])
-        .select();
+      const { data, error } = await secureSupabaseRequest(
+        () => supabase.from('projects').insert([sanitizedProject]).select(),
+        csrfToken
+      );
 
       if (error) throw error;
       
-      // ✅ CORRECTION CLÉ : ON VÉRIFIE QUE DATA EXISTE ET N'EST PAS VIDE
+      // ✅ C'EST ICI QUE C'ÉTAIT CASSÉ
+      // On vérifie que 'data' est un tableau valide et qu'il contient au moins un élément
       if (data && Array.isArray(data) && data.length > 0) {
         const newProjMapped = mapProjectsFromDB(data)[0];
         setProjects(prev => [newProjMapped, ...prev]);
       } else {
-        // Fallback si Supabase ne renvoie rien (ex: RLS policies)
-        // On recharge la liste complète pour être sûr
+        // Si Supabase ne renvoie rien (arrive parfois avec les policies RLS)
+        // On recharge la liste complète pour être sûr d'avoir le projet
         await fetchProjects(session.user.id);
       }
 
@@ -608,7 +612,6 @@ function App() {
       }
 
     } catch (error: any) {
-      console.error("Erreur création:", error);
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
@@ -819,7 +822,7 @@ function App() {
     await supabase.from('profiles').upsert({ id: session.user.id, studio_name: name, onboarding_completed: true, plan: 'discovery', created_at: new Date().toISOString(), stages_config: INITIAL_STAGES_CONFIG });
     await fetchProfile(session.user.id);
     await handleCreateProject(firstProject);
-    // setCurrentPage('dashboard') est appelé à l'intérieur de handleCreateProject en cas de succès
+    // Note: setCurrentPage est appelé dans handleCreateProject
   };
 
   const handleDeleteAccount = async () => {
