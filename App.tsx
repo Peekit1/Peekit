@@ -528,10 +528,16 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION (CORRECTION CRASH "reading '0'")
+  // ✅ CORRECTION DU CRASH
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
-    if (!session || !csrfToken) {
-      if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
+    if (!session) {
+      alert("Session expirée. Veuillez vous reconnecter.");
+      return;
+    }
+
+    if (!csrfToken) {
+      alert("Token de sécurité manquant. Veuillez rafraîchir la page.");
+      window.location.reload();
       return;
     }
 
@@ -586,21 +592,29 @@ function App() {
         stages_config: isolatedConfig
       };
       
-      const { data, error } = await secureSupabaseRequest(
-        () => supabase.from('projects').insert([sanitizedProject]).select(),
-        csrfToken
-      );
+      // ✅ APPEL DIRECT À SUPABASE
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([sanitizedProject])
+        .select();
 
       if (error) throw error;
       
-      // ✅ CORRECTION DU CRASH: On vérifie que 'data' est un tableau non vide
-      if (data && data.length > 0) {
-        const newProjMapped = mapProjectsFromDB(data)[0];
-        setProjects(prev => [newProjMapped, ...prev]);
-        if (currentPage === 'onboarding') setCurrentPage('dashboard');
+      // ✅ VÉRIFICATION ROBUSTE
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error("Aucune donnée retournée après l'insertion");
+      }
+
+      const newProjMapped = mapProjectsFromDB(data)[0];
+      setProjects(prev => [newProjMapped, ...prev]);
+      
+      if (currentPage === 'onboarding') {
+        setCurrentPage('dashboard');
       }
 
     } catch (error: any) {
+      console.error("Erreur création projet:", error);
+      
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
