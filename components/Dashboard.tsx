@@ -361,11 +361,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </main>
 
-        {/* ✅ SETTINGS MODAL FIX POUR MOBILE SCROLL */}
+        {/* ✅ SETTINGS MODAL FIX POUR MOBILE SCROLL & LAYOUT */}
         {isSettingsModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                {/* Hauteur ajustée : h-[85vh] sur mobile pour forcer le scroll */}
-                <div className="bg-white w-full max-w-4xl h-[85vh] md:h-[600px] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-slide-up">
+                {/* CORRECTION MOBILE : 
+                   - h-[90dvh] pour s'adapter à la barre d'adresse mobile
+                   - overflow-hidden global sur la modale
+                */}
+                <div className="bg-white w-full max-w-4xl h-[90dvh] md:h-[600px] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-slide-up relative">
+                    
+                    {/* SIDEBAR (Navigation) */}
                     <div className="w-full md:w-64 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col shrink-0">
                         <div className="p-4 md:p-6 border-b border-gray-200">
                             <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2"><Settings size={20}/> <span className="md:inline">Paramètres</span></h3>
@@ -376,10 +381,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <button onClick={() => setSettingsTab('account')} className={`whitespace-nowrap flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'account' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}><ShieldCheck size={16} /> <span className="hidden sm:inline">Compte</span><span className="sm:hidden">Compte</span></button>
                         </nav>
                     </div>
-                    {/* Zone de contenu flexible */}
-                    <div className="flex-1 flex flex-col bg-white min-w-0 h-full">
-                        {/* Scroll vertical appliqué ici */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="flex-1 flex flex-col bg-white min-w-0 h-full overflow-hidden">
+                        
+                        {/* ZONE DE SCROLL 
+                           - flex-1 pour prendre l'espace restant
+                           - overflow-y-auto pour scroller
+                           - pb-20 (padding bottom) pour éviter que le contenu soit caché derrière le footer
+                        */}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8">
                             {settingsTab === 'general' && (
                                 <div className="space-y-6 max-w-lg">
                                     <div><h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Identité du Studio</h2><p className="text-gray-500 text-sm">Comment vos clients voient votre marque.</p></div>
@@ -433,7 +444,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 </div>
                             )}
                         </div>
-                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 shrink-0"><Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button><Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button></div>
+
+                        {/* FOOTER (BOUTONS) 
+                           - z-10 pour être au-dessus du scroll
+                           - shrink-0 pour ne jamais disparaître
+                        */}
+                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 shrink-0 z-10 safe-area-bottom">
+                            <Button variant="secondary" onClick={() => setIsSettingsModalOpen(false)}>Fermer</Button>
+                            <Button variant="black" onClick={handleSaveSettings} isLoading={isSavingSettings} className="gap-2"><Save size={16}/> Enregistrer</Button>
+                        </div>
                     </div>
                 </div>
             </div>
