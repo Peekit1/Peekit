@@ -52,7 +52,7 @@ export interface AuthNavigationProps {
 export interface DashboardProps {
   userPlan: UserPlan;
   studioName: string;
-  userEmail?: string; // <--- NOUVELLE PROP AJOUTÉE
+  userEmail?: string;
   onLogout: () => void;
   onOpenProject: (project: Project) => void;
   projects: Project[];
@@ -67,4 +67,8 @@ export interface DashboardProps {
   onDeleteAccount: () => Promise<void>;
   onUpdateProfile: (updates: { studioName?: string; stagesConfig?: StagesConfiguration }) => Promise<void>;
   onResetStudioConfig: () => Promise<void>;
+  
+  // ✅ AJOUTS POUR LA GESTION DU COMPTE
+  onUpdateEmail: (newEmail: string) => Promise<void>;
+  onUpdatePassword: (newPassword: string) => Promise<void>;
 }
