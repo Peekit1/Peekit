@@ -137,8 +137,6 @@ export async function verifyFileMimeType(file: File): Promise<string> {
       if (detectedType) {
         resolve(detectedType);
       } else {
-        // Fallback: si le magic number n'est pas dans notre liste mais que l'extension est OK
-        // (certains MP4 ont des headers variables), on se fie au type déclaré MAIS avec prudence
         resolve(file.type); 
       }
     };
@@ -178,7 +176,6 @@ export async function validateFile(
 
   try {
     const realType = await verifyFileMimeType(file);
-    // On accepte si le type réel correspond ou si c'est un sous-type compatible
     if (!realType.startsWith(category === 'video' ? 'video/' : 'image/')) {
        return { valid: false, error: 'Le contenu du fichier ne correspond pas à son extension' };
     }
@@ -516,7 +513,6 @@ function App() {
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
     let subject = "";
     let body = "";
-    // Logique simplifiée pour les emails
     if (type === 'status') {
         subject = `Avancement de votre projet ${project.type}`;
         body = `Bonjour ${project.clientName},\n\nBonne nouvelle ! Le projet avance bien.\nNous venons de passer officiellement à l'étape : "${stage.label}".`;
@@ -555,7 +551,6 @@ function App() {
         const validation = await validateFile(coverFile, 'cover');
         if (!validation.valid) throw new Error(validation.error);
 
-        // Compression optionnelle pour la couverture
         let fileToUpload: File | Blob = coverFile;
         try { fileToUpload = await resizeImage(coverFile, 1200, 630); } catch(e) {}
 
@@ -635,7 +630,6 @@ function App() {
               const secureName = generateSecureFileName(coverFile.name);
               const filePath = `covers/${session.user.id}/${secureName}`;
               
-              // Compression
               let fileToUpload: File | Blob = coverFile;
               try { fileToUpload = await resizeImage(coverFile, 1200, 630); } catch(e) {}
 
@@ -707,6 +701,28 @@ function App() {
     }
   };
 
+  // ✅ FONCTIONS POUR MODIFIER EMAIL ET MOT DE PASSE
+  const handleUpdateEmail = async (newEmail: string) => {
+    try {
+        const { error } = await supabase.auth.updateUser({ email: newEmail });
+        if (error) throw error;
+        // Supabase envoie un email de confirmation aux deux adresses
+    } catch (error: any) {
+        alert("Erreur mise à jour email: " + getErrorMessage(error));
+        throw error;
+    }
+  };
+
+  const handleUpdatePassword = async (newPassword: string) => {
+    try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+    } catch (error: any) {
+        alert("Erreur mise à jour mot de passe: " + getErrorMessage(error));
+        throw error;
+    }
+  };
+
   const handleUpdateStageConfig = async (newConfig: StagesConfiguration) => {
     if (editingProject) {
         const isolatedConfig = JSON.parse(JSON.stringify(newConfig));
@@ -729,7 +745,6 @@ function App() {
     } catch (error) { console.error('Error updating stage:', error); }
   };
 
-  // ✅ UPLOAD TEASERS SÉCURISÉ
   const handleUploadTeasers = async (files: File[]) => {
       if (!editingProject || !session) return;
       const currentCount = (editingProject.teasers || []).length;
@@ -738,7 +753,6 @@ function App() {
       try {
           const newTeasers: Teaser[] = [];
           for (const file of files) {
-              // 1. Validation complète (Taille, MimeType, MagicNumber)
               const category = file.type.startsWith('video') ? 'video' : 'image';
               const validation = await validateFile(file, category);
               if (!validation.valid) {
@@ -746,19 +760,17 @@ function App() {
                  continue;
               }
 
-              // 2. Redimensionnement si image
               let fileToUpload: File | Blob = file;
               if (category === 'image') {
                   try { fileToUpload = await resizeImage(file, 1920, 1080); } 
                   catch(e) { console.warn("Redimensionnement échoué, upload de l'original"); }
               }
 
-              // 3. Nom de fichier sécurisé
               const secureName = generateSecureFileName(file.name);
               const filePath = `teasers/${session.user.id}/${editingProject.id}/${secureName}`;
               
               const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, fileToUpload, {
-                 contentType: file.type // Conserver le type MIME original
+                 contentType: file.type
               });
 
               if (uploadError) throw uploadError;
@@ -769,7 +781,7 @@ function App() {
                   user_id: session.user.id, 
                   url: publicUrl, 
                   type: category, 
-                  title: file.name // On garde le titre original pour l'affichage
+                  title: file.name
               }]).select();
 
               if (dbError) throw dbError;
@@ -901,6 +913,10 @@ function App() {
         onResetStudioConfig={async () => { if(session) { await supabase.from('profiles').update({ stages_config: INITIAL_STAGES_CONFIG }).eq('id', session.user.id); setStageConfig(JSON.parse(JSON.stringify(INITIAL_STAGES_CONFIG))); } }}
         onDeleteAccount={handleDeleteAccount}
         onUpdateProfile={handleUpdateProfile} 
+        
+        // ✅ PASSAGE DES NOUVELLES FONCTIONS AU DASHBOARD
+        onUpdateEmail={handleUpdateEmail}
+        onUpdatePassword={handleUpdatePassword}
       />;
   }
 
