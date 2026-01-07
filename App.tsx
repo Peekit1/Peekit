@@ -531,7 +531,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION ROBUSTE
+  // ✅ CREATE PROJECT AVEC VALIDATION ROBUSTE ET FIX "READING '0'"
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -570,9 +570,15 @@ function App() {
         coverUrl = publicUrl;
       }
       
-      const configToSave = overrideStageConfig || stageConfig;
-      const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
+      // FIX CRITIQUE: On s'assure d'avoir une config par défaut si tout le reste échoue
+      const configToSave = overrideStageConfig || stageConfig || INITIAL_STAGES_CONFIG;
+      const isolatedConfig = configToSave ? JSON.parse(JSON.stringify(configToSave)) : [];
       
+      // On vérifie que isolatedConfig est bien un tableau valide et contient des éléments avant de lire l'index [0]
+      const firstStageId = (Array.isArray(isolatedConfig) && isolatedConfig.length > 0 && isolatedConfig[0]?.id) 
+            ? isolatedConfig[0].id 
+            : 'secured';
+
       const sanitizedProject: any = { 
         user_id: session.user.id, 
         client_name: sanitizeString(validatedData.clientName), 
@@ -581,7 +587,7 @@ function App() {
         location: sanitizeString(validatedData.location), 
         type: validatedData.type, 
         cover_image: coverUrl, 
-        current_stage: isolatedConfig[0]?.id || 'secured', 
+        current_stage: firstStageId, // Utilisation de la variable sécurisée
         last_update: "À l'instant", 
         expected_delivery_date: validatedData.expectedDeliveryDate || null, 
         access_password: validatedData.accessPassword || null,
@@ -596,7 +602,6 @@ function App() {
 
       if (error) throw error;
       
-      // ✅ C'EST ICI QUE C'ÉTAIT CASSÉ
       // On vérifie que 'data' est un tableau valide et qu'il contient au moins un élément
       if (data && Array.isArray(data) && data.length > 0) {
         const newProjMapped = mapProjectsFromDB(data)[0];
@@ -616,6 +621,7 @@ function App() {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
       } else {
+        console.error("Erreur complète:", error);
         alert('Erreur création: ' + getErrorMessage(error));
       }
     }
@@ -816,13 +822,24 @@ function App() {
       } catch (error) { console.error("Delete failed:", error); }
   };
 
+  // ✅ FIX HANDLE ONBOARDING COMPLETE
   const handleOnboardingComplete = async (name: string, firstProject: Project) => {
     if (!session) return;
     setStudioName(name);
-    await supabase.from('profiles').upsert({ id: session.user.id, studio_name: name, onboarding_completed: true, plan: 'discovery', created_at: new Date().toISOString(), stages_config: INITIAL_STAGES_CONFIG });
+    // 1. Mise à jour du profil avec les configs par défaut
+    await supabase.from('profiles').upsert({ 
+        id: session.user.id, 
+        studio_name: name, 
+        onboarding_completed: true, 
+        plan: 'discovery', 
+        created_at: new Date().toISOString(), 
+        stages_config: INITIAL_STAGES_CONFIG 
+    });
+    
     await fetchProfile(session.user.id);
-    await handleCreateProject(firstProject);
-    // Note: setCurrentPage est appelé dans handleCreateProject
+    
+    // 2. Création du projet en forçant l'usage de INITIAL_STAGES_CONFIG pour éviter le undefined
+    await handleCreateProject(firstProject, undefined, INITIAL_STAGES_CONFIG);
   };
 
   const handleDeleteAccount = async () => {
