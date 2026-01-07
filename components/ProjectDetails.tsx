@@ -6,18 +6,20 @@ import {
   AlertCircle, RefreshCcw, CheckCircle2, Circle, Eye, Mail,
   Copy, Globe, Flag, Sparkles, ShieldCheck, GitBranch, X, Send,
   Zap, MessageSquareText, AlertTriangle, StickyNote, GripVertical, ChevronRight as ChevronRightIcon, Image as ImageIcon,
-  Dice5
+  Dice5 // ✅ Import de l'icône dé pour le mot de passe
 } from 'lucide-react';
 import { ProjectDetailsProps, WorkflowStep, NotificationType, Project } from '../types';
 import { Button } from './Button';
 import emailjs from '@emailjs/browser';
 
+// ✅ SECURE CONFIGURATION: Environment Variables
 const EMAILJS_CONFIG = {
   serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
   templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
   publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
 };
 
+// Check configuration
 const isEmailJSConfigured = () => {
   const { serviceId, templateId, publicKey } = EMAILJS_CONFIG;
   if (!serviceId || !templateId || !publicKey) {
@@ -29,6 +31,7 @@ const isEmailJSConfigured = () => {
 
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
+    // ✅ Ajout de la prop pour tout supprimer
     onDeleteAllTeasers?: () => Promise<void>; 
 }
 
@@ -45,7 +48,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   onUpdatePassword, 
   onUploadTeasers, 
   onDeleteTeaser, 
-  onDeleteAllTeasers,
+  onDeleteAllTeasers, // ✅ Récupération de la fonction
   onUpdateCoverImage, 
   onNotifyClient,
   onUpdateProject 
@@ -56,15 +59,19 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [password, setPassword] = useState(project.accessPassword || '');
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
+  // ✅ Nouvel état pour la modale de suppression
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false); 
    
+  // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
 
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
    
+  // ✅ NOUVEL ÉTAT POUR LE MENU MOBILE
   const [openMenuStepId, setOpenMenuStepId] = useState<string | null>(null);
 
+  // INFO EDITING STATES
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
       clientEmail: project.clientEmail,
@@ -82,20 +89,10 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset preview if project changes (navigation)
   useEffect(() => {
     setLocalCoverPreview(null);
   }, [project.id]);
-
-  // ✅ FONCTION DE FORMATAGE POUR L'AFFICHAGE VISUEL
-  const formatDisplayDate = (dateString: string | undefined) => {
-    if (!dateString) return '—';
-    if (dateString.match(/[a-zA-Z]/)) return dateString;
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat('fr-FR', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
-    }).format(date);
-  };
 
   const defaultStepContent: Record<string, string> = {
     'secured': "Sauvegarde et organisation des fichiers\nPréparation de l’espace de travail\nVérification de l’intégrité des données\nCette phase garantit la sécurité et la fiabilité des fichiers avant toute modification",
@@ -228,16 +225,20 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
+  // ✅ 1. Clic sur le bouton "Tout supprimer" : Ouvre la modale
   const handleDeleteAllMediaClick = () => {
       if (!project.teasers || project.teasers.length === 0) return;
       setIsDeleteAllModalOpen(true);
   };
 
+  // ✅ 2. Confirmation dans la modale : Supprime vraiment
   const confirmDeleteAll = async () => {
       setIsDeleteAllModalOpen(false);
+      
       if (onDeleteAllTeasers) {
           await onDeleteAllTeasers();
       } else {
+         // Fallback si pas de prop globale
          for (const teaser of project.teasers) {
              await onDeleteTeaser(teaser.id);
          }
@@ -258,6 +259,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
+  // ✅ LOGIQUE GÉNÉRATEUR DE MOT DE PASSE
   const generateRandomPassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
     const length = 12;
@@ -298,14 +300,18 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const sendNotification = async () => {
     if (!notificationEmail) return;
+
     if (!isEmailJSConfigured()) {
         alert('⚠️ Configuration email manquante.');
         return;
     }
+
     setIsSendingNotification(true);
+
     try {
         const baseUrl = window.location.href.split('#')[0];
         const clientLink = `${baseUrl}#/v/${project.id}`;
+        
         const templateParams = {
             to_email: project.clientEmail,
             client_name: project.clientName,
@@ -314,17 +320,20 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
             link: clientLink,
             studio_name: studioName
         };
+
         await emailjs.send(
             EMAILJS_CONFIG.serviceId!,
             EMAILJS_CONFIG.templateId!,
             templateParams,
             EMAILJS_CONFIG.publicKey!
         );
+        
         setNotifyStep('success');
         setTimeout(() => {
             setIsNotifyModalOpen(false);
             setNotifyStep('choice');
         }, 2500);
+
     } catch (error) {
         console.error('❌ Erreur lors de l\'envoi:', error);
         alert('Erreur lors de l\'envoi de l\'email');
@@ -338,6 +347,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20">
+      {/* OVERLAY FERMETURE MENU MOBILE */}
       {openMenuStepId && <div className="fixed inset-0 z-40" onClick={() => setOpenMenuStepId(null)} />}
 
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-sm">
@@ -395,12 +405,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full transition-colors"></div>}
                                           </div>
                                           
+                                          {/* ✅ FIX OVERLAP: AJOUT DE min-w-0 et FLEX */}
                                           <div className="flex-1 min-w-0">
                                               {isEditing ? (
                                                   <input autoFocus value={step.label} onChange={(e) => handleUpdateStepField(step.id, 'label', e.target.value)} className="w-full bg-transparent text-sm font-bold text-gray-900 outline-none border-b border-gray-300 pb-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Enter') saveWorkflow(); if (e.key === 'Escape') cancelWorkflowEdit(); }}/>
                                               ) : (
+                                                  // ✅ FIX OVERLAP: AJOUT DE md:pr-24 pour que le texte s'arrête avant les boutons absolus
                                                   <div className="flex items-center justify-between pr-8 md:pr-24">
                                                       <span className={`text-sm font-bold truncate ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
+                                                      
+                                                      {/* ✅ MODIFICATION: TEXTE "En cours" au lieu de "Valider" */}
                                                       {isCurrent && <span className={`hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "En cours"}</span>}
                                                       {isCurrent && <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Terminé" : "En cours"}</span>}
                                                   </div>
@@ -408,12 +422,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                           </div>
                                       </div>
 
+                                      {/* BOUTONS D'ÉDITION SÉPARÉS */}
                                       {isPro && !isEditing && (
                                           <>
+                                              {/* VERSION BUREAU : AU SURVOL (Position Absolute conservée mais gérée par le padding du texte) */}
                                               <div className="hidden md:flex absolute right-4 top-3 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 backdrop-blur-sm p-1 rounded-lg">
                                                   <button onClick={(e) => { e.stopPropagation(); setEditingStepId(step.id); }} className="p-2 text-gray-400 hover:text-black hover:bg-white rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm"><Pencil size={14}/></button>
                                                   <button onClick={(e) => handleDeleteStep(step.id, e)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"><Trash2 size={14}/></button>
                                               </div>
+
+                                              {/* VERSION MOBILE : MENU "..." */}
                                               <div className="md:hidden absolute right-2 top-3">
                                                   <button 
                                                     onClick={(e) => { e.stopPropagation(); setOpenMenuStepId(openMenuStepId === step.id ? null : step.id); }} 
@@ -421,6 +439,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                                   >
                                                       <MoreHorizontal size={18} />
                                                   </button>
+                                                  
+                                                  {/* MENU DÉROULANT MOBILE */}
                                                   {openMenuStepId === step.id && (
                                                       <div className="absolute right-0 top-8 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fade-in origin-top-right">
                                                           <button 
@@ -441,11 +461,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                           </>
                                       )}
 
+                                      {/* ZONE D'ÉDITION (Message, Description...) */}
                                       {(isCurrent || isEditing) && (
                                           <div className="px-6 pb-4 ml-10 space-y-3 animate-fade-in">
                                               {isEditing ? (
                                                   <>
                                                       <div className="space-y-1"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Message court</label><input value={step.message} onChange={(e) => handleUpdateStepField(step.id, 'message', e.target.value)} className="w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-900 outline-none" onClick={(e) => e.stopPropagation()} /></div>
+                                                      
                                                       {typeof step.description === 'string' ? (
                                                           <div className="space-y-1 animate-fade-in">
                                                               <div className="flex items-center justify-between">
@@ -457,6 +479,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                                       ) : (
                                                           <button onClick={() => handleUpdateStepField(step.id, 'description', "")} className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 font-medium hover:border-gray-400 hover:text-gray-700 flex items-center justify-center gap-2 transition-colors mt-2"><Plus size={12} /> Ajouter une note détaillée</button>
                                                       )}
+
                                                       <div className="space-y-1 mt-3">
                                                           <div className="flex items-center justify-between"><label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Informations complémentaires {!isPro && <span className="bg-gray-200 text-gray-500 px-1 rounded text-[8px]">PRO</span>}</label></div>
                                                           <textarea value={step.content} onChange={(e) => isPro && handleUpdateStepField(step.id, 'content', e.target.value)} className={`w-full bg-gray-50 border border-gray-100 rounded px-2 py-1.5 text-xs text-gray-600 outline-none min-h-[80px] ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={(e) => e.stopPropagation()} readOnly={!isPro}/>
@@ -486,11 +509,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
                           <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><FileImage size={16} className="text-gray-400"/>Fichiers & Teasers</h3>
                           <div className="flex items-center gap-3">
+                              {/* ✅ BOUTON TOUT SUPPRIMER */}
                               {(project.teasers || []).length > 0 && (
                                 <button onClick={handleDeleteAllMediaClick} className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
                                     <Trash2 size={10} /> Tout supprimer
                                 </button>
                               )}
+
                               {isUploading && <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 animate-pulse"><Loader2 size={12} className="animate-spin"/> Upload en cours...</div>}
                               <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{(project.teasers || []).length} {userPlan === 'discovery' ? '/ 3' : ''}</span>
                           </div>
@@ -559,9 +584,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               ) : (
                                   <>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
-                                      {/* ✅ DATE FORMATÉE POUR L'AFFICHAGE */}
-                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{formatDisplayDate(project.date)}</span></div>
-                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{formatDisplayDate(project.expectedDeliveryDate)}</span></div>
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><MapPin size={14} /><span className="text-xs font-medium">Lieu</span></div><span className="text-xs font-bold text-gray-900">{project.location}</span></div>
                                   </>
                               )}
@@ -583,6 +607,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                         <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-10 py-2.5 text-xs font-mono font-medium focus:bg-white focus:border-black outline-none transition-all" placeholder="Mot de passe"/>
                                         <button onClick={() => onUpdatePassword(password)} className="absolute right-1 top-1 p-1.5 hover:bg-white rounded-md text-gray-400 hover:text-emerald-600 transition-colors"><Check size={14}/></button>
                                     </div>
+                                    {/* ✅ BOUTON GÉNÉRATEUR MOT DE PASSE */}
                                     <button onClick={generateRandomPassword} className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all" title="Générer un code aléatoire">
                                         <Dice5 size={16} />
                                     </button>
