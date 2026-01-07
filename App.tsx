@@ -528,7 +528,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION
+  // ✅ CREATE PROJECT AVEC VALIDATION (CORRECTION DU CRASH)
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -593,8 +593,9 @@ function App() {
 
       if (error) throw error;
       
-      if (data) {
-        const newProjMapped = mapProjectsFromDB([data[0]])[0];
+      // ✅ CORRECTION DU CRASH : Vérification stricte que 'data' existe et n'est pas vide
+      if (data && data.length > 0) {
+        const newProjMapped = mapProjectsFromDB(data)[0];
         setProjects(prev => [newProjMapped, ...prev]);
         if (currentPage === 'onboarding') setCurrentPage('dashboard');
       }
@@ -706,7 +707,6 @@ function App() {
     try {
         const { error } = await supabase.auth.updateUser({ email: newEmail });
         if (error) throw error;
-        // Supabase envoie un email de confirmation aux deux adresses
     } catch (error: any) {
         alert("Erreur mise à jour email: " + getErrorMessage(error));
         throw error;
@@ -914,7 +914,6 @@ function App() {
         onDeleteAccount={handleDeleteAccount}
         onUpdateProfile={handleUpdateProfile} 
         
-        // ✅ PASSAGE DES NOUVELLES FONCTIONS AU DASHBOARD
         onUpdateEmail={handleUpdateEmail}
         onUpdatePassword={handleUpdatePassword}
       />;
