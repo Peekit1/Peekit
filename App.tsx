@@ -528,7 +528,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION (CORRECTION DU CRASH)
+  // ✅ CREATE PROJECT AVEC VALIDATION (CORRECTION CRASH "reading '0'")
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -593,7 +593,7 @@ function App() {
 
       if (error) throw error;
       
-      // ✅ CORRECTION DU CRASH : Vérification stricte que 'data' existe et n'est pas vide
+      // ✅ CORRECTION DU CRASH: On vérifie que 'data' est un tableau non vide
       if (data && data.length > 0) {
         const newProjMapped = mapProjectsFromDB(data)[0];
         setProjects(prev => [newProjMapped, ...prev]);
@@ -702,7 +702,6 @@ function App() {
     }
   };
 
-  // ✅ FONCTIONS POUR MODIFIER EMAIL ET MOT DE PASSE
   const handleUpdateEmail = async (newEmail: string) => {
     try {
         const { error } = await supabase.auth.updateUser({ email: newEmail });
