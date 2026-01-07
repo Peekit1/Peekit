@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
+// ✅ CORRECTION 1 : Import plus compatible pour DOMPurify
+import * as DOMPurify from 'dompurify';
+import { z } from 'zod';
+
 import { Hero } from './components/Hero';
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
@@ -17,6 +21,90 @@ import { ProjectDetails } from './components/ProjectDetails';
 import { SectionDivider } from './components/SectionDivider';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser, WorkflowStep, NotificationType } from './types';
 import { supabase } from './supabaseClient';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+// ==========================================
+// 1. SCHÉMAS DE VALIDATION (ZOD)
+// ==========================================
+
+export const ProjectCreateSchema = z.object({
+  clientName: z.string()
+    .min(2, 'Le nom doit contenir au moins 2 caractères')
+    .max(100, 'Le nom ne peut pas dépasser 100 caractères')
+    .regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/, 'Le nom contient des caractères invalides')
+    .transform(str => str.trim()),
+  
+  clientEmail: z.string()
+    .email('Email invalide')
+    .toLowerCase()
+    .transform(str => str.trim()),
+  
+  date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
+  
+  location: z.string()
+    .min(2, 'La localisation doit contenir au moins 2 caractères')
+    .max(200, 'La localisation ne peut pas dépasser 200 caractères')
+    .transform(str => str.trim()),
+  
+  type: z.enum(['Mariage', 'Entreprise', 'Portrait', 'Événement', 'Autre'], {
+    errorMap: () => ({ message: 'Type de projet invalide' })
+  }),
+  
+  expectedDeliveryDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide')
+    .optional()
+    .or(z.literal('')), 
+
+  accessPassword: z.string()
+    .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
+    .max(50)
+    .optional()
+    .or(z.literal(''))
+});
+
+export const FileUploadSchema = z.object({
+  name: z.string().max(255, 'Nom de fichier trop long'),
+  type: z.string().refine(
+    (type) => ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'].includes(type),
+    'Type de fichier non autorisé'
+  ),
+  size: z.number().max(100 * 1024 * 1024, 'Fichier trop volumineux (max 100MB)')
+});
+
+// ==========================================
+// 2. UTILITAIRES & SANITIZATION
+// ==========================================
+
+// ✅ CORRECTION 2 : Fallback UUID pour compatibilité tous navigateurs
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback simple
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+export function sanitizeString(input: string): string {
+  // Vérifie si DOMPurify est disponible (cas SSR vs Client)
+  if (typeof window !== 'undefined' && DOMPurify && DOMPurify.sanitize) {
+    return DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+  }
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+export function sanitizeEmail(email: string): string {
+  return email.toLowerCase().trim().replace(/[^\w.@+-]/g, '');
+}
 
 export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
   { id: 'secured', label: "Sécurisation des fichiers", minDays: 0, maxDays: 1, message: "Projet commencé" },
@@ -179,10 +267,72 @@ function App() {
   };
 
   const fetchPublicProject = async (projectId: string) => {
-    setIsAuthChecking(true); 
+    setIsAuthChecking(true);
+    
+    // ✅ CORRECTION 3 : Vérification de la variable d'env
+    if (!SUPABASE_URL) {
+      console.error("VITE_SUPABASE_URL manquante dans le fichier .env");
+      alert("Erreur de configuration serveur");
+      setCurrentPage('home');
+      setIsAuthChecking(false);
+      return;
+    }
+
     try {
-      const { data: projectData, error } = await supabase.from('projects').select('*, teasers ( id, type, url, created_at, title )').eq('id', projectId).single();
+      const storedToken = localStorage.getItem(`project_token_${projectId}`);
+      let isAuthorized = false;
+      
+      if (storedToken) {
+        try {
+          const decoded = JSON.parse(atob(storedToken));
+          if (decoded.exp > Date.now()) {
+            isAuthorized = true;
+          }
+        } catch (e) {
+          localStorage.removeItem(`project_token_${projectId}`);
+        }
+      }
+      
+      if (!isAuthorized) {
+        const password = prompt('Ce projet est protégé. Veuillez entrer le mot de passe :');
+        
+        if (password === null) {
+            setCurrentPage('home');
+            return;
+        }
+
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/verify-project-access`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId,
+              password,
+              clientIp: 'browser' 
+            })
+          }
+        );
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          alert(result.error || 'Accès refusé');
+          setCurrentPage('home');
+          return;
+        }
+        
+        localStorage.setItem(`project_token_${projectId}`, result.accessToken);
+      }
+      
+      const { data: projectData, error } = await supabase
+        .from('projects')
+        .select('*, teasers ( id, type, url, created_at, title )')
+        .eq('id', projectId)
+        .single();
+      
       if (error) throw error;
+      
       if (projectData) {
         let activeConfig = INITIAL_STAGES_CONFIG;
         if (projectData.stages_config && Array.isArray(projectData.stages_config) && projectData.stages_config.length > 0) {
@@ -203,13 +353,17 @@ function App() {
         }
 
         setClientViewProject(mapped);
-        setClientAccessGranted(mapped.accessPassword ? false : (currentSession && currentSession.user.id === projectData.user_id));
+        setClientAccessGranted(true); 
         setCurrentPage('client-view');
       }
+      
     } catch (error) {
-      console.error("Erreur chargement projet public:", error);
+      console.error('Erreur chargement projet:', error);
+      alert("Impossible de charger le projet ou accès refusé.");
       setCurrentPage('home');
-    } finally { setIsAuthChecking(false); }
+    } finally {
+      setIsAuthChecking(false);
+    }
   };
 
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
@@ -232,14 +386,43 @@ function App() {
     return { subject, body };
   };
 
+  // =================================================================
+  // ✅ FONCTION DE CRÉATION DE PROJET SÉCURISÉE (VALIDATION + SANITIZATION)
+  // =================================================================
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session) return;
+
     try {
+      // 1. VALIDATION DES DONNÉES ENTRANTES AVEC ZOD
+      const validatedData = ProjectCreateSchema.parse({
+        clientName: projectData.clientName,
+        clientEmail: projectData.clientEmail,
+        date: projectData.date,
+        location: projectData.location,
+        type: projectData.type,
+        expectedDeliveryDate: projectData.expectedDeliveryDate,
+        accessPassword: projectData.accessPassword
+      });
+
+      // 2. GESTION ET VALIDATION DU FICHIER COVER
       let coverUrl = null;
       if (coverFile) {
-        const fileExt = coverFile.name.split('.').pop();
-        const filePath = `covers/${session.user.id}/${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile);
+        // Validation du fichier (taille, type)
+        FileUploadSchema.parse({
+          name: coverFile.name,
+          type: coverFile.type,
+          size: coverFile.size
+        });
+
+        const fileExt = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const safeName = `${generateUUID()}.${fileExt}`; // Utilisation de notre fonction sûre
+        const filePath = `covers/${session.user.id}/${safeName}`;
+        
+        const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile, {
+             cacheControl: '3600',
+             upsert: false
+        });
+        
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
         coverUrl = publicUrl;
@@ -248,29 +431,41 @@ function App() {
       const configToSave = overrideStageConfig || stageConfig;
       const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
       
-      const newProject: any = { 
+      // 3. SANITIZATION DES DONNÉES (Prévention XSS) ET PRÉPARATION OBJET DB
+      const sanitizedProject: any = { 
         user_id: session.user.id, 
-        client_name: projectData.clientName, 
-        client_email: projectData.clientEmail, 
-        date: projectData.date, 
-        location: projectData.location, 
-        type: projectData.type, 
+        client_name: sanitizeString(validatedData.clientName), 
+        client_email: sanitizeEmail(validatedData.clientEmail), 
+        date: validatedData.date, 
+        location: sanitizeString(validatedData.location), 
+        type: validatedData.type, 
         cover_image: coverUrl, 
         current_stage: isolatedConfig[0]?.id || 'secured', 
         last_update: "À l'instant", 
-        expected_delivery_date: projectData.expectedDeliveryDate, 
+        expected_delivery_date: validatedData.expectedDeliveryDate || null, 
+        access_password: validatedData.accessPassword || null,
         created_at: new Date().toISOString(), 
         stages_config: isolatedConfig
       };
       
-      const { data, error } = await supabase.from('projects').insert([newProject]).select();
+      const { data, error } = await supabase.from('projects').insert([sanitizedProject]).select();
       if (error) throw error;
+      
       if (data) {
         const newProjMapped = mapProjectsFromDB([data[0]])[0];
         setProjects(prev => [newProjMapped, ...prev]);
         if (currentPage === 'onboarding') setCurrentPage('dashboard');
       }
-    } catch (error: any) { alert('Erreur creation: ' + getErrorMessage(error)); }
+
+    } catch (error: any) {
+      // 4. GESTION DES ERREURS DE VALIDATION
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        alert(`Erreur de validation : ${firstError.message}`);
+      } else {
+        alert('Erreur création: ' + getErrorMessage(error));
+      }
+    }
   };
 
   const handleDeleteProject = async (projectId: string) => {
@@ -282,7 +477,6 @@ function App() {
     } catch (error) { console.error('Error deleting project:', error); }
   };
 
-//   ✅ MODIFIED FUNCTION TO FIX IMAGE CACHING
   const handleEditProject = async (projectId: string, projectData: Partial<Project>, coverFile?: File) => {
       try {
           let updates: any = { ...projectData };
@@ -290,9 +484,8 @@ function App() {
 
           if (coverFile && session) {
               const fileExt = coverFile.name.split('.').pop();
-              // Use a unique filename or path if possible, but here we keep the path structure
-              // The cache bust will happen on the URL string
-              const filePath = `covers/${session.user.id}/${Math.random()}.${fileExt}`;
+              const safeName = `${generateUUID()}.${fileExt}`;
+              const filePath = `covers/${session.user.id}/${safeName}`;
               const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile);
               if (uploadError) throw uploadError;
               const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
@@ -300,10 +493,11 @@ function App() {
               updates.cover_image = newCoverUrl;
           }
           const dbUpdates: any = {};
-          if (updates.clientName) dbUpdates.client_name = updates.clientName;
-          if (updates.clientEmail) dbUpdates.client_email = updates.clientEmail;
+          
+          if (updates.clientName) dbUpdates.client_name = sanitizeString(updates.clientName);
+          if (updates.clientEmail) dbUpdates.client_email = sanitizeEmail(updates.clientEmail);
           if (updates.date) dbUpdates.date = updates.date;
-          if (updates.location) dbUpdates.location = updates.location;
+          if (updates.location) dbUpdates.location = sanitizeString(updates.location);
           if (updates.type) dbUpdates.type = updates.type;
           
           if (updates.cover_image) {
@@ -316,7 +510,6 @@ function App() {
           const { error } = await supabase.from('projects').update(dbUpdates).eq('id', projectId);
           if (error) throw error;
           
-          // ✅ FORCE UPDATE LOCAL STATE WITH TIMESTAMP TO BUST CACHE
           const timestamp = Date.now();
 
           setProjects(prev => prev.map(p => {
@@ -324,7 +517,6 @@ function App() {
                   return { 
                       ...p, 
                       ...updates, 
-                      // If a new cover was uploaded, force a URL change with ?t=
                       coverImage: newCoverUrl ? `${newCoverUrl}?t=${timestamp}` : p.coverImage,
                       lastUpdate: dbUpdates.last_update 
                   };
@@ -336,7 +528,6 @@ function App() {
               setEditingProject(prev => prev ? { 
                   ...prev, 
                   ...updates, 
-                   // If a new cover was uploaded, force a URL change with ?t=
                   coverImage: newCoverUrl ? `${newCoverUrl}?t=${timestamp}` : prev.coverImage,
                   lastUpdate: dbUpdates.last_update 
               } : null);
@@ -349,7 +540,7 @@ function App() {
     if (!session) return;
     try {
         const dbUpdates: any = {};
-        if (updates.studioName) dbUpdates.studio_name = updates.studioName;
+        if (updates.studioName) dbUpdates.studio_name = sanitizeString(updates.studioName);
         if (updates.stagesConfig) dbUpdates.stages_config = updates.stagesConfig;
 
         const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', session.user.id);
@@ -392,9 +583,12 @@ function App() {
       try {
           const newTeasers: Teaser[] = [];
           for (const file of files) {
+              if (file.size > 100 * 1024 * 1024) throw new Error("Fichier trop volumineux (max 100MB)");
+              
               const fileExt = file.name.split('.').pop();
-              const fileName = `${Math.random()}.${fileExt}`;
-              const filePath = `teasers/${session.user.id}/${editingProject.id}/${fileName}`;
+              const safeName = `${generateUUID()}.${fileExt}`;
+              const filePath = `teasers/${session.user.id}/${editingProject.id}/${safeName}`;
+              
               const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, file);
               if (uploadError) throw uploadError;
               const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
@@ -497,6 +691,13 @@ function App() {
         }}
         onUploadTeasers={handleUploadTeasers}
         onDeleteTeaser={handleDeleteTeaser}
+        onDeleteAllTeasers={async () => {
+             if(editingProject.teasers) {
+                 for(const t of editingProject.teasers) {
+                     await handleDeleteTeaser(t.id);
+                 }
+             }
+        }}
         onUpdateCoverImage={async (file) => await handleEditProject(editingProject.id, {}, file)}
         onNotifyClient={handleNotifyClient}
         onUpdateProject={async (id, data) => await handleEditProject(id, data)}
@@ -507,7 +708,7 @@ function App() {
     return <Dashboard 
         userPlan={userPlan} 
         studioName={studioName} 
-        userEmail={session.user.email} // PASSAGE DE L'EMAIL ICI
+        userEmail={session.user.email} 
         onLogout={async () => { await supabase.auth.signOut(); setCurrentPage('home'); }} 
         onOpenProject={(project) => { setEditingProject(project); setCurrentPage('project-details'); }} 
         projects={projects} 
@@ -530,21 +731,13 @@ function App() {
       <StickyHeader onAuthClick={handleAuthNavigation} />
       <main>
         <Hero onAuthClick={handleAuthNavigation} />
-        
         <SectionDivider />
-        
         <Solution />
-        
         <SectionDivider />
-        
         <Benefits />
-        
         <SectionDivider />
-        
         <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
-
         <SectionDivider />
-        
         <FAQ />
       </main>
       <Footer onAuthClick={handleAuthNavigation} />
