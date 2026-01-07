@@ -6,7 +6,7 @@ import { OnboardingWizardProps, Project } from '../types';
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [studioName, setStudioName] = useState('');
-  
+   
   // Project Details
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -14,7 +14,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [projectLocation, setProjectLocation] = useState('');
   const [projectType, setProjectType] = useState('Mariage');
   const [projectExpectedDate, setProjectExpectedDate] = useState('');
-  
+   
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNext = () => {
@@ -22,43 +22,41 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 2 && clientName && clientEmail && projectDate) setStep(3);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setIsLoading(true);
     
-    // Format date to French long format (e.g. "30 avril 2025")
-    let formattedDate = projectDate;
-    if (projectDate) {
-        const [year, month, day] = projectDate.split('-').map(Number);
-        const dateObj = new Date(year, month - 1, day);
-        formattedDate = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    try {
+        // ⚠️ CORRECTION MAJEURE : 
+        // On ne formate PLUS la date ici. On envoie le format brut (YYYY-MM-DD)
+        // pour que la validation Zod dans App.tsx fonctionne.
+        // Le formatage "30 avril" se fera uniquement à l'affichage dans le Dashboard.
+
+        const firstProject: Project = {
+            id: Date.now().toString(), // Sera remplacé par Supabase
+            userId: '', // Sera remplacé par App.tsx avec la session active
+            clientName: clientName,
+            clientEmail: clientEmail,
+            date: projectDate, // ✅ Date brute YYYY-MM-DD
+            location: projectLocation || 'Non spécifié',
+            type: projectType,
+            coverImage: '', 
+            currentStage: 'secured',
+            lastUpdate: "À l'instant",
+            expectedDeliveryDate: projectExpectedDate || undefined, // ✅ Date brute ou undefined
+            teasers: []
+        };
+
+        // ✅ On attend la fin de l'opération (création en base)
+        await onComplete(studioName, firstProject);
+        
+        // Si tout se passe bien, App.tsx changera la page, donc pas besoin de setIsLoading(false)
+        
+    } catch (error) {
+        console.error("Erreur Onboarding:", error);
+        // En cas d'erreur, on arrête le chargement pour débloquer l'utilisateur
+        setIsLoading(false); 
+        alert("Une erreur est survenue lors de la création du projet. Vérifiez les informations.");
     }
-
-    // Format expected date if present
-    let formattedExpectedDate = projectExpectedDate;
-    if (projectExpectedDate) {
-        const [year, month, day] = projectExpectedDate.split('-').map(Number);
-        const dateObj = new Date(year, month - 1, day);
-        formattedExpectedDate = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
-    const firstProject: Project = {
-        id: Date.now().toString(),
-        userId: '', // Placeholder, correctly assigned in App.tsx handleCreateProject
-        clientName: clientName,
-        clientEmail: clientEmail,
-        date: formattedDate, 
-        location: projectLocation || 'Non spécifié',
-        type: projectType,
-        coverImage: '', // No default image
-        currentStage: 'secured',
-        lastUpdate: "À l'instant",
-        expectedDeliveryDate: formattedExpectedDate,
-        teasers: []
-    };
-
-    setTimeout(() => {
-        onComplete(studioName, firstProject);
-    }, 1500);
   };
 
   return (
@@ -137,7 +135,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                             />
                         </div>
                         
-                        {/* FIX: h-11 and appearance-none applied to date/select inputs */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
@@ -203,6 +200,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <p className="text-gray-500 mb-8 text-sm font-medium leading-relaxed max-w-xs mx-auto">
                     Votre dashboard <strong className="text-gray-900">{studioName}</strong> est prêt à être utilisé.
                 </p>
+                
+                {/* On désactive le bouton pendant le chargement pour éviter les doubles clics */}
                 <Button variant="black" fullWidth onClick={handleFinish} disabled={isLoading}>
                     {isLoading ? <Loader2 className="animate-spin" /> : "Accéder au Dashboard"}
                 </Button>
