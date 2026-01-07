@@ -26,42 +26,36 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     setIsLoading(true);
     
     try {
-        // ⚠️ CORRECTION MAJEURE : 
-        // On ne formate PLUS la date ici. On envoie le format brut (YYYY-MM-DD)
-        // pour que la validation Zod dans App.tsx fonctionne.
-        // Le formatage "30 avril" se fera uniquement à l'affichage dans le Dashboard.
+        // ⚠️ CORRECTION : On envoie la date brute (YYYY-MM-DD)
+        // On ne formate PLUS la date ici pour éviter le conflit avec Zod dans App.tsx
 
         const firstProject: Project = {
-            id: Date.now().toString(), // Sera remplacé par Supabase
-            userId: '', // Sera remplacé par App.tsx avec la session active
+            id: Date.now().toString(), 
+            userId: '', // Sera remplacé par App.tsx
             clientName: clientName,
             clientEmail: clientEmail,
-            date: projectDate, // ✅ Date brute YYYY-MM-DD
+            date: projectDate, // ✅ Date brute YYYY-MM-DD (ex: 2024-05-20)
             location: projectLocation || 'Non spécifié',
             type: projectType,
             coverImage: '', 
             currentStage: 'secured',
             lastUpdate: "À l'instant",
-            expectedDeliveryDate: projectExpectedDate || undefined, // ✅ Date brute ou undefined
+            expectedDeliveryDate: projectExpectedDate || undefined, // ✅ Date brute
             teasers: []
         };
 
-        // ✅ On attend la fin de l'opération (création en base)
+        // On attend la création réelle
         await onComplete(studioName, firstProject);
-        
-        // Si tout se passe bien, App.tsx changera la page, donc pas besoin de setIsLoading(false)
         
     } catch (error) {
         console.error("Erreur Onboarding:", error);
-        // En cas d'erreur, on arrête le chargement pour débloquer l'utilisateur
         setIsLoading(false); 
-        alert("Une erreur est survenue lors de la création du projet. Vérifiez les informations.");
+        alert("Une erreur est survenue. Vérifiez que la date est bien sélectionnée.");
     }
   };
 
   return (
     <div className="min-h-[100dvh] bg-dot-pattern flex flex-col items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
-      
       {/* Progress */}
       <div className="w-full max-w-md mb-8 flex justify-center gap-2 shrink-0">
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`}></div>
@@ -200,14 +194,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <p className="text-gray-500 mb-8 text-sm font-medium leading-relaxed max-w-xs mx-auto">
                     Votre dashboard <strong className="text-gray-900">{studioName}</strong> est prêt à être utilisé.
                 </p>
-                
-                {/* On désactive le bouton pendant le chargement pour éviter les doubles clics */}
-                <Button variant="black" fullWidth onClick={handleFinish} disabled={isLoading}>
+                <Button type="button" variant="black" fullWidth onClick={handleFinish} disabled={isLoading}>
                     {isLoading ? <Loader2 className="animate-spin" /> : "Accéder au Dashboard"}
                 </Button>
             </div>
         )}
-
       </div>
       
       <div className="mt-8 flex items-center gap-2 text-gray-300 select-none shrink-0">
