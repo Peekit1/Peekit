@@ -86,7 +86,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
     setLocalCoverPreview(null);
   }, [project.id]);
 
-  // ✅ FONCTION POUR FORMATER LA DATE EN FRANÇAIS (VISUEL UNIQUEMENT)
+  // ✅ 1. FONCTION DE FORMATAGE POUR L'AFFICHAGE VISUEL
   const formatDisplayDate = (dateString: string | undefined) => {
     if (!dateString) return '—';
     if (dateString.match(/[a-zA-Z]/)) return dateString;
@@ -360,7 +360,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-8 space-y-8">
                   {/* WORKFLOW SECTION */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                           <div>
                             <div className="flex items-center gap-2"><h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><GitBranch size={16} className="text-gray-400"/> Processus de Création</h3></div>
@@ -486,11 +486,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
                           <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2"><FileImage size={16} className="text-gray-400"/>Fichiers & Teasers</h3>
                           <div className="flex items-center gap-3">
+                              {/* ✅ BOUTON TOUT SUPPRIMER */}
                               {(project.teasers || []).length > 0 && (
                                 <button onClick={handleDeleteAllMediaClick} className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors flex items-center gap-1">
                                     <Trash2 size={10} /> Tout supprimer
                                 </button>
                               )}
+
                               {isUploading && <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-600 animate-pulse"><Loader2 size={12} className="animate-spin"/> Upload en cours...</div>}
                               <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{(project.teasers || []).length} {userPlan === 'discovery' ? '/ 3' : ''}</span>
                           </div>
