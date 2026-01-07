@@ -340,11 +340,11 @@ function App() {
   };
 
   const mapProjectsFromDB = (data: any[]): Project[] => {
-    // Sécurité supplémentaire : si data est null/undefined, renvoyer un tableau vide
     if (!data) return [];
     
     return data.map(p => {
         let effectiveConfig = INITIAL_STAGES_CONFIG;
+        // Protection contre les configs vides ou nulles
         if (p.stages_config && Array.isArray(p.stages_config) && p.stages_config.length > 0) {
             effectiveConfig = p.stages_config;
         }
@@ -531,7 +531,7 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CREATE PROJECT AVEC VALIDATION ROBUSTE
+  // ✅ CREATE PROJECT BLINDÉ (Avec gestion des étapes vides)
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
@@ -570,9 +570,16 @@ function App() {
         coverUrl = publicUrl;
       }
       
-      const configToSave = overrideStageConfig || stageConfig;
-      const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
+      const configToSave = overrideStageConfig || stageConfig || INITIAL_STAGES_CONFIG;
+      const isolatedConfig = configToSave ? JSON.parse(JSON.stringify(configToSave)) : [];
       
+      // Sécurité max : on vérifie que isolatedConfig[0] existe ET qu'il a un ID
+      // Si le tableau est vide ou corrompu, on force 'secured'
+      let firstStageId = 'secured';
+      if (Array.isArray(isolatedConfig) && isolatedConfig.length > 0 && isolatedConfig[0] && isolatedConfig[0].id) {
+          firstStageId = isolatedConfig[0].id;
+      }
+
       const sanitizedProject: any = { 
         user_id: session.user.id, 
         client_name: sanitizeString(validatedData.clientName), 
@@ -581,7 +588,7 @@ function App() {
         location: sanitizeString(validatedData.location), 
         type: validatedData.type, 
         cover_image: coverUrl, 
-        current_stage: isolatedConfig[0]?.id || 'secured', 
+        current_stage: firstStageId, 
         last_update: "À l'instant", 
         expected_delivery_date: validatedData.expectedDeliveryDate || null, 
         access_password: validatedData.accessPassword || null,
@@ -596,14 +603,18 @@ function App() {
 
       if (error) throw error;
       
-      // ✅ C'EST ICI QUE C'ÉTAIT CASSÉ
-      // On vérifie que 'data' est un tableau valide et qu'il contient au moins un élément
+      // Sécurité max sur le retour de Supabase
       if (data && Array.isArray(data) && data.length > 0) {
-        const newProjMapped = mapProjectsFromDB(data)[0];
-        setProjects(prev => [newProjMapped, ...prev]);
+        const mappedProjects = mapProjectsFromDB(data);
+        // On vérifie que le mapping a bien retourné quelque chose avant de lire [0]
+        if (mappedProjects && mappedProjects.length > 0) {
+            const newProjMapped = mappedProjects[0];
+            setProjects(prev => [newProjMapped, ...prev]);
+        } else {
+            // Fallback si mapping échoue (rare)
+            await fetchProjects(session.user.id);
+        }
       } else {
-        // Si Supabase ne renvoie rien (arrive parfois avec les policies RLS)
-        // On recharge la liste complète pour être sûr d'avoir le projet
         await fetchProjects(session.user.id);
       }
 
@@ -612,7 +623,10 @@ function App() {
       }
 
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
+      console.error("Erreur complète création:", error); // Pour le debug console
+      
+      // Sécurité sur l'erreur Zod qui pouvait aussi causer le "reading '0'"
+      if (error instanceof z.ZodError && error.errors && error.errors.length > 0) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
       } else {
@@ -816,13 +830,33 @@ function App() {
       } catch (error) { console.error("Delete failed:", error); }
   };
 
-  const handleOnboardingComplete = async (name: string, firstProject: Project) => {
+  // ✅ NOUVELLE VERSION : Onboarding Simple (Sans création de projet)
+  const handleOnboardingComplete = async (name: string) => {
     if (!session) return;
     setStudioName(name);
-    await supabase.from('profiles').upsert({ id: session.user.id, studio_name: name, onboarding_completed: true, plan: 'discovery', created_at: new Date().toISOString(), stages_config: INITIAL_STAGES_CONFIG });
-    await fetchProfile(session.user.id);
-    await handleCreateProject(firstProject);
-    // Note: setCurrentPage est appelé dans handleCreateProject
+    
+    try {
+        // 1. Mise à jour du profil uniquement
+        await supabase.from('profiles').upsert({ 
+            id: session.user.id, 
+            studio_name: name, 
+            onboarding_completed: true, 
+            plan: 'discovery', 
+            created_at: new Date().toISOString(), 
+            stages_config: INITIAL_STAGES_CONFIG 
+        });
+        
+        // 2. Refresh du profil local
+        await fetchProfile(session.user.id);
+        
+        // 3. Redirection directe vers le Dashboard (plus de création de projet)
+        setCurrentPage('dashboard');
+        
+    } catch (error: any) {
+        // Même en cas d'erreur mineure, on tente d'aller au dashboard si le profil est passé
+        alert("Erreur lors de l'onboarding: " + getErrorMessage(error));
+        setCurrentPage('dashboard');
+    }
   };
 
   const handleDeleteAccount = async () => {
