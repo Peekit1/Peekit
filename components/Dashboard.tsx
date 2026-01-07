@@ -11,8 +11,8 @@ import { Button } from './Button';
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   userPlan, 
-  studioName,
-  userEmail,
+  studioName, 
+  userEmail, 
   onLogout, 
   onOpenProject, 
   projects, 
@@ -26,15 +26,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteAccount,
   onUpdateProfile,
   onResetStudioConfig,
-  onUpdateProjects
+  onUpdateProjects,
+  // ✅ NOUVELLES PROPS RÉCUPÉRÉES ICI
+  onUpdateEmail,
+  onUpdatePassword
 }) => {
   const [currentView, setCurrentView] = useState<'projects' | 'subscription'>('projects');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  
+   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  
+   
   // Cache buster pour forcer le rechargement des images
   const [dashboardCacheBuster, setDashboardCacheBuster] = useState(Date.now());
 
@@ -46,16 +49,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
-  
+   
   // ÉTATS SETTINGS
   const [settingsTab, setSettingsTab] = useState<'general' | 'workflow' | 'account'>('general');
   const [localStudioName, setLocalStudioName] = useState(studioName);
   const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(defaultConfig);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  
+   
   // États pour modification Compte
   const [emailForm, setEmailForm] = useState(userEmail || '');
   const [passwordForm, setPasswordForm] = useState('');
+  // ✅ ÉTAT DE CHARGEMENT POUR AUTH
+  const [isAuthUpdating, setIsAuthUpdating] = useState(false);
 
   // ÉTATS PROJETS
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -89,6 +94,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
       } finally {
           setIsSavingSettings(false);
       }
+  };
+
+  // ✅ GESTIONNAIRE MISE A JOUR EMAIL
+  const handleUpdateEmailClick = async () => {
+    if (!emailForm || emailForm === userEmail) return;
+    setIsAuthUpdating(true);
+    try {
+        await onUpdateEmail(emailForm);
+        alert("Un email de confirmation a été envoyé à votre nouvelle adresse.");
+    } catch (error) {
+        console.error(error);
+        alert("Erreur lors de la mise à jour de l'email.");
+    } finally {
+        setIsAuthUpdating(false);
+    }
+  };
+
+  // ✅ GESTIONNAIRE MISE A JOUR MOT DE PASSE
+  const handleUpdatePasswordClick = async () => {
+    if (!passwordForm || passwordForm.length < 6) {
+        alert("Le mot de passe doit contenir au moins 6 caractères.");
+        return;
+    }
+    setIsAuthUpdating(true);
+    try {
+        await onUpdatePassword(passwordForm);
+        alert("Mot de passe mis à jour avec succès.");
+        setPasswordForm('');
+    } catch (error) {
+        console.error(error);
+        alert("Erreur lors de la mise à jour du mot de passe.");
+    } finally {
+        setIsAuthUpdating(false);
+    }
   };
 
   const isPro = userPlan === 'pro' || userPlan === 'agency';
@@ -139,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       try {
           if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
           else await onCreateProject(newProject, coverFile);
-          
+           
           setDashboardCacheBuster(Date.now()); 
 
           setIsNewProjectModalOpen(false);
@@ -154,7 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const getCoverUrl = (project: Project) => {
       if (!project.coverImage) return "";
       if (project.coverImage.startsWith('data:')) return project.coverImage;
-      
+       
       const separator = project.coverImage.includes('?') ? '&' : '?';
       return `${project.coverImage}${separator}t=${dashboardCacheBuster}`;
   };
@@ -373,13 +412,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div><h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Sécurité & Connexion</h2><p className="text-gray-500 text-sm">Gérez vos identifiants.</p></div>
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Mail size={16} /> Email</div>
-                                        <div className="flex flex-col sm:flex-row gap-3"><input type="email" value={emailForm} onChange={(e) => setEmailForm(e.target.value)} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/><Button size="sm" variant="secondary" onClick={() => {}}>Modifier</Button></div>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            {/* ✅ INPUT ET BOUTON CONNECTÉS POUR L'EMAIL */}
+                                            <input type="email" value={emailForm} onChange={(e) => setEmailForm(e.target.value)} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/>
+                                            <Button size="sm" variant="secondary" onClick={handleUpdateEmailClick} isLoading={isAuthUpdating && emailForm !== userEmail}>Modifier</Button>
+                                        </div>
                                         <p className="text-xs text-gray-400 pl-1">Email actuel : <span className="font-medium text-gray-600">{userEmail}</span></p>
                                     </div>
                                     <div className="h-px bg-gray-100 w-full"></div>
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Lock size={16} /> Mot de passe</div>
-                                        <div className="space-y-3"><input type="password" placeholder="Nouveau mot de passe" value={passwordForm} onChange={(e) => setPasswordForm(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/><div className="flex justify-end"><Button size="sm" variant="secondary" onClick={() => {}}>Mettre à jour</Button></div></div>
+                                        <div className="space-y-3">
+                                            {/* ✅ INPUT ET BOUTON CONNECTÉS POUR LE MDP */}
+                                            <input type="password" placeholder="Nouveau mot de passe" value={passwordForm} onChange={(e) => setPasswordForm(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/>
+                                            <div className="flex justify-end">
+                                                <Button size="sm" variant="secondary" onClick={handleUpdatePasswordClick} isLoading={isAuthUpdating && passwordForm.length > 0}>Mettre à jour</Button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="h-px bg-gray-100 w-full"></div>
                                     <div className="pt-2"><h3 className="font-bold text-red-600 mb-2">Zone de danger</h3><Button variant="danger" size="sm" onClick={() => setIsDeleteAccountModalOpen(true)}>Supprimer mon compte</Button></div>
