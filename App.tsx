@@ -528,16 +528,10 @@ function App() {
     return { subject, body };
   };
 
-  // ✅ CORRECTION DU CRASH
+  // ✅ CREATE PROJECT (CORRIGÉ : VÉRIFICATION STRICTE)
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
-    if (!session) {
-      alert("Session expirée. Veuillez vous reconnecter.");
-      return;
-    }
-
-    if (!csrfToken) {
-      alert("Token de sécurité manquant. Veuillez rafraîchir la page.");
-      window.location.reload();
+    if (!session || !csrfToken) {
+      if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
       return;
     }
 
@@ -592,7 +586,6 @@ function App() {
         stages_config: isolatedConfig
       };
       
-      // ✅ APPEL DIRECT À SUPABASE
       const { data, error } = await supabase
         .from('projects')
         .insert([sanitizedProject])
@@ -600,21 +593,22 @@ function App() {
 
       if (error) throw error;
       
-      // ✅ VÉRIFICATION ROBUSTE
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        throw new Error("Aucune donnée retournée après l'insertion");
+      // ✅ CORRECTION CLÉ : ON VÉRIFIE QUE DATA EXISTE ET N'EST PAS VIDE
+      if (data && Array.isArray(data) && data.length > 0) {
+        const newProjMapped = mapProjectsFromDB(data)[0];
+        setProjects(prev => [newProjMapped, ...prev]);
+      } else {
+        // Fallback si Supabase ne renvoie rien (ex: RLS policies)
+        // On recharge la liste complète pour être sûr
+        await fetchProjects(session.user.id);
       }
 
-      const newProjMapped = mapProjectsFromDB(data)[0];
-      setProjects(prev => [newProjMapped, ...prev]);
-      
       if (currentPage === 'onboarding') {
         setCurrentPage('dashboard');
       }
 
     } catch (error: any) {
-      console.error("Erreur création projet:", error);
-      
+      console.error("Erreur création:", error);
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         alert(`Erreur de validation : ${firstError.message}`);
@@ -825,7 +819,7 @@ function App() {
     await supabase.from('profiles').upsert({ id: session.user.id, studio_name: name, onboarding_completed: true, plan: 'discovery', created_at: new Date().toISOString(), stages_config: INITIAL_STAGES_CONFIG });
     await fetchProfile(session.user.id);
     await handleCreateProject(firstProject);
-    setCurrentPage('dashboard');
+    // setCurrentPage('dashboard') est appelé à l'intérieur de handleCreateProject en cas de succès
   };
 
   const handleDeleteAccount = async () => {
