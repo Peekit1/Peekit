@@ -26,36 +26,43 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     setIsLoading(true);
     
     try {
-        // ⚠️ CORRECTION : On envoie la date brute (YYYY-MM-DD)
-        // On ne formate PLUS la date ici pour éviter le conflit avec Zod dans App.tsx
-
+        // ⚠️ CORRECTION CRITIQUE : 
+        // On ne touche PAS au format de la date ici.
+        // On envoie directement les variables d'état (qui sont au format YYYY-MM-DD via l'input date)
+        
         const firstProject: Project = {
             id: Date.now().toString(), 
-            userId: '', // Sera remplacé par App.tsx
+            userId: '', // Sera remplacé automatiquement par App.tsx
             clientName: clientName,
             clientEmail: clientEmail,
-            date: projectDate, // ✅ Date brute YYYY-MM-DD (ex: 2024-05-20)
+            date: projectDate, // ✅ On envoie "2025-05-20" brut, sans modification
             location: projectLocation || 'Non spécifié',
             type: projectType,
             coverImage: '', 
             currentStage: 'secured',
             lastUpdate: "À l'instant",
-            expectedDeliveryDate: projectExpectedDate || undefined, // ✅ Date brute
+            expectedDeliveryDate: projectExpectedDate || undefined,
             teasers: []
         };
 
-        // On attend la création réelle
+        // On déclenche la création dans App.tsx
         await onComplete(studioName, firstProject);
+        
+        // Pas besoin de setIsLoading(false) ici car App.tsx va changer de page
         
     } catch (error) {
         console.error("Erreur Onboarding:", error);
-        setIsLoading(false); 
-        alert("Une erreur est survenue. Vérifiez que la date est bien sélectionnée.");
+        setIsLoading(false); // On débloque le bouton en cas d'erreur
+        
+        // On affiche l'erreur exacte pour le débug si besoin, sinon un message générique
+        const message = error instanceof Error ? error.message : "Une erreur inconnue est survenue";
+        alert(`Erreur lors de la création : ${message}`);
     }
   };
 
   return (
     <div className="min-h-[100dvh] bg-dot-pattern flex flex-col items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
+      
       {/* Progress */}
       <div className="w-full max-w-md mb-8 flex justify-center gap-2 shrink-0">
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`}></div>
@@ -194,11 +201,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <p className="text-gray-500 mb-8 text-sm font-medium leading-relaxed max-w-xs mx-auto">
                     Votre dashboard <strong className="text-gray-900">{studioName}</strong> est prêt à être utilisé.
                 </p>
+                
+                {/* Type button pour éviter le submit auto si jamais */}
                 <Button type="button" variant="black" fullWidth onClick={handleFinish} disabled={isLoading}>
                     {isLoading ? <Loader2 className="animate-spin" /> : "Accéder au Dashboard"}
                 </Button>
             </div>
         )}
+
       </div>
       
       <div className="mt-8 flex items-center gap-2 text-gray-300 select-none shrink-0">
