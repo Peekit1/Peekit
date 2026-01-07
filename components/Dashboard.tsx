@@ -27,7 +27,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateProfile,
   onResetStudioConfig,
   onUpdateProjects,
-  // ✅ NOUVELLES PROPS RÉCUPÉRÉES ICI
   onUpdateEmail,
   onUpdatePassword
 }) => {
@@ -59,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // États pour modification Compte
   const [emailForm, setEmailForm] = useState(userEmail || '');
   const [passwordForm, setPasswordForm] = useState('');
-  // ✅ ÉTAT DE CHARGEMENT POUR AUTH
+  // ÉTAT DE CHARGEMENT POUR AUTH
   const [isAuthUpdating, setIsAuthUpdating] = useState(false);
 
   // ÉTATS PROJETS
@@ -96,7 +95,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       }
   };
 
-  // ✅ GESTIONNAIRE MISE A JOUR EMAIL
   const handleUpdateEmailClick = async () => {
     if (!emailForm || emailForm === userEmail) return;
     setIsAuthUpdating(true);
@@ -111,7 +109,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  // ✅ GESTIONNAIRE MISE A JOUR MOT DE PASSE
   const handleUpdatePasswordClick = async () => {
     if (!passwordForm || passwordForm.length < 6) {
         alert("Le mot de passe doit contenir au moins 6 caractères.");
@@ -364,10 +361,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         </main>
 
-        {/* SETTINGS MODAL RESPONSIVE FIX */}
+        {/* ✅ SETTINGS MODAL FIX POUR MOBILE SCROLL */}
         {isSettingsModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                <div className="bg-white w-full max-w-4xl h-[600px] max-h-[90vh] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-slide-up">
+                {/* Hauteur ajustée : h-[85vh] sur mobile pour forcer le scroll */}
+                <div className="bg-white w-full max-w-4xl h-[85vh] md:h-[600px] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-slide-up">
                     <div className="w-full md:w-64 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col shrink-0">
                         <div className="p-4 md:p-6 border-b border-gray-200">
                             <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2"><Settings size={20}/> <span className="md:inline">Paramètres</span></h3>
@@ -378,7 +376,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <button onClick={() => setSettingsTab('account')} className={`whitespace-nowrap flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${settingsTab === 'account' ? 'bg-white text-black shadow-sm border border-gray-200' : 'text-gray-500 hover:bg-gray-100'}`}><ShieldCheck size={16} /> <span className="hidden sm:inline">Compte</span><span className="sm:hidden">Compte</span></button>
                         </nav>
                     </div>
-                    <div className="flex-1 flex flex-col bg-white min-w-0">
+                    {/* Zone de contenu flexible */}
+                    <div className="flex-1 flex flex-col bg-white min-w-0 h-full">
+                        {/* Scroll vertical appliqué ici */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8">
                             {settingsTab === 'general' && (
                                 <div className="space-y-6 max-w-lg">
@@ -413,7 +413,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Mail size={16} /> Email</div>
                                         <div className="flex flex-col sm:flex-row gap-3">
-                                            {/* ✅ INPUT ET BOUTON CONNECTÉS POUR L'EMAIL */}
                                             <input type="email" value={emailForm} onChange={(e) => setEmailForm(e.target.value)} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/>
                                             <Button size="sm" variant="secondary" onClick={handleUpdateEmailClick} isLoading={isAuthUpdating && emailForm !== userEmail}>Modifier</Button>
                                         </div>
@@ -423,7 +422,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wide"><Lock size={16} /> Mot de passe</div>
                                         <div className="space-y-3">
-                                            {/* ✅ INPUT ET BOUTON CONNECTÉS POUR LE MDP */}
                                             <input type="password" placeholder="Nouveau mot de passe" value={passwordForm} onChange={(e) => setPasswordForm(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:border-black focus:bg-white transition-colors outline-none"/>
                                             <div className="flex justify-end">
                                                 <Button size="sm" variant="secondary" onClick={handleUpdatePasswordClick} isLoading={isAuthUpdating && passwordForm.length > 0}>Mettre à jour</Button>
