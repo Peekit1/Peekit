@@ -1,60 +1,28 @@
 import React, { useState } from 'react';
-import { ArrowRight, Activity, Building2, User, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRight, Activity, Building2, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './Button';
-import { OnboardingWizardProps, Project } from '../types';
+import { OnboardingWizardProps } from '../types';
+
+// Adaptez l'interface si elle est définie dans types.ts, ou laissez TypeScript déduire
+// Si besoin, modifiez dans types.ts : onComplete: (name: string) => Promise<void>;
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [studioName, setStudioName] = useState('');
-   
-  // Project Details
-  const [clientName, setClientName] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
-  const [projectDate, setProjectDate] = useState('');
-  const [projectLocation, setProjectLocation] = useState('');
-  const [projectType, setProjectType] = useState('Mariage');
-  const [projectExpectedDate, setProjectExpectedDate] = useState('');
-   
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNext = () => {
     if (step === 1 && studioName) setStep(2);
-    if (step === 2 && clientName && clientEmail && projectDate) setStep(3);
   };
 
   const handleFinish = async () => {
     setIsLoading(true);
-    
     try {
-        // ⚠️ CORRECTION CRITIQUE : 
-        // On ne touche PAS au format de la date ici.
-        // On envoie directement les variables d'état (qui sont au format YYYY-MM-DD via l'input date)
-        
-        const firstProject: Project = {
-            id: Date.now().toString(), 
-            userId: '', // Sera remplacé automatiquement par App.tsx
-            clientName: clientName,
-            clientEmail: clientEmail,
-            date: projectDate, // ✅ On envoie "2025-05-20" brut, sans modification
-            location: projectLocation || 'Non spécifié',
-            type: projectType,
-            coverImage: '', 
-            currentStage: 'secured',
-            lastUpdate: "À l'instant",
-            expectedDeliveryDate: projectExpectedDate || undefined,
-            teasers: []
-        };
-
-        // On déclenche la création dans App.tsx
-        await onComplete(studioName, firstProject);
-        
-        // Pas besoin de setIsLoading(false) ici car App.tsx va changer de page
-        
+        // On renvoie UNIQUEMENT le nom du studio
+        await onComplete(studioName);
     } catch (error) {
         console.error("Erreur Onboarding:", error);
-        setIsLoading(false); // On débloque le bouton en cas d'erreur
-        
-        // On affiche l'erreur exacte pour le débug si besoin, sinon un message générique
+        setIsLoading(false);
         const message = error instanceof Error ? error.message : "Une erreur inconnue est survenue";
         alert(`Erreur lors de la création : ${message}`);
     }
@@ -63,11 +31,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   return (
     <div className="min-h-[100dvh] bg-dot-pattern flex flex-col items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
       
-      {/* Progress */}
+      {/* Progress (2 étapes seulement maintenant) */}
       <div className="w-full max-w-md mb-8 flex justify-center gap-2 shrink-0">
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 1 ? 'bg-black' : 'bg-gray-200'}`}></div>
         <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 2 ? 'bg-black' : 'bg-gray-200'}`}></div>
-        <div className={`h-1.5 w-12 rounded-full transition-all duration-300 ${step >= 3 ? 'bg-black' : 'bg-gray-200'}`}></div>
       </div>
 
       <div className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl p-6 sm:p-8 relative">
@@ -102,97 +69,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </div>
         )}
 
-        {/* Step 2: First Project */}
+        {/* Step 2: Success (Anciennement Step 3) */}
         {step === 2 && (
-            <div className="animate-fade-in">
-                 <div className="w-12 h-12 bg-white text-gray-900 border border-gray-200 rounded-lg flex items-center justify-center mb-6 shadow-sm">
-                    <User size={20} strokeWidth={1.5} />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Initialisons votre espace</h2>
-                <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-                    Ajoutez un premier projet pour voir la magie opérer.
-                </p>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Nom du Client</label>
-                            <input 
-                                autoFocus
-                                type="text" 
-                                value={clientName}
-                                onChange={(e) => setClientName(e.target.value)}
-                                placeholder="Ex: Sophie & Marc"
-                                className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Email de contact</label>
-                            <input 
-                                type="email" 
-                                value={clientEmail}
-                                onChange={(e) => setClientEmail(e.target.value)}
-                                placeholder="email@client.com"
-                                className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                            />
-                        </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Date</label>
-                                <input 
-                                    type="date" 
-                                    value={projectDate}
-                                    onChange={(e) => setProjectDate(e.target.value)}
-                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Lieu</label>
-                                <input 
-                                    type="text" 
-                                    value={projectLocation}
-                                    onChange={(e) => setProjectLocation(e.target.value)}
-                                    placeholder="Ville"
-                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                                />
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
-                                <select 
-                                    value={projectType}
-                                    onChange={(e) => setProjectType(e.target.value)}
-                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
-                                >
-                                    <option value="Mariage">Mariage</option>
-                                    <option value="Shooting Mode">Shooting Mode</option>
-                                    <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
-                                    <option value="Identité Visuelle">Identité Visuelle</option>
-                                    <option value="Corporate">Corporate</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Rendu Estimé</label>
-                                <input 
-                                    type="date" 
-                                    value={projectExpectedDate}
-                                    onChange={(e) => setProjectExpectedDate(e.target.value)}
-                                    className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <Button variant="black" fullWidth onClick={handleNext} disabled={!clientName || !clientEmail || !projectDate} className="mt-4">
-                        Créer le projet <ArrowRight size={16} />
-                    </Button>
-                </div>
-            </div>
-        )}
-
-        {/* Step 3: Success */}
-        {step === 3 && (
             <div className="animate-fade-in text-center py-6">
                 <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg shadow-gray-900/20">
                     <Sparkles size={24} strokeWidth={2} />
@@ -202,7 +80,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                     Votre dashboard <strong className="text-gray-900">{studioName}</strong> est prêt à être utilisé.
                 </p>
                 
-                {/* Type button pour éviter le submit auto si jamais */}
                 <Button type="button" variant="black" fullWidth onClick={handleFinish} disabled={isLoading}>
                     {isLoading ? <Loader2 className="animate-spin" /> : "Accéder au Dashboard"}
                 </Button>
