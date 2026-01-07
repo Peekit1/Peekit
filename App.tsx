@@ -27,7 +27,6 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 // 1. UTILITAIRES & SANITIZATION
 // ==========================================
 
-// Fallback UUID pour compatibilité (utilisé aussi pour CSRF)
 function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -67,7 +66,6 @@ export function getCSRFToken(): string | null {
 
 export function useCSRFToken() {
   useEffect(() => {
-    // Générer un token au montage si inexistant
     if (!getCSRFToken()) {
       const token = generateCSRFToken();
       setCSRFToken(token);
@@ -76,67 +74,179 @@ export function useCSRFToken() {
   return getCSRFToken();
 }
 
-/**
- * Wrapper pour sécuriser les appels critiques Supabase
- */
 export async function secureSupabaseRequest<T>(
   requestFn: () => Promise<{ data: T | null; error: any }>,
   csrfToken: string | null
 ): Promise<{ data: T | null; error: any }> {
-  
   if (!csrfToken) {
     return {
       data: null,
       error: new Error('Token CSRF manquant ou invalide. Veuillez rafraîchir la page.')
     };
   }
-
-  // Note: Pour une vraie sécurité, ce token doit être envoyé dans un Header 
-  // vers une Edge Function qui le vérifie. Ici, on s'assure au moins de sa présence.
   return await requestFn();
 }
 
 // ==========================================
-// 3. SCHÉMAS DE VALIDATION (ZOD)
+// 3. GESTION SÉCURISÉE DES FICHIERS
+// ==========================================
+
+export const ALLOWED_FILE_TYPES = {
+  images: {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+    'image/gif': ['.gif']
+  },
+  videos: {
+    'video/mp4': ['.mp4'],
+    'video/quicktime': ['.mov'],
+    'video/x-msvideo': ['.avi']
+  }
+} as const;
+
+export const MAX_FILE_SIZES = {
+  image: 10 * 1024 * 1024, // 10 MB
+  video: 100 * 1024 * 1024, // 100 MB
+  cover: 5 * 1024 * 1024    // 5 MB
+} as const;
+
+export async function verifyFileMimeType(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const arr = new Uint8Array(reader.result as ArrayBuffer).subarray(0, 4);
+      let header = '';
+      for (let i = 0; i < arr.length; i++) {
+        header += arr[i].toString(16);
+      }
+      
+      const magicNumbers: Record<string, string> = {
+        '89504e47': 'image/png',
+        'ffd8ffe0': 'image/jpeg',
+        'ffd8ffe1': 'image/jpeg',
+        'ffd8ffe2': 'image/jpeg',
+        '47494638': 'image/gif',
+        '52494646': 'video/avi',
+        '00000018': 'video/mp4',
+        '00000020': 'video/mp4',
+        '66747970': 'video/mp4',
+      };
+      
+      const detectedType = magicNumbers[header.toLowerCase()];
+      if (detectedType) {
+        resolve(detectedType);
+      } else {
+        // Fallback: si le magic number n'est pas dans notre liste mais que l'extension est OK
+        // (certains MP4 ont des headers variables), on se fie au type déclaré MAIS avec prudence
+        resolve(file.type); 
+      }
+    };
+    reader.onerror = () => reject(new Error('Erreur lecture fichier'));
+    reader.readAsArrayBuffer(file.slice(0, 4));
+  });
+}
+
+export async function validateFile(
+  file: File, 
+  category: 'image' | 'video' | 'cover'
+): Promise<{ valid: boolean; error?: string }> {
+  
+  const maxSize = MAX_FILE_SIZES[category];
+  if (file.size > maxSize) {
+    return {
+      valid: false,
+      error: `Fichier trop volumineux (max ${Math.round(maxSize / 1024 / 1024)}MB)`
+    };
+  }
+
+  if (file.size === 0) {
+    return { valid: false, error: 'Fichier vide' };
+  }
+
+  const declaredType = file.type;
+  const allowedTypes = category === 'cover' 
+    ? Object.keys(ALLOWED_FILE_TYPES.images)
+    : [...Object.keys(ALLOWED_FILE_TYPES.images), ...Object.keys(ALLOWED_FILE_TYPES.videos)];
+
+  if (!allowedTypes.includes(declaredType)) {
+    return { 
+      valid: false, 
+      error: `Type de fichier non autorisé: ${declaredType}` 
+    };
+  }
+
+  try {
+    const realType = await verifyFileMimeType(file);
+    // On accepte si le type réel correspond ou si c'est un sous-type compatible
+    if (!realType.startsWith(category === 'video' ? 'video/' : 'image/')) {
+       return { valid: false, error: 'Le contenu du fichier ne correspond pas à son extension' };
+    }
+  } catch (error) {
+    return { valid: false, error: 'Impossible de vérifier le type de fichier' };
+  }
+
+  return { valid: true };
+}
+
+export function generateSecureFileName(originalName: string): string {
+  const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '');
+  const lastDot = sanitizedName.lastIndexOf('.');
+  const ext = lastDot !== -1 ? sanitizedName.substring(lastDot) : '';
+  return `${generateUUID()}${ext}`;
+}
+
+export async function resizeImage(file: File, maxWidth: number, maxHeight: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) { reject(new Error('Canvas non supporté')); return; }
+
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Erreur compression image'));
+      }, 'image/jpeg', 0.85);
+    };
+
+    img.onerror = () => reject(new Error('Erreur chargement image'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ==========================================
+// 4. SCHÉMAS DE VALIDATION (ZOD)
 // ==========================================
 
 export const ProjectCreateSchema = z.object({
-  clientName: z.string()
-    .min(2, 'Le nom doit contenir au moins 2 caractères')
-    .max(100, 'Le nom ne peut pas dépasser 100 caractères')
-    .regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/, 'Le nom contient des caractères invalides')
-    .transform(str => str.trim()),
-  clientEmail: z.string()
-    .email('Email invalide')
-    .toLowerCase()
-    .transform(str => str.trim()),
-  date: z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
-  location: z.string()
-    .min(2, 'La localisation doit contenir au moins 2 caractères')
-    .max(200, 'La localisation ne peut pas dépasser 200 caractères')
-    .transform(str => str.trim()),
-  type: z.enum(['Mariage', 'Entreprise', 'Portrait', 'Événement', 'Autre'], {
-    errorMap: () => ({ message: 'Type de projet invalide' })
-  }),
-  expectedDeliveryDate: z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide')
-    .optional()
-    .or(z.literal('')), 
-  accessPassword: z.string()
-    .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
-    .max(50)
-    .optional()
-    .or(z.literal(''))
-});
-
-export const FileUploadSchema = z.object({
-  name: z.string().max(255, 'Nom de fichier trop long'),
-  type: z.string().refine(
-    (type) => ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'].includes(type),
-    'Type de fichier non autorisé'
-  ),
-  size: z.number().max(100 * 1024 * 1024, 'Fichier trop volumineux (max 100MB)')
+  clientName: z.string().min(2).max(100).regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/).transform(str => str.trim()),
+  clientEmail: z.string().email().toLowerCase().transform(str => str.trim()),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  location: z.string().min(2).max(200).transform(str => str.trim()),
+  type: z.enum(['Mariage', 'Entreprise', 'Portrait', 'Événement', 'Autre']),
+  expectedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')), 
+  accessPassword: z.string().min(6).max(50).optional().or(z.literal(''))
 });
 
 export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
@@ -152,7 +262,6 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 // ==========================================
 
 function App() {
-  // ✅ 1. Initialisation du Hook CSRF
   const csrfToken = useCSRFToken();
 
   const [currentPage, setCurrentPage] = useState('home');
@@ -407,35 +516,30 @@ function App() {
   const handleNotifyClient = async (project: Project, stage: WorkflowStep, type: NotificationType) => {
     let subject = "";
     let body = "";
-
+    // Logique simplifiée pour les emails
     if (type === 'status') {
         subject = `Avancement de votre projet ${project.type}`;
-        body = `Bonjour ${project.clientName},\n\nBonne nouvelle ! Le projet avance bien.\nNous venons de passer officiellement à l'étape : "${stage.label}".\n\nTout se déroule comme prévu. Vous pouvez consulter l'avancement en temps réel sur votre espace.`;
+        body = `Bonjour ${project.clientName},\n\nBonne nouvelle ! Le projet avance bien.\nNous venons de passer officiellement à l'étape : "${stage.label}".`;
     } 
     else if (type === 'delay') {
         subject = `Information concernant votre projet ${project.type}`;
-        body = `Bonjour ${project.clientName},\n\nJe tenais à vous informer d'un léger contretemps sur l'étape "${stage.label}".\n\nPour garantir une qualité optimale, je préfère prendre un peu plus de temps que prévu sur cette partie.\nMerci de votre patience et de votre confiance.`;
+        body = `Bonjour ${project.clientName},\n\nJe tenais à vous informer d'un léger contretemps sur l'étape "${stage.label}".`;
     } 
     else if (type === 'note') {
         subject = `Note importante - Projet ${project.type}`;
-        body = `Bonjour ${project.clientName},\n\nJ'ai ajouté une précision importante concernant l'étape en cours ("${stage.label}").\n\nMerci de vous connecter à votre espace personnel pour en prendre connaissance dès que possible.`;
+        body = `Bonjour ${project.clientName},\n\nJ'ai ajouté une précision importante concernant l'étape en cours ("${stage.label}").`;
     }
-
     return { subject, body };
   };
 
-  // =================================================================
-  // ✅ FONCTION CRÉATION PROJET AVEC VALIDATION + CSRF WRAPPER
-  // =================================================================
+  // ✅ CREATE PROJECT AVEC VALIDATION
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
-    // ✅ 2. Vérification Session ET Token CSRF
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
       return;
     }
 
     try {
-      // VALIDATION ZOD
       const validatedData = ProjectCreateSchema.parse({
         clientName: projectData.clientName,
         clientEmail: projectData.clientEmail,
@@ -448,17 +552,17 @@ function App() {
 
       let coverUrl = null;
       if (coverFile) {
-        FileUploadSchema.parse({
-          name: coverFile.name,
-          type: coverFile.type,
-          size: coverFile.size
-        });
+        const validation = await validateFile(coverFile, 'cover');
+        if (!validation.valid) throw new Error(validation.error);
 
-        const fileExt = coverFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const safeName = `${generateUUID()}.${fileExt}`;
-        const filePath = `covers/${session.user.id}/${safeName}`;
+        // Compression optionnelle pour la couverture
+        let fileToUpload: File | Blob = coverFile;
+        try { fileToUpload = await resizeImage(coverFile, 1200, 630); } catch(e) {}
+
+        const secureName = generateSecureFileName(coverFile.name);
+        const filePath = `covers/${session.user.id}/${secureName}`;
         
-        const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile, {
+        const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, fileToUpload, {
              cacheControl: '3600',
              upsert: false
         });
@@ -487,7 +591,6 @@ function App() {
         stages_config: isolatedConfig
       };
       
-      // ✅ 3. UTILISATION DU WRAPPER CSRF
       const { data, error } = await secureSupabaseRequest(
         () => supabase.from('projects').insert([sanitizedProject]).select(),
         csrfToken
@@ -526,10 +629,17 @@ function App() {
           let newCoverUrl = null;
 
           if (coverFile && session) {
-              const fileExt = coverFile.name.split('.').pop();
-              const safeName = `${generateUUID()}.${fileExt}`;
-              const filePath = `covers/${session.user.id}/${safeName}`;
-              const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, coverFile);
+              const validation = await validateFile(coverFile, 'cover');
+              if (!validation.valid) throw new Error(validation.error);
+
+              const secureName = generateSecureFileName(coverFile.name);
+              const filePath = `covers/${session.user.id}/${secureName}`;
+              
+              // Compression
+              let fileToUpload: File | Blob = coverFile;
+              try { fileToUpload = await resizeImage(coverFile, 1200, 630); } catch(e) {}
+
+              const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, fileToUpload);
               if (uploadError) throw uploadError;
               const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
               newCoverUrl = publicUrl;
@@ -619,24 +729,49 @@ function App() {
     } catch (error) { console.error('Error updating stage:', error); }
   };
 
+  // ✅ UPLOAD TEASERS SÉCURISÉ
   const handleUploadTeasers = async (files: File[]) => {
       if (!editingProject || !session) return;
       const currentCount = (editingProject.teasers || []).length;
       if (userPlan === 'discovery' && (currentCount + files.length) > 3) { alert("Plan Découverte limité à 3 fichiers."); return; }
+      
       try {
           const newTeasers: Teaser[] = [];
           for (const file of files) {
-              if (file.size > 100 * 1024 * 1024) throw new Error("Fichier trop volumineux (max 100MB)");
+              // 1. Validation complète (Taille, MimeType, MagicNumber)
+              const category = file.type.startsWith('video') ? 'video' : 'image';
+              const validation = await validateFile(file, category);
+              if (!validation.valid) {
+                 alert(`Fichier ${file.name} ignoré: ${validation.error}`);
+                 continue;
+              }
+
+              // 2. Redimensionnement si image
+              let fileToUpload: File | Blob = file;
+              if (category === 'image') {
+                  try { fileToUpload = await resizeImage(file, 1920, 1080); } 
+                  catch(e) { console.warn("Redimensionnement échoué, upload de l'original"); }
+              }
+
+              // 3. Nom de fichier sécurisé
+              const secureName = generateSecureFileName(file.name);
+              const filePath = `teasers/${session.user.id}/${editingProject.id}/${secureName}`;
               
-              const fileExt = file.name.split('.').pop();
-              const safeName = `${generateUUID()}.${fileExt}`;
-              const filePath = `teasers/${session.user.id}/${editingProject.id}/${safeName}`;
-              
-              const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, file);
+              const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, fileToUpload, {
+                 contentType: file.type // Conserver le type MIME original
+              });
+
               if (uploadError) throw uploadError;
               const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
-              const type = file.type.startsWith('video') ? 'video' : 'image';
-              const { data, error: dbError } = await supabase.from('teasers').insert([{ project_id: editingProject.id, user_id: session.user.id, url: publicUrl, type: type, title: file.name }]).select();
+              
+              const { data, error: dbError } = await supabase.from('teasers').insert([{ 
+                  project_id: editingProject.id, 
+                  user_id: session.user.id, 
+                  url: publicUrl, 
+                  type: category, 
+                  title: file.name // On garde le titre original pour l'affichage
+              }]).select();
+
               if (dbError) throw dbError;
               if (data) newTeasers.push({ id: data[0].id, url: data[0].url, type: data[0].type, title: data[0].title, date: new Date().toLocaleDateString('fr-FR') });
           }
