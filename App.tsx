@@ -240,9 +240,11 @@ export async function resizeImage(file: File, maxWidth: number, maxHeight: numbe
 // ==========================================
 
 export const ProjectCreateSchema = z.object({
-  clientName: z.string().min(2).max(100).regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/).transform(str => str.trim()),
-  clientEmail: z.string().email().toLowerCase().transform(str => str.trim()),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  // ✅ FIX: Suppression de la regex trop restrictive pour permettre & et autres caractères
+  // La sanitization se fait via DOMPurify dans sanitizeString()
+  clientName: z.string().min(2, "Le nom doit contenir au moins 2 caractères").max(100).transform(str => str.trim()),
+  clientEmail: z.string().email("Email invalide").toLowerCase().transform(str => str.trim()),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format de date invalide"),
   location: z.string().min(0).max(200).transform(str => str.trim()).optional().or(z.literal('')),
   type: z.string().min(2).max(50).transform(str => str.trim()),
   expectedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),

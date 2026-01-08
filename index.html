@@ -92,6 +92,19 @@
   <body class="bg-white text-gray-900 font-sans selection:bg-gray-900 selection:text-white relative">
     <div class="bg-noise"></div>
     <div id="root"></div>
+
+    <!-- ⚠️ IMPORTANT: Ce script DOIT s'exécuter AVANT React pour capturer le hash
+         Supabase nettoie automatiquement le hash URL lors de son initialisation -->
+    <script>
+      (function() {
+        var hash = window.location.hash;
+        if (hash && hash.indexOf('type=recovery') !== -1) {
+          sessionStorage.setItem('peekit_recovery_mode', 'true');
+          console.log('[Peekit] Mode recovery détecté:', hash.substring(0, 50) + '...');
+        }
+      })();
+    </script>
+
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

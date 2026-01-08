@@ -1,26 +1,16 @@
 // =====================================================
-// DETECTION DU MODE RECOVERY AVANT SUPABASE
+// DETECTION DU MODE RECOVERY POUR RESET PASSWORD
 // =====================================================
-// Ce fichier DOIT être importé AVANT supabaseClient.ts
-// car Supabase nettoie automatiquement le hash URL lors
-// de son initialisation, ce qui empêche notre code de
-// détecter le paramètre type=recovery.
+// La capture du hash se fait dans index.html AVANT le chargement
+// de React/Supabase. Ce fichier expose simplement les fonctions
+// pour lire et effacer l'état stocké dans sessionStorage.
 
 const RECOVERY_KEY = 'peekit_recovery_mode';
 
-// Capture immédiate du hash avant que Supabase ne le nettoie
-const initialHash = window.location.hash;
-
-// Détection du mode recovery dans le hash
-if (initialHash.includes('type=recovery')) {
-  sessionStorage.setItem(RECOVERY_KEY, 'true');
-  console.log('[RecoveryMode] Mode recovery détecté et sauvegardé');
-}
-
 /**
  * Vérifie si on est en mode recovery (reset password)
- * Cette fonction doit être appelée pour déterminer si on
- * doit afficher la page de reset password.
+ * Le flag est défini par le script inline dans index.html
+ * qui s'exécute AVANT que Supabase ne nettoie le hash URL.
  */
 export function isInRecoveryMode(): boolean {
   return sessionStorage.getItem(RECOVERY_KEY) === 'true';
