@@ -53,16 +53,18 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onSuccess 
 
   if (success) {
     return (
-      <div className="min-h-screen h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans overflow-hidden">
-        <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
-            <Check size={24} strokeWidth={2.5} className="text-emerald-600"/>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-2">Mot de passe modifié !</h2>
-            <p className="text-gray-500 text-sm leading-relaxed">
-              Votre mot de passe a été mis à jour avec succès. Redirection en cours...
-            </p>
+      <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans">
+        <div className="min-h-full flex items-center justify-center p-6">
+          <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
+              <Check size={24} strokeWidth={2.5} className="text-emerald-600"/>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-2">Mot de passe modifié !</h2>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Votre mot de passe a été mis à jour avec succès. Redirection en cours...
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -70,23 +72,24 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onSuccess 
   }
 
   return (
-    <div className="min-h-screen h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative overflow-hidden">
+    <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans overflow-y-auto">
       <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
 
-      <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
-        <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
-            <Lock size={24} strokeWidth={2} />
+      <div className="min-h-full flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
+          <div className="text-center mb-8">
+            <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
+              <Lock size={24} strokeWidth={2} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+              Nouveau mot de passe
+            </h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Choisissez un nouveau mot de passe sécurisé.
+            </p>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-            Nouveau mot de passe
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Choisissez un nouveau mot de passe sécurisé.
-          </p>
-        </div>
 
-        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl">
+          <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl">
           {error && (
             <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 border border-red-100">
               <AlertCircle size={18} className="shrink-0 mt-0.5"/>
@@ -137,6 +140,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onSuccess 
               Réinitialiser le mot de passe
             </Button>
           </form>
+          </div>
         </div>
       </div>
     </div>

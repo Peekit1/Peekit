@@ -291,11 +291,17 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
+
+      // ✅ FIX: Supabase envoie des URLs comme #access_token=...&type=recovery
+      // On doit détecter le paramètre type=recovery pour le reset password
+      if (hash.includes('type=recovery')) {
+        setCurrentPage('reset-password');
+        return;
+      }
+
       if (hash.startsWith('#/v/')) {
         const projectId = hash.split('/v/')[1];
         if (projectId) fetchPublicProject(projectId);
-      } else if (hash === '#/reset-password') {
-        setCurrentPage('reset-password');
       }
     };
     handleHashChange();
@@ -823,7 +829,8 @@ function App() {
   if (currentPage === 'reset-password') {
     return <ResetPasswordPage onSuccess={() => {
       window.location.hash = '';
-      setCurrentPage('dashboard');
+      setCurrentPage('auth');
+      setAuthMode('login');
     }} />;
   }
 

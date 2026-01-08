@@ -46,7 +46,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/#/reset-password`,
+        redirectTo: window.location.origin,
       });
 
       if (error) throw error;
@@ -109,7 +109,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
   if (resetEmailSent) {
       return (
-        <div className="min-h-screen h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans overflow-hidden">
+        <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans">
+          <div className="min-h-full flex items-center justify-center p-6">
             <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
                     <Check size={24} strokeWidth={2.5} className="text-emerald-600"/>
@@ -124,13 +125,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
                     Retour à la connexion
                 </Button>
             </div>
+          </div>
         </div>
       );
   }
 
   if (showConfirmationMessage) {
       return (
-        <div className="min-h-screen h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans overflow-hidden">
+        <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans">
+          <div className="min-h-full flex items-center justify-center p-6">
             <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
                     <Mail size={24} strokeWidth={1.5}/>
@@ -145,69 +148,72 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
                     Retour à la connexion
                 </Button>
             </div>
+          </div>
         </div>
       );
   }
 
   if (showResetPassword) {
       return (
-        <div className="min-h-screen h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative overflow-hidden">
+        <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans overflow-y-auto">
           <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
 
           <button
             onClick={() => { setShowResetPassword(false); setError(null); }}
-            className="absolute top-8 left-8 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
+            className="fixed top-8 left-8 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
           >
               <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform"/> Retour
           </button>
 
-          <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
-            <div className="text-center mb-8">
-                <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
-                    <Mail size={24} strokeWidth={2} />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                    Mot de passe oublié
-                </h2>
-                <p className="mt-2 text-sm text-gray-500">
-                    Entrez votre email pour recevoir un lien de réinitialisation.
-                </p>
-            </div>
+          <div className="min-h-full flex items-center justify-center px-6 py-20">
+            <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
+              <div className="text-center mb-8">
+                  <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
+                      <Mail size={24} strokeWidth={2} />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                      Mot de passe oublié
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                      Entrez votre email pour recevoir un lien de réinitialisation.
+                  </p>
+              </div>
 
-            <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl">
-                {error && (
-                    <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 border border-red-100">
-                        <AlertCircle size={18} className="shrink-0 mt-0.5"/>
-                        <span>{error}</span>
-                    </div>
-                )}
+              <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl">
+                  {error && (
+                      <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 border border-red-100">
+                          <AlertCircle size={18} className="shrink-0 mt-0.5"/>
+                          <span>{error}</span>
+                      </div>
+                  )}
 
-                <form className="space-y-5" onSubmit={handleResetPassword}>
-                    <div>
-                        <label htmlFor="reset-email" className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
-                            Adresse email
-                        </label>
-                        <input
-                            id="reset-email"
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="appearance-none block w-full px-3 py-2.5 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm transition-all"
-                            placeholder="vous@exemple.com"
-                        />
-                    </div>
+                  <form className="space-y-5" onSubmit={handleResetPassword}>
+                      <div>
+                          <label htmlFor="reset-email" className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">
+                              Adresse email
+                          </label>
+                          <input
+                              id="reset-email"
+                              type="email"
+                              required
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="appearance-none block w-full px-3 py-2.5 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm transition-all"
+                              placeholder="vous@exemple.com"
+                          />
+                      </div>
 
-                    <Button
-                        type="submit"
-                        fullWidth
-                        isLoading={isLoading}
-                        variant="black"
-                        className="!rounded-xl h-11 text-sm shadow-lg shadow-gray-900/10"
-                    >
-                        Envoyer le lien
-                    </Button>
-                </form>
+                      <Button
+                          type="submit"
+                          fullWidth
+                          isLoading={isLoading}
+                          variant="black"
+                          className="!rounded-xl h-11 text-sm shadow-lg shadow-gray-900/10"
+                      >
+                          Envoyer le lien
+                      </Button>
+                  </form>
+              </div>
             </div>
           </div>
         </div>
@@ -215,37 +221,33 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
   }
 
   return (
-    // ✅ FIX: Centrage vertical parfait + overflow-hidden pour éviter le scroll vertical
-    <div className="min-h-screen h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative overflow-hidden">
-
+    <div className="fixed inset-0 w-full h-full bg-[#F9FAFB] font-sans overflow-y-auto">
       <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
 
-      {/* ✅ FIX: Bouton retour mieux positionné (top-8 left-8 au lieu de top-6 left-6) */}
       <button
         onClick={onBack}
-        className="absolute top-8 left-8 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
+        className="fixed top-8 left-8 text-gray-400 hover:text-black flex items-center gap-2 text-xs font-bold transition-colors uppercase tracking-wider group z-20"
       >
           <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform"/> Retour
       </button>
 
-      <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
+      <div className="min-h-full flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-[420px] relative z-10 animate-fade-in">
 
-        <div className="text-center mb-8">
-            <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
-                <Activity size={24} strokeWidth={2.5} />
-            </div>
-            {/* CORRECTION POLICE : Agbalumo pour le titre Peekit (optionnel si vous voulez la marque ici) */}
-            {/* <h1 className="text-3xl font-brand text-gray-900 mb-2">Peekit</h1> */}
-            
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                {isLogin ? 'Bon retour parmi nous' : 'Créer un compte'}
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">
-                {isLogin ? 'Entrez vos identifiants pour accéder au studio.' : 'Commencez à gérer vos projets sereinement.'}
-            </p>
-        </div>
+          <div className="text-center mb-8">
+              <div className="mx-auto h-12 w-12 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg shadow-gray-900/20 mb-6">
+                  <Activity size={24} strokeWidth={2.5} />
+              </div>
 
-        <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl w-full">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  {isLogin ? 'Bon retour parmi nous' : 'Créer un compte'}
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                  {isLogin ? 'Entrez vos identifiants pour accéder au studio.' : 'Commencez à gérer vos projets sereinement.'}
+              </p>
+          </div>
+
+          <div className="bg-white py-8 px-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] sm:rounded-3xl sm:px-10 border border-gray-100 rounded-2xl w-full">
             
             {error && (
                 <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 border border-red-100">
@@ -373,9 +375,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
             </div>
         </div>
         
-        <p className="text-center text-xs text-gray-400 mt-8 mb-4">
-            &copy; {new Date().getFullYear()} Peekit. Sécurisé et chiffré.
-        </p>
+          <p className="text-center text-xs text-gray-400 mt-8 mb-4">
+              &copy; {new Date().getFullYear()} Peekit. Sécurisé et chiffré.
+          </p>
+        </div>
       </div>
     </div>
   );
