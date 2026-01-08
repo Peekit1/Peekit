@@ -160,16 +160,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">Type</label>
-                                <select 
+                                <select
                                     value={projectType}
                                     onChange={(e) => setProjectType(e.target.value)}
                                     className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none appearance-none cursor-pointer"
                                 >
                                     <option value="Mariage">Mariage</option>
-                                    <option value="Shooting Mode">Shooting Mode</option>
-                                    <option value="Vidéo Publicitaire">Vidéo Publicitaire</option>
-                                    <option value="Identité Visuelle">Identité Visuelle</option>
-                                    <option value="Corporate">Corporate</option>
+                                    <option value="Shooting">Shooting</option>
+                                    <option value="Entreprise">Entreprise</option>
+                                    <option value="Vidéo">Vidéo</option>
                                 </select>
                             </div>
                             <div>

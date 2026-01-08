@@ -240,9 +240,9 @@ export const ProjectCreateSchema = z.object({
   clientName: z.string().min(2).max(100).regex(/^[a-zA-ZÀ-ÿ0-9\s'-]+$/).transform(str => str.trim()),
   clientEmail: z.string().email().toLowerCase().transform(str => str.trim()),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  location: z.string().min(2).max(200).transform(str => str.trim()),
-  type: z.enum(['Mariage', 'Entreprise', 'Portrait', 'Événement', 'Autre']),
-  expectedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')), 
+  location: z.string().min(0).max(200).transform(str => str.trim()).optional().or(z.literal('')),
+  type: z.string().min(2).max(50).transform(str => str.trim()),
+  expectedDeliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
   accessPassword: z.string().min(6).max(50).optional().or(z.literal(''))
 });
 
