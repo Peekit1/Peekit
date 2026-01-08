@@ -52,7 +52,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // ÉTATS SETTINGS
   const [settingsTab, setSettingsTab] = useState<'general' | 'workflow' | 'account'>('general');
   const [localStudioName, setLocalStudioName] = useState(studioName);
-  const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(defaultConfig);
+  
+  // Sécurisation de l'initialisation du workflow local
+  const [localWorkflow, setLocalWorkflow] = useState<StagesConfiguration>(
+    Array.isArray(defaultConfig) ? defaultConfig : []
+  );
+  
   const [isSavingSettings, setIsSavingSettings] = useState(false);
    
   // États pour modification Compte
@@ -76,7 +81,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   useEffect(() => {
       if (isSettingsModalOpen) {
           setLocalStudioName(studioName);
-          setLocalWorkflow(JSON.parse(JSON.stringify(defaultConfig))); 
+          // Protection contre le crash JSON.parse si defaultConfig est undefined
+          const safeConfig = Array.isArray(defaultConfig) ? defaultConfig : [];
+          setLocalWorkflow(JSON.parse(JSON.stringify(safeConfig))); 
           setEmailForm(userEmail || '');
           setPasswordForm('');
       }
@@ -132,25 +139,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const maxProjects = userPlan === 'discovery' ? 1 : 9999;
   const usagePercent = Math.min((projectCount / maxProjects) * 100, 100);
 
+  // Fonction utilitaire pour récupérer la config active sans crash
+  const getSafeConfig = (projectConfig?: StagesConfiguration) => {
+    if (projectConfig && Array.isArray(projectConfig) && projectConfig.length > 0) return projectConfig;
+    if (defaultConfig && Array.isArray(defaultConfig) && defaultConfig.length > 0) return defaultConfig;
+    return [];
+  };
+
   const activeProjectsCount = projects.filter(p => {
-      const activeConfig = p.stagesConfig || defaultConfig;
+      const activeConfig = getSafeConfig(p.stagesConfig);
       const lastStepId = activeConfig.length > 0 ? activeConfig[activeConfig.length - 1].id : null;
-      return p.currentStage !== lastStepId;
+      return lastStepId ? p.currentStage !== lastStepId : true; // Si pas de config, considéré actif
   }).length;
   const completedProjectsCount = projects.length - activeProjectsCount;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
-    if (dateString.match(/[a-zA-Z]/)) return dateString;
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+    try {
+        if (dateString.match(/[a-zA-Z]/)) return dateString;
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+    } catch (e) {
+        return dateString;
+    }
   };
 
   const getProjectStageInfo = (project: Project) => {
-      const activeConfig = project.stagesConfig || defaultConfig;
+      const activeConfig = getSafeConfig(project.stagesConfig);
+      
+      // Si la config est vide, on renvoie une valeur par défaut safe
+      if (activeConfig.length === 0) return { label: 'Inconnu', progress: 0 };
+
       const index = activeConfig.findIndex(s => s.id === project.currentStage);
-      if (index === -1) return { label: activeConfig[0]?.label || 'Non débuté', progress: 0 };
+      
+      if (index === -1) {
+          // Utilisation de l'opérateur optionnel ?. pour éviter le crash reading '0'
+          return { label: activeConfig[0]?.label || 'Non débuté', progress: 0 };
+      }
+      
       const progress = Math.round(((index + 1) / activeConfig.length) * 100);
       return { label: activeConfig[index].label, progress: progress };
   };
@@ -158,8 +185,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const filteredProjects = projects.filter(project => {
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = (project.clientName || '').toLowerCase().includes(searchLower) || (project.clientEmail || '').toLowerCase().includes(searchLower);
-      const activeConfig = project.stagesConfig || defaultConfig;
+      
+      const activeConfig = getSafeConfig(project.stagesConfig);
       const lastStepId = activeConfig.length > 0 ? activeConfig[activeConfig.length - 1].id : null;
+      
       const isCompleted = lastStepId ? project.currentStage === lastStepId : false;
       const matchStatus = statusFilter === 'all' ? true : statusFilter === 'completed' ? isCompleted : !isCompleted;
       const matchType = typeFilter === 'all' ? true : project.type === typeFilter;
@@ -173,16 +202,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
       e.preventDefault();
       setNewProjectLoading(true);
       try {
-          if (editingProjectId) await onEditProject(editingProjectId, newProject, coverFile);
-          else await onCreateProject(newProject, coverFile);
+          if (editingProjectId) {
+              await onEditProject(editingProjectId, newProject, coverFile);
+          } else {
+              await onCreateProject(newProject, coverFile);
+          }
            
           setDashboardCacheBuster(Date.now()); 
 
+          // On ferme la modale et reset uniquement si pas d'erreur
           setIsNewProjectModalOpen(false);
           setEditingProjectId(null);
           setNewProject({ clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: '' });
           setCoverFile(undefined);
-      } finally { setNewProjectLoading(false); }
+      } catch (error) {
+          console.error("Erreur création/édition projet:", error);
+          // L'erreur est normalement déjà affichée par App.tsx via alert
+      } finally { 
+          setNewProjectLoading(false); 
+      }
   };
 
   const availableTypes = Array.from(new Set(projects.map(p => p.type).filter(Boolean))).sort();
