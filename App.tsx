@@ -556,33 +556,34 @@ function App() {
 
         const secureName = generateSecureFileName(coverFile.name);
         const filePath = `covers/${session.user.id}/${secureName}`;
-        
+
         const { error: uploadError } = await supabase.storage.from('project-files').upload(filePath, fileToUpload, {
              cacheControl: '3600',
              upsert: false
         });
-        
+
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(filePath);
         coverUrl = publicUrl;
       }
-      
-      const configToSave = overrideStageConfig || stageConfig;
+
+      // ✅ FIX: Utiliser INITIAL_STAGES_CONFIG si stageConfig est vide ou undefined
+      const configToSave = overrideStageConfig || (stageConfig && stageConfig.length > 0 ? stageConfig : INITIAL_STAGES_CONFIG);
       const isolatedConfig = JSON.parse(JSON.stringify(configToSave));
-      
-      const sanitizedProject: any = { 
-        user_id: session.user.id, 
-        client_name: sanitizeString(validatedData.clientName), 
-        client_email: sanitizeEmail(validatedData.clientEmail), 
-        date: validatedData.date, 
-        location: sanitizeString(validatedData.location), 
-        type: validatedData.type, 
-        cover_image: coverUrl, 
-        current_stage: isolatedConfig[0]?.id || 'secured', 
-        last_update: "À l'instant", 
-        expected_delivery_date: validatedData.expectedDeliveryDate || null, 
+
+      const sanitizedProject: any = {
+        user_id: session.user.id,
+        client_name: sanitizeString(validatedData.clientName),
+        client_email: sanitizeEmail(validatedData.clientEmail),
+        date: validatedData.date,
+        location: sanitizeString(validatedData.location || ''),
+        type: validatedData.type,
+        cover_image: coverUrl,
+        current_stage: isolatedConfig[0]?.id || 'secured',
+        last_update: "À l'instant",
+        expected_delivery_date: validatedData.expectedDeliveryDate || null,
         access_password: validatedData.accessPassword || null,
-        created_at: new Date().toISOString(), 
+        created_at: new Date().toISOString(),
         stages_config: isolatedConfig
       };
       
@@ -808,11 +809,33 @@ function App() {
 
   const handleOnboardingComplete = async (name: string, firstProject: Project) => {
     if (!session) return;
-    setStudioName(name);
-    await supabase.from('profiles').upsert({ id: session.user.id, studio_name: name, onboarding_completed: true, plan: 'discovery', created_at: new Date().toISOString(), stages_config: INITIAL_STAGES_CONFIG });
-    await fetchProfile(session.user.id);
-    await handleCreateProject(firstProject);
-    setCurrentPage('dashboard');
+
+    try {
+      setStudioName(name);
+
+      // ✅ FIX: Créer/mettre à jour le profil avec la config initiale
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: session.user.id,
+        studio_name: name,
+        onboarding_completed: true,
+        plan: 'discovery',
+        created_at: new Date().toISOString(),
+        stages_config: INITIAL_STAGES_CONFIG
+      });
+
+      if (profileError) throw profileError;
+
+      // ✅ FIX: Recharger le profil pour synchroniser stageConfig
+      await fetchProfile(session.user.id);
+
+      // ✅ FIX: Passer INITIAL_STAGES_CONFIG explicitement pour éviter les undefined
+      await handleCreateProject(firstProject, undefined, INITIAL_STAGES_CONFIG);
+
+      setCurrentPage('dashboard');
+    } catch (error) {
+      console.error('Erreur onboarding:', error);
+      alert('Erreur lors de la finalisation de l\'onboarding');
+    }
   };
 
   const handleDeleteAccount = async () => {
