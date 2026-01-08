@@ -319,7 +319,16 @@ function App() {
       if (!window.location.hash.startsWith('#/v/')) setIsAuthChecking(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // ✅ FIX: Intercepter l'événement PASSWORD_RECOVERY de Supabase
+      // Cet événement est déclenché quand l'utilisateur clique sur le lien de reset password
+      if (event === 'PASSWORD_RECOVERY') {
+        setSession(session);
+        setCurrentPage('reset-password');
+        setIsAuthChecking(false);
+        return; // Ne pas continuer vers le dashboard
+      }
+
       setSession(session);
       if (session) {
         fetchProfile(session.user.id);
