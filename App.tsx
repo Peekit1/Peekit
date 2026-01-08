@@ -18,10 +18,9 @@ import { ClientAccessGate } from './components/ClientAccessGate';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { ProjectDetails } from './components/ProjectDetails';
 import { SectionDivider } from './components/SectionDivider';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { SelectedPlan, Project, StagesConfiguration, UserPlan, Teaser, WorkflowStep, NotificationType } from './types';
 import { supabase } from './supabaseClient';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 // ==========================================
 // 1. UTILITAIRES & SANITIZATION
@@ -295,6 +294,8 @@ function App() {
       if (hash.startsWith('#/v/')) {
         const projectId = hash.split('/v/')[1];
         if (projectId) fetchPublicProject(projectId);
+      } else if (hash === '#/reset-password') {
+        setCurrentPage('reset-password');
       }
     };
     handleHashChange();
@@ -414,61 +415,9 @@ function App() {
 
   const fetchPublicProject = async (projectId: string) => {
     setIsAuthChecking(true);
-    
-    if (!SUPABASE_URL) {
-      console.error("VITE_SUPABASE_URL manquante");
-      alert("Erreur de configuration serveur");
-      setCurrentPage('home');
-      setIsAuthChecking(false);
-      return;
-    }
 
     try {
-      const storedToken = localStorage.getItem(`project_token_${projectId}`);
-      let isAuthorized = false;
-      
-      if (storedToken) {
-        try {
-          const decoded = JSON.parse(atob(storedToken));
-          if (decoded.exp > Date.now()) {
-            isAuthorized = true;
-          }
-        } catch (e) {
-          localStorage.removeItem(`project_token_${projectId}`);
-        }
-      }
-      
-      if (!isAuthorized) {
-        const password = prompt('Ce projet est protégé. Veuillez entrer le mot de passe :');
-        if (password === null) {
-            setCurrentPage('home');
-            return;
-        }
-
-        const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/verify-project-access`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId,
-              password,
-              clientIp: 'browser' 
-            })
-          }
-        );
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-          alert(result.error || 'Accès refusé');
-          setCurrentPage('home');
-          return;
-        }
-        
-        localStorage.setItem(`project_token_${projectId}`, result.accessToken);
-      }
-      
+      // Récupérer le projet depuis Supabase
       const { data: projectData, error } = await supabase
         .from('projects')
         .select('*, teasers ( id, type, url, created_at, title )')
@@ -488,16 +437,18 @@ function App() {
         setStageConfig(activeConfig);
         const mapped = mapProjectsFromDB([projectData])[0];
         mapped.stagesConfig = JSON.parse(JSON.stringify(activeConfig));
-        
+
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (!currentSession || currentSession.user.id !== projectData.user_id) {
-           await supabase.from('projects').update({ 
-             client_last_viewed_at: new Date().toISOString() 
+           await supabase.from('projects').update({
+             client_last_viewed_at: new Date().toISOString()
            }).eq('id', projectId);
         }
 
         setClientViewProject(mapped);
-        setClientAccessGranted(true); 
+        // ✅ FIX: Si le projet a un mot de passe, ne pas accorder l'accès automatiquement
+        // Le composant ClientAccessGate s'en chargera
+        setClientAccessGranted(!mapped.accessPassword);
         setCurrentPage('client-view');
       }
       
@@ -868,6 +819,13 @@ function App() {
   };
 
   if (isAuthChecking) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-gray-900" /></div>;
+
+  if (currentPage === 'reset-password') {
+    return <ResetPasswordPage onSuccess={() => {
+      window.location.hash = '';
+      setCurrentPage('dashboard');
+    }} />;
+  }
 
   if (currentPage === 'client-view' && clientViewProject) {
     if (clientViewProject.accessPassword && !clientAccessGranted) {

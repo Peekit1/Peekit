@@ -46,7 +46,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}`,
+        redirectTo: `${window.location.origin}/#/reset-password`,
       });
 
       if (error) throw error;
@@ -109,7 +109,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
   if (resetEmailSent) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans">
+        <div className="min-h-screen h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans overflow-hidden">
             <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
                     <Check size={24} strokeWidth={2.5} className="text-emerald-600"/>
@@ -130,7 +130,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
   if (showConfirmationMessage) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans">
+        <div className="min-h-screen h-screen flex items-center justify-center bg-[#F9FAFB] p-6 font-sans overflow-hidden">
             <div className="max-w-md w-full text-center space-y-6 animate-fade-in bg-white p-8 rounded-3xl border border-gray-200 shadow-xl shadow-gray-200/50">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-black border border-gray-100 mb-2">
                     <Mail size={24} strokeWidth={1.5}/>
@@ -151,7 +151,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
 
   if (showResetPassword) {
       return (
-        <div className="min-h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative">
+        <div className="min-h-screen h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative overflow-hidden">
           <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
 
           <button
@@ -215,8 +215,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack, onLogin, initialView
   }
 
   return (
-    // ✅ FIX: Centrage vertical parfait sur desktop avec items-center justify-center
-    <div className="min-h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative">
+    // ✅ FIX: Centrage vertical parfait + overflow-hidden pour éviter le scroll vertical
+    <div className="min-h-screen h-screen w-full flex items-center justify-center px-6 bg-[#F9FAFB] font-sans relative overflow-hidden">
 
       <div className="absolute inset-0 bg-dot-pattern opacity-50 pointer-events-none"></div>
 
