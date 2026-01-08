@@ -257,10 +257,20 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 // APP COMPONENT
 // ==========================================
 
+// ✅ Helper: Détecte si on est en mode recovery password (avant le rendu)
+const isPasswordRecoveryMode = () => {
+  const hash = window.location.hash;
+  return hash.includes('type=recovery');
+};
+
 function App() {
   const csrfToken = useCSRFToken();
 
-  const [currentPage, setCurrentPage] = useState('home');
+  // ✅ FIX: Initialiser currentPage à 'reset-password' si on détecte le hash recovery
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (isPasswordRecoveryMode()) return 'reset-password';
+    return 'home';
+  });
   const currentPageRef = useRef(currentPage);
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -310,33 +320,44 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // ✅ FIX: Si on est en mode recovery, ne pas faire de redirections
+    const inRecoveryMode = isPasswordRecoveryMode();
+
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
-      if (initialSession) {
+
+      // ✅ FIX: Ne pas charger le profil en mode recovery (évite la redirection dashboard)
+      if (initialSession && !inRecoveryMode) {
         fetchProfile(initialSession.user.id);
         fetchProjects(initialSession.user.id);
       }
+
       if (!window.location.hash.startsWith('#/v/')) setIsAuthChecking(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // ✅ FIX: Intercepter l'événement PASSWORD_RECOVERY de Supabase
-      // Cet événement est déclenché quand l'utilisateur clique sur le lien de reset password
       if (event === 'PASSWORD_RECOVERY') {
         setSession(session);
         setCurrentPage('reset-password');
         setIsAuthChecking(false);
-        return; // Ne pas continuer vers le dashboard
+        return;
       }
 
       setSession(session);
       if (session) {
-        fetchProfile(session.user.id);
-        fetchProjects(session.user.id);
+        // ✅ FIX: Ne pas rediriger si on est en mode recovery
+        if (!isPasswordRecoveryMode()) {
+          fetchProfile(session.user.id);
+          fetchProjects(session.user.id);
+        }
       } else {
         setProjects([]);
         setStudioName('');
-        if (!window.location.hash.startsWith('#/v/')) setCurrentPage('home');
+        // ✅ FIX: Ne pas rediriger vers home si on est en mode recovery ou client-view
+        if (!window.location.hash.startsWith('#/v/') && !isPasswordRecoveryMode()) {
+          setCurrentPage('home');
+        }
       }
     });
 
@@ -397,18 +418,21 @@ function App() {
         setUserPlan(plan as UserPlan);
         setStudioName(data.studio_name || '');
         if (data.stages_config) setStageConfig(data.stages_config);
-        
+
+        // ✅ FIX: Ne pas rediriger si on est en mode client-view ou reset-password
         if (window.location.hash.startsWith('#/v/')) return;
-        
+        if (isPasswordRecoveryMode()) return;
+
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
         } else {
             const current = currentPageRef.current;
+            // ✅ FIX: Ne pas rediriger si on est sur reset-password
             if (current === 'home' || current === 'auth') {
                 setCurrentPage('dashboard');
             }
         }
-      } else if (!window.location.hash.startsWith('#/v/')) {
+      } else if (!window.location.hash.startsWith('#/v/') && !isPasswordRecoveryMode()) {
         setCurrentPage('onboarding');
       }
     } catch (error) { console.error('Error fetching profile:', error); }
