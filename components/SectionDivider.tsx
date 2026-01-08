@@ -2,8 +2,8 @@ import React from 'react';
 
 export const SectionDivider: React.FC = () => {
   return (
-    // On réduit la hauteur à h-8 (32px) sur mobile et h-12 (48px) sur ordi
-    // Cela garde une petite respiration sans créer un grand vide.
-    <div className="w-full h-8 md:h-12 bg-white"></div>
+    // MODIFICATION: h-4 (16px) sur mobile, h-8 (32px) sur tablette, h-12 (48px) sur desktop
+    // Réduit les espacements sur mobile pour une meilleure densité de contenu
+    <div className="w-full h-4 sm:h-8 md:h-12 bg-white"></div>
   );
 };

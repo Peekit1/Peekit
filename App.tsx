@@ -3,6 +3,10 @@ import { Loader2 } from 'lucide-react';
 import * as DOMPurify from 'dompurify';
 import { z } from 'zod';
 
+// ⚠️ IMPORTANT: Ce module DOIT être importé AVANT supabaseClient
+// car il capture le hash URL avant que Supabase ne le nettoie
+import { isInRecoveryMode, clearRecoveryMode } from './recoveryMode';
+
 import { Hero } from './components/Hero';
 import { Solution } from './components/Solution';
 import { Benefits } from './components/Benefits';
@@ -257,18 +261,13 @@ export const INITIAL_STAGES_CONFIG: StagesConfiguration = [
 // APP COMPONENT
 // ==========================================
 
-// ✅ Helper: Détecte si on est en mode recovery password (avant le rendu)
-const isPasswordRecoveryMode = () => {
-  const hash = window.location.hash;
-  return hash.includes('type=recovery');
-};
-
 function App() {
   const csrfToken = useCSRFToken();
 
-  // ✅ FIX: Initialiser currentPage à 'reset-password' si on détecte le hash recovery
+  // ✅ FIX: Initialiser currentPage à 'reset-password' si on détecte le mode recovery
+  // isInRecoveryMode() utilise sessionStorage car le hash est capturé AVANT Supabase
   const [currentPage, setCurrentPage] = useState(() => {
-    if (isPasswordRecoveryMode()) return 'reset-password';
+    if (isInRecoveryMode()) return 'reset-password';
     return 'home';
   });
   const currentPageRef = useRef(currentPage);
@@ -321,7 +320,7 @@ function App() {
 
   useEffect(() => {
     // ✅ FIX: Si on est en mode recovery, ne pas faire de redirections
-    const inRecoveryMode = isPasswordRecoveryMode();
+    const inRecoveryMode = isInRecoveryMode();
 
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
@@ -347,7 +346,7 @@ function App() {
       setSession(session);
       if (session) {
         // ✅ FIX: Ne pas rediriger si on est en mode recovery
-        if (!isPasswordRecoveryMode()) {
+        if (!isInRecoveryMode()) {
           fetchProfile(session.user.id);
           fetchProjects(session.user.id);
         }
@@ -355,7 +354,7 @@ function App() {
         setProjects([]);
         setStudioName('');
         // ✅ FIX: Ne pas rediriger vers home si on est en mode recovery ou client-view
-        if (!window.location.hash.startsWith('#/v/') && !isPasswordRecoveryMode()) {
+        if (!window.location.hash.startsWith('#/v/') && !isInRecoveryMode()) {
           setCurrentPage('home');
         }
       }
@@ -421,7 +420,7 @@ function App() {
 
         // ✅ FIX: Ne pas rediriger si on est en mode client-view ou reset-password
         if (window.location.hash.startsWith('#/v/')) return;
-        if (isPasswordRecoveryMode()) return;
+        if (isInRecoveryMode()) return;
 
         if (!data.onboarding_completed) {
             setCurrentPage('onboarding');
@@ -432,7 +431,7 @@ function App() {
                 setCurrentPage('dashboard');
             }
         }
-      } else if (!window.location.hash.startsWith('#/v/') && !isPasswordRecoveryMode()) {
+      } else if (!window.location.hash.startsWith('#/v/') && !isInRecoveryMode()) {
         setCurrentPage('onboarding');
       }
     } catch (error) { console.error('Error fetching profile:', error); }
@@ -591,9 +590,16 @@ function App() {
       }
 
     } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        const firstError = error.errors[0];
-        alert(`Erreur de validation : ${firstError.message}`);
+      // ✅ FIX: Gestion défensive des erreurs Zod
+      // Dans le code minifié, error.errors peut être undefined
+      if (error instanceof z.ZodError || error?.issues || error?.errors) {
+        const issues = error?.issues || error?.errors || [];
+        const firstError = issues[0];
+        if (firstError?.message) {
+          alert(`Erreur de validation : ${firstError.message}`);
+        } else {
+          alert('Erreur de validation des données du projet.');
+        }
       } else {
         alert('Erreur création: ' + getErrorMessage(error));
       }
@@ -861,6 +867,8 @@ function App() {
 
   if (currentPage === 'reset-password') {
     return <ResetPasswordPage onSuccess={() => {
+      // Nettoyer le mode recovery et le hash
+      clearRecoveryMode();
       window.location.hash = '';
       setCurrentPage('auth');
       setAuthMode('login');

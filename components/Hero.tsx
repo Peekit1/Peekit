@@ -66,13 +66,13 @@ const MOCK_PROJECTS: Partial<Project>[] = [
 
 export const Hero: React.FC<AuthNavigationProps> = ({ onAuthClick }) => {
   return (
-    // CORRECTION ICI : Suppression du texte invalide et application des classes de padding réduites
-    <section className="relative pt-40 pb-16 md:pt-60 md:pb-24 overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/60">
-      
+    // MODIFICATION: pt-28 (112px) sur mobile, pt-60 sur desktop pour réduire l'espace
+    <section className="relative pt-28 pb-12 md:pt-60 md:pb-24 overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/60">
+
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
-        
+
         {/* TITRE ET APPEL À L'ACTION */}
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-12 md:mb-16">
+        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-8 md:mb-16">
           
           <Reveal delay={0}>
             <h1 

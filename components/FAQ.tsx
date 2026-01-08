@@ -33,15 +33,17 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <section className="py-24 bg-white" id="faq">
+    // MODIFICATION: py-12 pour mobile, md:py-24 pour desktop
+    <section className="py-12 md:py-24 bg-white" id="faq">
       <div className="container mx-auto px-6 max-w-4xl">
-        
+
         <Reveal>
-            <div className="text-center mb-20 space-y-6">
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tighter" style={{ fontFamily: 'Gabarito, sans-serif' }}>
+            {/* MODIFICATION: mb-10 pour mobile, md:mb-20 pour desktop */}
+            <div className="text-center mb-10 md:mb-20 space-y-4 md:space-y-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tighter" style={{ fontFamily: 'Gabarito, sans-serif' }}>
                     Questions fréquentes
                 </h2>
-                <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">
+                <p className="text-gray-500 max-w-lg mx-auto leading-relaxed text-sm md:text-base">
                     Nous avons compilé les réponses aux questions les plus courantes pour vous aider à démarrer.
                 </p>
             </div>
@@ -80,7 +82,8 @@ export const FAQ: React.FC = () => {
         </div>
 
         <Reveal delay={600}>
-            <div className="mt-20 text-center">
+            {/* MODIFICATION: mt-10 pour mobile, md:mt-20 pour desktop */}
+            <div className="mt-10 md:mt-20 text-center">
                 <p className="text-sm text-gray-400">
                     Vous avez une autre question ? <a href="mailto:support@peekit.io" className="text-gray-900 font-bold underline underline-offset-4 hover:text-black transition-colors">Écrivez-nous</a>
                 </p>
