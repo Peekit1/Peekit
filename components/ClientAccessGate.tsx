@@ -25,16 +25,7 @@ export const ClientAccessGate: React.FC<ClientAccessGateProps> = ({ project, onA
   };
 
   return (
-    <div className="min-h-screen bg-dot-pattern font-sans flex flex-col items-center justify-center p-6 text-gray-900 relative">
-      
-      {onBack && (
-        <button 
-          onClick={onBack}
-          className="absolute top-8 left-8 flex items-center gap-2 text-[10px] font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-widest"
-        >
-          <ArrowLeft size={14} /> Retour
-        </button>
-      )}
+    <div className="fixed inset-0 bg-white font-sans flex flex-col items-center justify-center p-6 text-gray-900 overflow-hidden">
 
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in ring-1 ring-gray-100">
         <div className="p-8 text-center">

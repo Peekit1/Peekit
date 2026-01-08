@@ -167,9 +167,6 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20 relative">
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-4">
-              <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-colors bg-white">
-                  <ArrowLeft size={16}/>
-              </button>
               <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center text-white">
                       <Activity size={12} strokeWidth={2.5}/>

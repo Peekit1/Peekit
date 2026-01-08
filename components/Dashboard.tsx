@@ -450,21 +450,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             {settingsTab === 'workflow' && (
                                 <div className="space-y-6">
                                     <div><h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Workflow par défaut</h2><p className="text-gray-500 text-sm">Ces étapes seront appliquées aux <strong>nouveaux</strong> projets.</p></div>
-                                    <div className="space-y-3">
-                                        {localWorkflow.map((stage, index) => (
-                                            <div key={stage.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg group">
-                                                <div className="hidden sm:block"><GripVertical size={16} className="text-gray-300 cursor-move" /></div>
-                                                <div className="flex-1 grid grid-cols-12 gap-3 w-full">
-                                                    <div className="col-span-12 sm:col-span-6"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Nom</label><input type="text" value={stage.label} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].label = e.target.value; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm font-medium"/></div>
-                                                    <div className="col-span-5 sm:col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Min Jours</label><input type="number" value={stage.minDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].minDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm"/></div>
-                                                    <div className="col-span-5 sm:col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Max Jours</label><input type="number" value={stage.maxDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].maxDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm"/></div>
-                                                    <div className="col-span-2 sm:hidden flex items-end justify-center pb-2"><button onClick={() => { const newWorkflow = localWorkflow.filter((_, i) => i !== index); setLocalWorkflow(newWorkflow); }} className="text-red-500"><Trash2 size={18}/></button></div>
-                                                </div>
-                                                <button onClick={() => { const newWorkflow = localWorkflow.filter((_, i) => i !== index); setLocalWorkflow(newWorkflow); }} className="hidden sm:block p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-md transition-colors"><Trash2 size={16}/></button>
+                                    {!isPro ? (
+                                        <div className="p-8 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-center">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400"><Zap size={20}/></div>
+                                            <h3 className="font-bold text-gray-900 mb-2">Fonctionnalité Pro</h3>
+                                            <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">La personnalisation du workflow par défaut est réservée aux membres Pro.</p>
+                                            <Button variant="black" size="sm" onClick={onUpgradeClick}>Passer au Pro</Button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="space-y-3">
+                                                {localWorkflow.map((stage, index) => (
+                                                    <div key={stage.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-lg group">
+                                                        <div className="hidden sm:block"><GripVertical size={16} className="text-gray-300 cursor-move" /></div>
+                                                        <div className="flex-1 grid grid-cols-12 gap-3 w-full">
+                                                            <div className="col-span-12 sm:col-span-6"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Nom</label><input type="text" value={stage.label} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].label = e.target.value; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm font-medium"/></div>
+                                                            <div className="col-span-5 sm:col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Min Jours</label><input type="number" value={stage.minDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].minDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm"/></div>
+                                                            <div className="col-span-5 sm:col-span-3"><label className="text-[9px] font-bold text-gray-400 uppercase sm:hidden mb-1 block">Max Jours</label><input type="number" value={stage.maxDays} onChange={(e) => { const newWorkflow = [...localWorkflow]; newWorkflow[index].maxDays = parseInt(e.target.value) || 0; setLocalWorkflow(newWorkflow); }} className="w-full bg-white border border-gray-200 rounded px-2 py-2 sm:py-1 text-sm"/></div>
+                                                            <div className="col-span-2 sm:hidden flex items-end justify-center pb-2"><button onClick={() => { const newWorkflow = localWorkflow.filter((_, i) => i !== index); setLocalWorkflow(newWorkflow); }} className="text-red-500"><Trash2 size={18}/></button></div>
+                                                        </div>
+                                                        <button onClick={() => { const newWorkflow = localWorkflow.filter((_, i) => i !== index); setLocalWorkflow(newWorkflow); }} className="hidden sm:block p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-md transition-colors"><Trash2 size={16}/></button>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                    <Button variant="secondary" onClick={() => { setLocalWorkflow([...localWorkflow, { id: `custom-${Date.now()}`, label: 'Nouvelle étape', minDays: 1, maxDays: 3, message: 'En cours' }]); }} size="sm" className="w-full border-dashed border-gray-300 text-gray-500 hover:text-black hover:border-gray-400">+ Ajouter une étape</Button>
+                                            <Button variant="secondary" onClick={() => { setLocalWorkflow([...localWorkflow, { id: `custom-${Date.now()}`, label: 'Nouvelle étape', minDays: 1, maxDays: 3, message: 'En cours' }]); }} size="sm" className="w-full border-dashed border-gray-300 text-gray-500 hover:text-black hover:border-gray-400">+ Ajouter une étape</Button>
+                                        </>
+                                    )}
                                 </div>
                             )}
                             {settingsTab === 'account' && (

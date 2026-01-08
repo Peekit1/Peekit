@@ -42,9 +42,16 @@ function generateUUID() {
 
 export function sanitizeString(input: string): string {
   if (typeof window !== 'undefined' && DOMPurify && DOMPurify.sanitize) {
-    return DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+    // DOMPurify enlève les tags HTML dangereux mais encode aussi les entités
+    // On décode ensuite les entités HTML pour l'affichage dans React
+    const sanitized = DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+    // Décoder les entités HTML courantes pour éviter &amp; au lieu de &
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = sanitized;
+    return textarea.value;
   }
-  return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+  // Fallback: on n'encode PAS les caractères spéciaux car React gère l'échappement
+  return input.replace(/</g, '').replace(/>/g, '').replace(/"/g, '').replace(/'/g, '');
 }
 
 export function sanitizeEmail(email: string): string {
@@ -321,11 +328,25 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // ✅ FIX: Si on est en mode recovery, ne pas faire de redirections
+    // ✅ FIX: Si on est en mode recovery, rediriger immédiatement vers reset-password
     const inRecoveryMode = isInRecoveryMode();
+
+    if (inRecoveryMode) {
+      console.log('[Peekit] Mode recovery détecté au démarrage, redirection vers reset-password');
+      setCurrentPage('reset-password');
+      setIsAuthChecking(false);
+    }
 
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
+
+      // ✅ FIX: Si en mode recovery, rester sur reset-password sans charger le profil
+      if (inRecoveryMode) {
+        console.log('[Peekit] Session récupérée en mode recovery, page reste sur reset-password');
+        setCurrentPage('reset-password');
+        setIsAuthChecking(false);
+        return;
+      }
 
       // ✅ FIX: Ne pas charger le profil en mode recovery (évite la redirection dashboard)
       if (initialSession && !inRecoveryMode) {
@@ -523,6 +544,12 @@ function App() {
   const handleCreateProject = async (projectData: Partial<Project>, coverFile?: File, overrideStageConfig?: StagesConfiguration) => {
     if (!session || !csrfToken) {
       if (!csrfToken) alert("Session invalide (CSRF). Veuillez recharger la page.");
+      return;
+    }
+
+    // ✅ LIMITE DE PROJET POUR LE PLAN DÉCOUVERTE
+    if (userPlan === 'discovery' && projects.length >= 1) {
+      alert("Vous avez atteint la limite de 1 projet pour le plan Découverte. Passez au plan Pro pour créer des projets illimités.");
       return;
     }
 

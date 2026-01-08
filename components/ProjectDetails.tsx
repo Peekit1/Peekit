@@ -583,6 +583,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                   </div>
                               ) : (
                                   <>
+                                      <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Camera size={14} /><span className="text-xs font-medium">Client</span></div><span className="text-xs font-bold text-gray-900">{project.clientName}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>

@@ -97,10 +97,42 @@
          Supabase nettoie automatiquement le hash URL lors de son initialisation -->
     <script>
       (function() {
-        var hash = window.location.hash;
-        if (hash && hash.indexOf('type=recovery') !== -1) {
+        // Capturer hash ET query params
+        var hash = window.location.hash || '';
+        var search = window.location.search || '';
+        var fullUrl = window.location.href;
+
+        console.log('[Peekit-Preload] URL complète:', fullUrl);
+        console.log('[Peekit-Preload] Hash:', hash);
+        console.log('[Peekit-Preload] Query:', search);
+
+        // Détecter le mode recovery de plusieurs façons possibles
+        var isRecovery = false;
+
+        // 1. Vérifier le hash pour type=recovery (format Supabase standard)
+        if (hash.indexOf('type=recovery') !== -1) {
+          isRecovery = true;
+          console.log('[Peekit-Preload] Recovery détecté via hash type=recovery');
+        }
+
+        // 2. Vérifier les query params (certaines configs Supabase)
+        if (search.indexOf('type=recovery') !== -1) {
+          isRecovery = true;
+          console.log('[Peekit-Preload] Recovery détecté via query type=recovery');
+        }
+
+        // 3. Vérifier si c'est un callback auth avec token (fallback)
+        if ((hash.indexOf('access_token=') !== -1 || search.indexOf('access_token=') !== -1) &&
+            (hash.indexOf('type=recovery') !== -1 || search.indexOf('type=recovery') !== -1)) {
+          isRecovery = true;
+          console.log('[Peekit-Preload] Recovery détecté via access_token + type=recovery');
+        }
+
+        if (isRecovery) {
           sessionStorage.setItem('peekit_recovery_mode', 'true');
-          console.log('[Peekit] Mode recovery détecté:', hash.substring(0, 50) + '...');
+          console.log('[Peekit-Preload] ✅ Mode recovery activé dans sessionStorage');
+        } else {
+          console.log('[Peekit-Preload] Pas de mode recovery détecté');
         }
       })();
     </script>
