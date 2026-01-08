@@ -202,13 +202,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       e.preventDefault();
       setNewProjectLoading(true);
       try {
+          // ✅ CORRECTION : On envoie les dates brutes ISO (YYYY-MM-DD) pour la validation Zod
+          // Le formatage français se fait uniquement à l'affichage, pas au stockage
+          const projectToSubmit = {
+              ...newProject,
+              // Les dates restent en format ISO
+              date: newProject.date,
+              expectedDeliveryDate: newProject.expectedDeliveryDate
+          };
+
           if (editingProjectId) {
-              await onEditProject(editingProjectId, newProject, coverFile);
+              await onEditProject(editingProjectId, projectToSubmit, coverFile);
           } else {
-              await onCreateProject(newProject, coverFile);
+              await onCreateProject(projectToSubmit, coverFile);
           }
-           
-          setDashboardCacheBuster(Date.now()); 
+
+          setDashboardCacheBuster(Date.now());
 
           // On ferme la modale et reset uniquement si pas d'erreur
           setIsNewProjectModalOpen(false);
@@ -218,8 +227,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       } catch (error) {
           console.error("Erreur création/édition projet:", error);
           // L'erreur est normalement déjà affichée par App.tsx via alert
-      } finally { 
-          setNewProjectLoading(false); 
+      } finally {
+          setNewProjectLoading(false);
       }
   };
 
