@@ -461,7 +461,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                           </>
                                       )}
 
-                                      {/* ZONE D'ÉDITION (Message, Description...) */}
+                                      {/* ZONE D'ÉDITION (Message, Description....) */}
                                       {(isCurrent || isEditing) && (
                                           <div className="px-6 pb-4 ml-10 space-y-3 animate-fade-in">
                                               {isEditing ? (
