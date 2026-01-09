@@ -7,7 +7,7 @@ import {
 import { ClientTrackingPageProps } from '../types';
 import { Button } from './Button';
 
-export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig }) => {
+export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig, showBackButton }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
@@ -20,7 +20,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
   const currentStageConfig = stageConfig.find(s => s.id === project.currentStage) || stageConfig[0];
-  const isCompleted = currentStageIndex === stageConfig.length - 1 && project.currentStage === stageConfig[stageConfig.length -1].id;
+  // ✅ Le projet est terminé seulement si on est sur la dernière étape ET isFinalized est true
+  const isOnLastStage = currentStageIndex === stageConfig.length - 1;
+  const isCompleted = isOnLastStage && project.isFinalized === true;
 
   const totalFiles = project.teasers?.length || 0;
   const selectedCount = selectedFileIds.length;
@@ -167,6 +169,16 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     <div className="min-h-screen bg-[#F9FAFB] font-sans text-gray-900 pb-20 relative">
       <header className="bg-white border-b border-gray-200 h-16 sticky top-0 z-30 px-6 flex items-center justify-between shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-4">
+              {/* ✅ Bouton retour - affiché seulement quand on vient de "Vue client" */}
+              {showBackButton && onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors group mr-2"
+                >
+                  <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                  <span className="hidden sm:inline">Retour</span>
+                </button>
+              )}
               <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-gray-900 rounded-md flex items-center justify-center text-white">
                       <Activity size={12} strokeWidth={2.5}/>
@@ -211,9 +223,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                       </div>
                       <div className="flex items-center gap-3 mb-1">
                           {isCompleted ? <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div> : <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div>}
-                          <span className="text-lg font-bold text-gray-900">{currentStageConfig.label}</span>
+                          <span className="text-lg font-bold text-gray-900">{isCompleted ? 'Projet Terminé' : currentStageConfig.label}</span>
                       </div>
-                      <p className="text-xs text-gray-500 leading-snug">{currentStageConfig.message}</p>
+                      <p className="text-xs text-gray-500 leading-snug">{isCompleted ? 'Votre projet a été finalisé avec succès.' : currentStageConfig.message}</p>
                       
                       {currentStageConfig.description && (
                           <div className="mt-4">
@@ -259,20 +271,23 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                               {stageConfig.map((step, index) => {
                                   const isDone = index < currentStageIndex;
                                   const isCurrent = index === currentStageIndex;
+                                  const isLastStep = index === stageConfig.length - 1;
+                                  // ✅ La dernière étape est terminée uniquement si isCompleted (projet finalisé)
+                                  const isLastStepCompleted = isLastStep && isCurrent && isCompleted;
                                   const description = step.content || defaultStepContent[step.id];
                                   const isExpanded = expandedStepId === step.id;
                                   return (
                                       <div key={step.id} className="relative z-10">
                                           <div className="flex items-start gap-4">
-                                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 relative z-20 ${isDone ? 'bg-gray-900 border-gray-900 text-white' : isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 'bg-white border-gray-200 text-gray-300'}`}>
-                                                  {isDone && <Check size={12} strokeWidth={3}/>}
-                                                  {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
+                                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 relative z-20 ${isDone || isLastStepCompleted ? 'bg-gray-900 border-gray-900 text-white' : isCurrent ? 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50' : 'bg-white border-gray-200 text-gray-300'}`}>
+                                                  {(isDone || isLastStepCompleted) && <Check size={12} strokeWidth={3}/>}
+                                                  {isCurrent && !isLastStepCompleted && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"/>}
                                               </div>
                                               <div className={`flex-1 pt-0.5 ${isCurrent ? 'opacity-100' : isDone ? 'opacity-70' : 'opacity-40'}`}>
                                                   <div className="flex justify-between items-center mb-1">
                                                       <h4 className="text-sm font-bold text-gray-900">{step.label}</h4>
-                                                      {isDone && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">Terminé</span>}
-                                                      {isCurrent && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">En cours</span>}
+                                                      {(isDone || isLastStepCompleted) && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-500">Terminé</span>}
+                                                      {isCurrent && !isLastStepCompleted && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">En cours</span>}
                                                   </div>
                                                   <p className="text-xs text-gray-500 leading-relaxed font-medium mb-2">{step.message}</p>
                                                   {description && (

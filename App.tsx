@@ -294,6 +294,7 @@ function App() {
   const [clientViewProject, setClientViewProject] = useState<Project | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [clientAccessGranted, setClientAccessGranted] = useState(false);
+  const [showClientBackButton, setShowClientBackButton] = useState(false); // ✅ Afficher bouton retour seulement depuis "Vue client"
 
   useEffect(() => {
     currentPageRef.current = currentPage;
@@ -426,7 +427,8 @@ function App() {
           })) : [],
           accessPassword: p.access_password,
           expectedDeliveryDate: p.expected_delivery_date,
-          stagesConfig: JSON.parse(JSON.stringify(effectiveConfig))
+          stagesConfig: JSON.parse(JSON.stringify(effectiveConfig)),
+          isFinalized: p.is_finalized || false // ✅ Projet marqué comme terminé
         };
     });
   };
@@ -885,6 +887,7 @@ function App() {
     } else setCurrentPage('home');
     setClientViewProject(null);
     setClientAccessGranted(false);
+    setShowClientBackButton(false); // ✅ Reset du bouton retour
   };
 
   const handleAuthNavigation = (mode?: 'login' | 'signup') => {
@@ -906,9 +909,9 @@ function App() {
 
   if (currentPage === 'client-view' && clientViewProject) {
     if (clientViewProject.accessPassword && !clientAccessGranted) {
-      return <ClientAccessGate project={clientViewProject} onAccessGranted={() => setClientAccessGranted(true)} onBack={handleClientBack} />;
+      return <ClientAccessGate project={clientViewProject} onAccessGranted={() => setClientAccessGranted(true)} onBack={handleClientBack} showBackButton={showClientBackButton} />;
     }
-    return <ClientTrackingPage project={clientViewProject} stageConfig={stageConfig} onBack={handleClientBack} />;
+    return <ClientTrackingPage project={clientViewProject} stageConfig={stageConfig} onBack={handleClientBack} showBackButton={showClientBackButton} />;
   }
 
   if (currentPage === 'auth') return <AuthPage onBack={() => setCurrentPage('home')} onLogin={() => setCurrentPage('dashboard')} initialView={authMode} />;
@@ -930,6 +933,7 @@ function App() {
              if (viewProject.stagesConfig) setStageConfig(viewProject.stagesConfig);
              setClientViewProject(viewProject);
              setClientAccessGranted(viewProject.accessPassword ? false : true);
+             setShowClientBackButton(true); // ✅ Afficher le bouton retour car on vient de "Vue client"
              try { window.history.pushState({}, '', `#/v/${editingProject.id}`); } catch (e) {}
              setCurrentPage('client-view');
         }}
@@ -965,6 +969,16 @@ function App() {
         onUpdateCoverImage={async (file) => await handleEditProject(editingProject.id, {}, file)}
         onNotifyClient={handleNotifyClient}
         onUpdateProject={async (id, data) => await handleEditProject(id, data)}
+        onFinalizeProject={async () => {
+            // ✅ Persister l'état finalisé en base de données
+            try {
+                await supabase.from('projects').update({ is_finalized: true }).eq('id', editingProject.id);
+                setEditingProject(prev => prev ? ({ ...prev, isFinalized: true }) : null);
+                setProjects(prev => prev.map(p => p.id === editingProject.id ? { ...p, isFinalized: true } : p));
+            } catch (error) {
+                console.error('Erreur finalisation projet:', error);
+            }
+        }}
       />;
   }
 

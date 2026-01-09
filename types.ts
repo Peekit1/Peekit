@@ -36,7 +36,8 @@ export interface Project {
   teasers?: Teaser[];
   accessPassword?: string;
   expectedDeliveryDate?: string;
-  stagesConfig?: StagesConfiguration; 
+  stagesConfig?: StagesConfiguration;
+  isFinalized?: boolean; // ✅ Projet marqué comme terminé
 }
 
 export interface SelectedPlan {
@@ -71,4 +72,36 @@ export interface DashboardProps {
   // ✅ AJOUTS POUR LA GESTION DU COMPTE
   onUpdateEmail: (newEmail: string) => Promise<void>;
   onUpdatePassword: (newPassword: string) => Promise<void>;
+}
+
+export interface ClientTrackingPageProps {
+  project: Project;
+  stageConfig: StagesConfiguration;
+  onBack?: () => void;
+  showBackButton?: boolean; // ✅ Afficher le bouton retour (seulement depuis Vue client)
+}
+
+export interface ClientAccessGateProps {
+  project: Project;
+  onAccessGranted: () => void;
+  onBack?: () => void;
+  showBackButton?: boolean; // ✅ Afficher le bouton retour (seulement depuis Vue client)
+}
+
+export interface ProjectDetailsProps {
+  project: Project;
+  stageConfig: StagesConfiguration;
+  defaultConfig: StagesConfiguration;
+  userPlan: UserPlan;
+  studioName: string;
+  onBack: () => void;
+  onUpdateStage: (stageId: string) => Promise<void>;
+  onUpdateStageConfig: (config: StagesConfiguration) => Promise<void>;
+  onViewClientVersion: () => void;
+  onUpdatePassword: (password: string) => Promise<void>;
+  onUploadTeasers: (files: File[]) => Promise<void>;
+  onDeleteTeaser: (teaserId: string) => Promise<void>;
+  onUpdateCoverImage: (file: File) => Promise<void>;
+  onNotifyClient: (project: Project, stage: WorkflowStep, type: NotificationType) => Promise<{ subject: string; body: string }>;
+  onFinalizeProject?: () => Promise<void>; // ✅ Marquer le projet comme terminé
 }

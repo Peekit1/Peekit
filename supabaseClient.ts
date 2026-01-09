@@ -36,5 +36,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// ==========================================
+// ⚠️ LISTENER PRÉCOCE POUR PASSWORD_RECOVERY
+// Ce listener s'exécute IMMÉDIATEMENT après la création du client
+// pour capturer l'événement PASSWORD_RECOVERY avant React
+// ==========================================
+supabase.auth.onAuthStateChange((event, _session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    sessionStorage.setItem('peekit_recovery_mode', 'true');
+    console.log('[SupabaseClient] ✅ PASSWORD_RECOVERY event capturé par listener précoce!');
+  }
+});
+
 // Export des variables pour usage externe si nécessaire
 export { supabaseUrl, supabaseAnonKey };

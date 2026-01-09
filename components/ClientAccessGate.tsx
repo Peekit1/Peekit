@@ -4,7 +4,7 @@ import { Lock, ArrowRight, Activity, ShieldCheck, AlertCircle, ArrowLeft } from 
 import { Button } from './Button';
 import { ClientAccessGateProps } from '../types';
 
-export const ClientAccessGate: React.FC<ClientAccessGateProps> = ({ project, onAccessGranted, onBack }) => {
+export const ClientAccessGate: React.FC<ClientAccessGateProps> = ({ project, onAccessGranted, onBack, showBackButton }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +26,17 @@ export const ClientAccessGate: React.FC<ClientAccessGateProps> = ({ project, onA
 
   return (
     <div className="fixed inset-0 bg-white font-sans flex flex-col items-center justify-center p-6 text-gray-900 overflow-hidden">
+
+      {/* ✅ Bouton retour - affiché seulement quand on vient de "Vue client" */}
+      {showBackButton && onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Retour
+        </button>
+      )}
 
       <div className="w-full max-w-sm bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in ring-1 ring-gray-100">
         <div className="p-8 text-center">

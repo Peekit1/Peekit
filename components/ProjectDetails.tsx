@@ -31,8 +31,7 @@ const isEmailJSConfigured = () => {
 
 interface ExtendedProjectDetailsProps extends ProjectDetailsProps {
     onUpdateProject?: (projectId: string, data: Partial<Project>) => Promise<void>;
-    // ✅ Ajout de la prop pour tout supprimer
-    onDeleteAllTeasers?: () => Promise<void>; 
+    onDeleteAllTeasers?: () => Promise<void>;
 }
 
 export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({ 
@@ -48,10 +47,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   onUpdatePassword, 
   onUploadTeasers, 
   onDeleteTeaser, 
-  onDeleteAllTeasers, // ✅ Récupération de la fonction
-  onUpdateCoverImage, 
+  onDeleteAllTeasers,
+  onUpdateCoverImage,
   onNotifyClient,
-  onUpdateProject 
+  onUpdateProject,
+  onFinalizeProject // ✅ Handler pour marquer le projet comme terminé
 }) => {
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null);
   const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
@@ -63,7 +63,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
 
   // ✅ État pour marquer le projet comme terminé (dernière étape validée manuellement)
-  const [isProjectFinalized, setIsProjectFinalized] = useState(false); 
+  const [isProjectFinalized, setIsProjectFinalized] = useState(project.isFinalized || false); 
    
   // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
@@ -159,8 +159,12 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   };
 
   // ✅ Handler pour marquer le projet comme terminé
-  const handleFinalizeProject = () => {
+  const handleFinalizeProject = async () => {
       setIsProjectFinalized(true);
+      // Persister en base de données si le handler est fourni
+      if (onFinalizeProject) {
+          await onFinalizeProject();
+      }
   };
 
   const getProgress = () => {
