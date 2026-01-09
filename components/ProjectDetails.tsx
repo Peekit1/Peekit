@@ -60,7 +60,10 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [showCopyFeedback, setShowCopyFeedback] = useState(false);
   
   // ✅ Nouvel état pour la modale de suppression
-  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false); 
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+
+  // ✅ État pour marquer le projet comme terminé (dernière étape validée manuellement)
+  const [isProjectFinalized, setIsProjectFinalized] = useState(false); 
    
   // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
@@ -121,28 +124,43 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
 
   const currentStageIndex = stageConfig.findIndex(s => s.id === project.currentStage);
    
+  // ✅ FIX: Logique améliorée pour la gestion des étapes
+  // - Cliquer sur l'avant-dernière étape passe à la dernière en "en cours"
+  // - La dernière étape nécessite une action explicite pour terminer le projet
+  const isOnLastStage = currentStageIndex === stageConfig.length - 1;
+
   const handleStageClick = async (clickedStepId: string) => {
-      if (editingStepId) return; 
-       
+      if (editingStepId) return;
+
       const clickedIndex = stageConfig.findIndex(s => s.id === clickedStepId);
       if (clickedIndex === -1) return;
 
+      // Retour en arrière : toujours autorisé + reset finalization
       if (clickedIndex < currentStageIndex) {
+          setIsProjectFinalized(false);
           setLoadingStageId(clickedStepId);
           await onUpdateStage(clickedStepId);
           setLoadingStageId(null);
           return;
       }
 
+      // Clic sur l'étape actuelle pour passer à la suivante
       if (clickedStepId === project.currentStage) {
+          // Si on n'est PAS sur la dernière étape, on avance
           if (clickedIndex < stageConfig.length - 1) {
               const nextStep = stageConfig[clickedIndex + 1];
               setLoadingStageId(nextStep.id);
               await onUpdateStage(nextStep.id);
               setLoadingStageId(null);
           }
+          // Si on est sur la dernière étape, ne rien faire (utiliser le bouton "Terminer")
           return;
       }
+  };
+
+  // ✅ Handler pour marquer le projet comme terminé
+  const handleFinalizeProject = () => {
+      setIsProjectFinalized(true);
   };
 
   const getProgress = () => {
@@ -388,23 +406,27 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               const isLastStep = index === localWorkflow.length - 1;
                               const isNavigable = !isEditing && (isDone || isCurrent);
 
+                              // ✅ FIX: La dernière étape n'est "terminée" visuellement que si isProjectFinalized est true
+                              const isLastStepFinalized = isLastStep && isCurrent && isProjectFinalized;
+                              const isLastStepInProgress = isLastStep && isCurrent && !isProjectFinalized;
+
                               return (
-                                  <div 
-                                    key={step.id} 
+                                  <div
+                                    key={step.id}
                                     className={`group flex flex-col transition-all select-none relative
-                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''} 
-                                        ${!isEditing && isCurrent && isLastStep ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : ''}
+                                        ${isEditing ? 'ring-2 ring-black bg-white z-10 shadow-lg' : ''}
+                                        ${!isEditing && isLastStepFinalized ? 'bg-emerald-50/40' : isCurrent ? 'bg-blue-50/20' : ''}
                                     `}
                                   >
                                       {/* ZONE CLICABLE PRINCIPALE (NAVIGATION) */}
-                                      <div 
-                                        onClick={() => isNavigable && handleStageClick(step.id)}
-                                        className={`px-6 py-4 flex items-center gap-4 ${isNavigable ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'cursor-default'}`}
+                                      <div
+                                        onClick={() => isNavigable && !isLastStepInProgress && handleStageClick(step.id)}
+                                        className={`px-6 py-4 flex items-center gap-4 ${isNavigable && !isLastStepInProgress ? 'cursor-pointer hover:bg-gray-50 active:bg-gray-100' : 'cursor-default'}`}
                                       >
-                                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isCurrent && isLastStep ? 'bg-emerald-600 border-emerald-600 text-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
-                                              {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isCurrent && isLastStep ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full transition-colors"></div>}
+                                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${isLoading ? 'border-gray-200 bg-white' : isLastStepFinalized ? 'bg-emerald-600 border-emerald-600 text-white' : isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isCurrent ? 'border-blue-600 bg-white' : 'border-gray-300 bg-white'}`}>
+                                              {isLoading ? <Loader2 size={12} className="animate-spin text-gray-400"/> : isLastStepFinalized ? <Check size={14} strokeWidth={3}/> : isDone ? <Check size={14} strokeWidth={3}/> : isCurrent ? <div className="w-2.5 h-2.5 bg-blue-600 rounded-full animate-pulse"></div> : <div className="w-1.5 h-1.5 bg-gray-200 rounded-full transition-colors"></div>}
                                           </div>
-                                          
+
                                           {/* ✅ FIX OVERLAP: AJOUT DE min-w-0 et FLEX */}
                                           <div className="flex-1 min-w-0">
                                               {isEditing ? (
@@ -412,11 +434,15 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                               ) : (
                                                   // ✅ FIX OVERLAP: AJOUT DE md:pr-24 pour que le texte s'arrête avant les boutons absolus
                                                   <div className="flex items-center justify-between pr-8 md:pr-24">
-                                                      <span className={`text-sm font-bold truncate ${isCurrent && isLastStep ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
-                                                      
-                                                      {/* ✅ MODIFICATION: TEXTE "En cours" au lieu de "Valider" */}
-                                                      {isCurrent && <span className={`hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Projet Terminé" : "En cours"}</span>}
-                                                      {isCurrent && <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 ${isLastStep ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-blue-100 text-blue-700'}`}>{isLastStep ? "Terminé" : "En cours"}</span>}
+                                                      <span className={`text-sm font-bold truncate ${isLastStepFinalized ? 'text-emerald-900' : isCurrent || isDone ? 'text-gray-900' : 'text-gray-500'}`}>{step.label}</span>
+
+                                                      {/* ✅ FIX: Affichage conditionnel pour la dernière étape */}
+                                                      {isCurrent && isLastStepFinalized && <span className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-emerald-100 text-emerald-700 border border-emerald-200">Projet Terminé</span>}
+                                                      {isCurrent && isLastStepFinalized && <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-emerald-100 text-emerald-700 border border-emerald-200">Terminé</span>}
+                                                      {isCurrent && !isLastStep && <span className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-blue-100 text-blue-700">En cours</span>}
+                                                      {isCurrent && !isLastStep && <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-blue-100 text-blue-700">En cours</span>}
+                                                      {isCurrent && isLastStepInProgress && <span className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-amber-100 text-amber-700 border border-amber-200">Livraison en cours</span>}
+                                                      {isCurrent && isLastStepInProgress && <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0 ml-2 bg-amber-100 text-amber-700 border border-amber-200">En cours</span>}
                                                   </div>
                                               )}
                                           </div>
@@ -503,6 +529,31 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               </button>
                           )}
                       </div>
+
+                      {/* ✅ BOUTON TERMINER LE PROJET - Affiché quand on est sur la dernière étape non finalisée */}
+                      {isOnLastStage && !isProjectFinalized && (
+                          <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200">
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                  <div className="text-center sm:text-left">
+                                      <p className="text-sm font-bold text-amber-900">Prêt à finaliser le projet ?</p>
+                                      <p className="text-xs text-amber-700">Cette action marquera le projet comme terminé.</p>
+                                  </div>
+                                  <Button variant="black" size="sm" onClick={handleFinalizeProject} className="!bg-emerald-600 hover:!bg-emerald-700 !rounded-full !px-6 gap-2 shrink-0">
+                                      <Check size={14} /> Terminer le projet
+                                  </Button>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* ✅ MESSAGE DE CONFIRMATION - Affiché quand le projet est terminé */}
+                      {isOnLastStage && isProjectFinalized && (
+                          <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 border-t border-emerald-200">
+                              <div className="flex items-center justify-center gap-2 text-emerald-700">
+                                  <Check size={16} strokeWidth={3} />
+                                  <p className="text-sm font-bold">Projet terminé avec succès !</p>
+                              </div>
+                          </div>
+                      )}
                   </div>
 
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

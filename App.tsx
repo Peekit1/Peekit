@@ -940,9 +940,25 @@ function App() {
         onUploadTeasers={handleUploadTeasers}
         onDeleteTeaser={handleDeleteTeaser}
         onDeleteAllTeasers={async () => {
-             if(editingProject.teasers) {
-                 for(const t of editingProject.teasers) {
-                     await handleDeleteTeaser(t.id);
+             if(editingProject.teasers && editingProject.teasers.length > 0) {
+                 // Collecter tous les IDs avant de supprimer pour éviter les problèmes de closure
+                 const teaserIds = editingProject.teasers.map(t => t.id);
+
+                 try {
+                     // Supprimer tous les teasers en une seule requête batch
+                     const { error } = await supabase
+                         .from('teasers')
+                         .delete()
+                         .in('id', teaserIds);
+
+                     if (error) throw error;
+
+                     // Mettre à jour l'état une seule fois après toutes les suppressions
+                     const updatedProject = { ...editingProject, teasers: [] };
+                     setEditingProject(updatedProject);
+                     setProjects(prev => prev.map(p => p.id === editingProject.id ? updatedProject : p));
+                 } catch (error) {
+                     console.error("Erreur suppression teasers:", error);
                  }
              }
         }}

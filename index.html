@@ -97,7 +97,7 @@
          Supabase nettoie automatiquement le hash URL lors de son initialisation -->
     <script>
       (function() {
-        // Capturer hash ET query params
+        // Capturer hash ET query params ET le referrer (URL d'origine)
         var hash = window.location.hash || '';
         var search = window.location.search || '';
         var fullUrl = window.location.href;
@@ -109,7 +109,7 @@
         // Détecter le mode recovery de plusieurs façons possibles
         var isRecovery = false;
 
-        // 1. Vérifier le hash pour type=recovery (format Supabase standard)
+        // 1. Vérifier le hash pour type=recovery (format Supabase après redirect)
         if (hash.indexOf('type=recovery') !== -1) {
           isRecovery = true;
           console.log('[Peekit-Preload] Recovery détecté via hash type=recovery');
@@ -121,18 +121,35 @@
           console.log('[Peekit-Preload] Recovery détecté via query type=recovery');
         }
 
-        // 3. Vérifier si c'est un callback auth avec token (fallback)
-        if ((hash.indexOf('access_token=') !== -1 || search.indexOf('access_token=') !== -1) &&
-            (hash.indexOf('type=recovery') !== -1 || search.indexOf('type=recovery') !== -1)) {
+        // 3. Vérifier si c'est un callback auth avec error=access_denied (token expiré)
+        if (hash.indexOf('error=') !== -1 && hash.indexOf('recovery') !== -1) {
           isRecovery = true;
-          console.log('[Peekit-Preload] Recovery détecté via access_token + type=recovery');
+          console.log('[Peekit-Preload] Recovery détecté via error hash');
+        }
+
+        // 4. Vérifier si l'URL contient des fragments de token Supabase
+        if (hash.indexOf('access_token=') !== -1 && hash.indexOf('type=recovery') !== -1) {
+          isRecovery = true;
+          console.log('[Peekit-Preload] Recovery détecté via access_token + type');
+        }
+
+        // 5. Vérifier le document.referrer pour les redirects depuis Supabase
+        var referrer = document.referrer || '';
+        if (referrer.indexOf('supabase.co') !== -1 && referrer.indexOf('type=recovery') !== -1) {
+          isRecovery = true;
+          console.log('[Peekit-Preload] Recovery détecté via referrer Supabase');
         }
 
         if (isRecovery) {
           sessionStorage.setItem('peekit_recovery_mode', 'true');
           console.log('[Peekit-Preload] ✅ Mode recovery activé dans sessionStorage');
         } else {
-          console.log('[Peekit-Preload] Pas de mode recovery détecté');
+          // Vérifier si on a déjà un flag en session (persistance entre pages)
+          if (sessionStorage.getItem('peekit_recovery_mode') === 'true') {
+            console.log('[Peekit-Preload] ℹ️ Mode recovery déjà actif en session');
+          } else {
+            console.log('[Peekit-Preload] Pas de mode recovery détecté');
+          }
         }
       })();
     </script>
