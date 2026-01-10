@@ -288,14 +288,39 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
-  // ✅ HANDLER POUR CLIC SUR L'IMAGE (DÉFINIR LE POINT FOCAL)
-  const handleFocusClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-      const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+  // ✅ HANDLER POUR DRAG DU POINT FOCAL
+  const [isDraggingFocus, setIsDraggingFocus] = useState(false);
+  const focusContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleFocusDrag = (e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+      if (!focusContainerRef.current) return;
+      const rect = focusContainerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+      const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
       setLocalFocusX(x);
       setLocalFocusY(y);
   };
+
+  const handleFocusMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingFocus(true);
+      handleFocusDrag(e);
+  };
+
+  useEffect(() => {
+      if (!isDraggingFocus) return;
+
+      const handleMouseMove = (e: MouseEvent) => handleFocusDrag(e);
+      const handleMouseUp = () => setIsDraggingFocus(false);
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mouseup', handleMouseUp);
+      };
+  }, [isDraggingFocus]);
 
   // ✅ SAUVEGARDER LE FOCUS
   const handleSaveFocus = async () => {
@@ -806,34 +831,35 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                   <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                       <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Settings size={16} /></div>
-                          <div><h3 className="font-bold text-gray-900 text-sm">Ajuster le cadrage</h3><p className="text-[10px] text-gray-500">Cliquez pour définir le point focal</p></div>
+                          <div><h3 className="font-bold text-gray-900 text-sm">Ajuster le cadrage</h3><p className="text-[10px] text-gray-500">Glissez le point focal sur l'image</p></div>
                       </div>
                       <button onClick={() => setIsFocusModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
                   </div>
                   <div className="p-6">
                       <div
-                        className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden cursor-crosshair border-2 border-dashed border-gray-300 hover:border-indigo-400 transition-colors"
-                        onClick={handleFocusClick}
+                        ref={focusContainerRef}
+                        className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden cursor-crosshair border-2 border-dashed border-gray-300 hover:border-indigo-400 transition-colors select-none"
+                        onMouseDown={handleFocusMouseDown}
                       >
                           <img
                             src={displayImage}
-                            className="w-full h-full object-cover transition-all"
+                            className="w-full h-full object-cover transition-all pointer-events-none"
                             style={{ objectPosition: `${localFocusX}% ${localFocusY}%` }}
                             alt="Preview"
+                            draggable={false}
                           />
-                          {/* Point focal indicator */}
+                          {/* Point focal indicator - draggable */}
                           <div
-                            className="absolute w-6 h-6 -ml-3 -mt-3 pointer-events-none"
+                            className={`absolute w-8 h-8 -ml-4 -mt-4 cursor-grab ${isDraggingFocus ? 'cursor-grabbing scale-110' : ''} transition-transform`}
                             style={{ left: `${localFocusX}%`, top: `${localFocusY}%` }}
                           >
-                              <div className="w-full h-full rounded-full border-2 border-white shadow-lg bg-indigo-500/50 animate-pulse"></div>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-2 h-2 rounded-full bg-white shadow"></div>
+                              <div className={`w-full h-full rounded-full border-3 border-white shadow-xl bg-indigo-500 flex items-center justify-center ${isDraggingFocus ? '' : 'animate-pulse'}`}>
+                                  <div className="w-2 h-2 rounded-full bg-white"></div>
                               </div>
                           </div>
                       </div>
                       <p className="text-xs text-gray-500 text-center mt-3">
-                          Position actuelle : <span className="font-mono font-bold text-gray-900">{localFocusX}% / {localFocusY}%</span>
+                          Glissez le point pour définir le focus • <span className="font-mono font-bold text-gray-900">{localFocusX}% / {localFocusY}%</span>
                       </p>
                   </div>
                   <div className="px-6 py-4 border-t border-gray-100 flex gap-3">

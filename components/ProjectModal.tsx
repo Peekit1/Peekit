@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, Pencil, Camera } from 'lucide-react';
+import { X, User, Pencil, Camera, Plus, Trash2 } from 'lucide-react';
 import { Button } from './Button';
 
 interface ProjectModalProps {
@@ -37,6 +37,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
 }) => {
   const [showCustomType, setShowCustomType] = React.useState(false);
   const [customTypeValue, setCustomTypeValue] = React.useState('');
+  const [showSecondEmail, setShowSecondEmail] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -48,8 +49,10 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
         setShowCustomType(false);
         setCustomTypeValue('');
       }
+      // Afficher le champ si un email secondaire existe déjà
+      setShowSecondEmail(!!projectData.clientEmail2);
     }
-  }, [isOpen, projectData.type]);
+  }, [isOpen, projectData.type, projectData.clientEmail2]);
 
   const handleTypeChange = (value: string) => {
     if (value === 'custom') {
@@ -113,28 +116,55 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
                   Email de contact
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={projectData.clientEmail}
-                  onChange={(e) => onProjectDataChange({ ...projectData, clientEmail: e.target.value })}
-                  placeholder="email@client.com"
-                  className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    required
+                    value={projectData.clientEmail}
+                    onChange={(e) => onProjectDataChange({ ...projectData, clientEmail: e.target.value })}
+                    placeholder="email@client.com"
+                    className="flex-1 h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
+                  />
+                  {!showSecondEmail && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSecondEmail(true)}
+                      className="h-11 w-11 shrink-0 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-md text-gray-400 hover:text-gray-900 hover:border-gray-300 hover:bg-gray-100 transition-colors"
+                      title="Ajouter un email secondaire"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
-                  Email secondaire <span className="text-gray-400 font-normal">(optionnel)</span>
-                </label>
-                <input
-                  type="email"
-                  value={projectData.clientEmail2 || ''}
-                  onChange={(e) => onProjectDataChange({ ...projectData, clientEmail2: e.target.value })}
-                  placeholder="autre-email@client.com"
-                  className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
-                />
-              </div>
+              {showSecondEmail && (
+                <div className="animate-fade-in">
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
+                    Email secondaire <span className="text-gray-400 font-normal">(optionnel)</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={projectData.clientEmail2 || ''}
+                      onChange={(e) => onProjectDataChange({ ...projectData, clientEmail2: e.target.value })}
+                      placeholder="autre-email@client.com"
+                      className="flex-1 h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSecondEmail(false);
+                        onProjectDataChange({ ...projectData, clientEmail2: '' });
+                      }}
+                      className="h-11 w-11 shrink-0 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-md text-gray-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+                      title="Supprimer l'email secondaire"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
