@@ -38,6 +38,10 @@ export interface Project {
   expectedDeliveryDate?: string;
   stagesConfig?: StagesConfiguration;
   isFinalized?: boolean; // ✅ Projet marqué comme terminé
+  prestataireEmail?: string; // ✅ Email du prestataire pour contact client
+  clientEmail2?: string; // ✅ Deuxième email client optionnel
+  coverFocusX?: number; // ✅ Position X du focus de la cover (0-100)
+  coverFocusY?: number; // ✅ Position Y du focus de la cover (0-100)
 }
 
 export interface SelectedPlan {

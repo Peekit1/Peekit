@@ -11,6 +11,7 @@ interface ProjectModalProps {
   projectData: {
     clientName: string;
     clientEmail: string;
+    clientEmail2?: string;
     date: string;
     location: string;
     type: string;
@@ -118,6 +119,19 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                   value={projectData.clientEmail}
                   onChange={(e) => onProjectDataChange({ ...projectData, clientEmail: e.target.value })}
                   placeholder="email@client.com"
+                  className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
+                  Email secondaire <span className="text-gray-400 font-normal">(optionnel)</span>
+                </label>
+                <input
+                  type="email"
+                  value={projectData.clientEmail2 || ''}
+                  onChange={(e) => onProjectDataChange({ ...projectData, clientEmail2: e.target.value })}
+                  placeholder="autre-email@client.com"
                   className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-md text-sm font-medium focus:bg-white focus:border-black outline-none transition-colors appearance-none"
                 />
               </div>

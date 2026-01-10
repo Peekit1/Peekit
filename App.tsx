@@ -428,7 +428,11 @@ function App() {
           accessPassword: p.access_password,
           expectedDeliveryDate: p.expected_delivery_date,
           stagesConfig: JSON.parse(JSON.stringify(effectiveConfig)),
-          isFinalized: p.is_finalized || false // ✅ Projet marqué comme terminé
+          isFinalized: p.is_finalized || false,
+          prestataireEmail: p.prestataire_email || '',
+          clientEmail2: p.client_email_2 || '',
+          coverFocusX: p.cover_focus_x ?? 50,
+          coverFocusY: p.cover_focus_y ?? 50
         };
     });
   };
@@ -595,10 +599,14 @@ function App() {
         user_id: session.user.id,
         client_name: sanitizeString(validatedData.clientName),
         client_email: sanitizeEmail(validatedData.clientEmail),
+        client_email_2: validatedData.clientEmail2 ? sanitizeEmail(validatedData.clientEmail2) : null,
+        prestataire_email: session.user.email,
         date: validatedData.date,
         location: sanitizeString(validatedData.location || ''),
         type: validatedData.type,
         cover_image: coverUrl,
+        cover_focus_x: 50,
+        cover_focus_y: 50,
         current_stage: isolatedConfig[0]?.id || 'secured',
         last_update: "À l'instant",
         expected_delivery_date: validatedData.expectedDeliveryDate || null,
@@ -671,13 +679,21 @@ function App() {
           
           if (updates.clientName) dbUpdates.client_name = sanitizeString(updates.clientName);
           if (updates.clientEmail) dbUpdates.client_email = sanitizeEmail(updates.clientEmail);
+          if (updates.clientEmail2 !== undefined) dbUpdates.client_email_2 = updates.clientEmail2 ? sanitizeEmail(updates.clientEmail2) : null;
           if (updates.date) dbUpdates.date = updates.date;
           if (updates.location) dbUpdates.location = sanitizeString(updates.location);
           if (updates.type) dbUpdates.type = updates.type;
-          
+
           if (updates.cover_image) {
               dbUpdates.cover_image = updates.cover_image;
           }
+
+          // ✅ Gestion du focus de l'image
+          if (updates.coverFocusX !== undefined) dbUpdates.cover_focus_x = updates.coverFocusX;
+          if (updates.coverFocusY !== undefined) dbUpdates.cover_focus_y = updates.coverFocusY;
+
+          // ✅ Gestion du statut finalisé
+          if (updates.isFinalized !== undefined) dbUpdates.is_finalized = updates.isFinalized;
           
           dbUpdates.last_update = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
           if (updates.expectedDeliveryDate) dbUpdates.expected_delivery_date = updates.expectedDeliveryDate;

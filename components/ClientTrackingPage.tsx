@@ -56,14 +56,20 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     const isRead = localStorage.getItem(noteKey) === 'true';
     setHasReadNote(isRead);
 
-    const welcomeKey = `peekit_welcome_seen_${project.id}`;
-    const hasSeenWelcome = localStorage.getItem(welcomeKey);
-    
-    if (!hasSeenWelcome) {
+    // ✅ Popup de bienvenue: toujours visible depuis "Vue client", une seule fois pour les vrais clients
+    if (showBackButton) {
+        // Depuis "Vue client" (prestataire) → toujours afficher
         setTimeout(() => setIsWelcomeModalOpen(true), 500);
-        localStorage.setItem(welcomeKey, 'true');
+    } else {
+        // Vrai client → afficher une seule fois
+        const welcomeKey = `peekit_welcome_seen_${project.id}`;
+        const hasSeenWelcome = localStorage.getItem(welcomeKey);
+        if (!hasSeenWelcome) {
+            setTimeout(() => setIsWelcomeModalOpen(true), 500);
+            localStorage.setItem(welcomeKey, 'true');
+        }
     }
-  }, [project.id, project.currentStage, currentStageConfig.description]); // Ajout de description aux dépendances
+  }, [project.id, project.currentStage, currentStageConfig.description, showBackButton]); // Ajout de showBackButton pour le popup
 
   const handleOpenInfo = () => {
     setIsInfoModalOpen(true);
@@ -196,7 +202,12 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
           <div className={`rounded-xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden transition-all ${project.coverImage ? 'text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
               {project.coverImage && (
                   <>
-                      <img src={project.coverImage} className="absolute inset-0 w-full h-full object-cover z-0" alt="Cover" />
+                      <img
+                        src={project.coverImage}
+                        className="absolute inset-0 w-full h-full object-cover z-0"
+                        style={{ objectPosition: `${project.coverFocusX ?? 50}% ${project.coverFocusY ?? 50}%` }}
+                        alt="Cover"
+                      />
                       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] z-0"></div>
                   </>
               )}
@@ -370,7 +381,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-white rounded-xl border border-gray-200 p-5 text-center shadow-sm">
                       <h3 className="text-xs font-bold text-gray-900 mb-1">Une question ?</h3>
                       <p className="text-[10px] text-gray-500 mb-3">Contactez votre prestataire directement.</p>
-                      <Button variant="outline" size="sm" fullWidth className="text-xs">Envoyer un email</Button>
+                      <a href={`mailto:${project.prestataireEmail || ''}`}>
+                        <Button variant="outline" size="sm" fullWidth className="text-xs">Envoyer un email</Button>
+                      </a>
                   </div>
               </div>
           </div>
@@ -384,10 +397,10 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">Bienvenue sur votre espace</h3>
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 text-balance">
-                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre mon avancement de manière claire&nbsp;et&nbsp;continue.
+                      Certaines étapes créatives demandent du temps et de la précision. Cette page vous permet de suivre l'avancement de votre projet de manière claire&nbsp;et&nbsp;continue.
                   </p>
                   <Button variant="black" fullWidth onClick={() => setIsWelcomeModalOpen(false)}>
-                      Accéder à votre espace
+                      Accéder à mon espace
                   </Button>
               </div>
           </div>

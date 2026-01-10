@@ -70,7 +70,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // ÉTATS PROJETS
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [newProject, setNewProject] = useState({
-      clientName: '', clientEmail: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: ''
+      clientName: '', clientEmail: '', clientEmail2: '', date: '', location: '', type: 'Mariage', expectedDeliveryDate: ''
   });
   const [customType, setCustomType] = useState('');
   const [coverFile, setCoverFile] = useState<File | undefined>(undefined);

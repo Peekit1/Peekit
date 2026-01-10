@@ -68,6 +68,11 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   // STATE FOR INSTANT LOCAL PREVIEW
   const [localCoverPreview, setLocalCoverPreview] = useState<string | null>(null);
 
+  // ✅ STATE POUR AJUSTEMENT DU FOCUS DE L'IMAGE
+  const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
+  const [localFocusX, setLocalFocusX] = useState(project.coverFocusX ?? 50);
+  const [localFocusY, setLocalFocusY] = useState(project.coverFocusY ?? 50);
+
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [localWorkflow, setLocalWorkflow] = useState<any[]>([]);
    
@@ -78,6 +83,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedInfo, setEditedInfo] = useState({
       clientEmail: project.clientEmail,
+      clientEmail2: project.clientEmail2 || '',
       date: project.date,
       expectedDeliveryDate: project.expectedDeliveryDate,
       location: project.location
@@ -116,6 +122,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
   useEffect(() => {
       setEditedInfo({
           clientEmail: project.clientEmail,
+          clientEmail2: project.clientEmail2 || '',
           date: project.date,
           expectedDeliveryDate: project.expectedDeliveryDate,
           location: project.location
@@ -281,6 +288,26 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
       }
   };
 
+  // ✅ HANDLER POUR CLIC SUR L'IMAGE (DÉFINIR LE POINT FOCAL)
+  const handleFocusClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+      setLocalFocusX(x);
+      setLocalFocusY(y);
+  };
+
+  // ✅ SAUVEGARDER LE FOCUS
+  const handleSaveFocus = async () => {
+      if (onUpdateProject) {
+          await onUpdateProject(project.id, {
+              coverFocusX: localFocusX,
+              coverFocusY: localFocusY
+          });
+      }
+      setIsFocusModalOpen(false);
+  };
+
   // ✅ LOGIQUE GÉNÉRATEUR DE MOT DE PASSE
   const generateRandomPassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
@@ -334,8 +361,13 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
         const baseUrl = window.location.href.split('#')[0];
         const clientLink = `${baseUrl}#/v/${project.id}`;
         
+        // ✅ Envoyer aux deux emails si clientEmail2 existe
+        const recipientEmails = project.clientEmail2
+            ? `${project.clientEmail}, ${project.clientEmail2}`
+            : project.clientEmail;
+
         const templateParams = {
-            to_email: project.clientEmail,
+            to_email: recipientEmails,
             client_name: project.clientName,
             subject: notificationEmail.subject,
             message: notificationEmail.body,
@@ -601,17 +633,21 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                       <div className="h-40 bg-gray-100 relative group flex items-center justify-center">
                         {displayImage ? (
-                            <img 
-                                key={`cover-${displayImage}`} 
-                                src={displayImage} 
-                                className="w-full h-full object-cover" 
-                                alt="" 
+                            <img
+                                key={`cover-${displayImage}`}
+                                src={displayImage}
+                                className="w-full h-full object-cover"
+                                style={{ objectPosition: `${project.coverFocusX ?? 50}% ${project.coverFocusY ?? 50}%` }}
+                                alt=""
                             />
                         ) : (
                             <ImageIcon size={48} className="text-gray-300" />
                         )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter une image'}</button>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button onClick={() => coverInputRef.current?.click()} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Camera size={14}/> {project.coverImage ? 'Modifier' : 'Ajouter'}</button>
+                          {project.coverImage && (
+                            <button onClick={() => { setLocalFocusX(project.coverFocusX ?? 50); setLocalFocusY(project.coverFocusY ?? 50); setIsFocusModalOpen(true); }} className="bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm"><Settings size={14}/> Recadrer</button>
+                          )}
                         </div>
                       </div>
                       <input type="file" ref={coverInputRef} className="hidden" onChange={handleCoverUpload} accept="image/*" />
@@ -628,6 +664,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                               {isEditingInfo ? (
                                   <div className="space-y-3 animate-fade-in">
                                       <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Email Client</label><input type="email" value={editedInfo.clientEmail} onChange={(e) => setEditedInfo({...editedInfo, clientEmail: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
+                                      <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Email secondaire <span className="text-gray-300 font-normal">(optionnel)</span></label><input type="email" value={editedInfo.clientEmail2 || ''} onChange={(e) => setEditedInfo({...editedInfo, clientEmail2: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" placeholder="autre@email.com" /></div>
                                       <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Date</label><input type="date" value={editedInfo.date} onChange={(e) => setEditedInfo({...editedInfo, date: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
                                       <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Rendu Espéré</label><input type="date" value={editedInfo.expectedDeliveryDate || ''} onChange={(e) => setEditedInfo({...editedInfo, expectedDeliveryDate: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
                                       <div className="space-y-1"><label className="text-[10px] font-bold text-gray-400 uppercase">Lieu</label><input type="text" value={editedInfo.location} onChange={(e) => setEditedInfo({...editedInfo, location: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-gray-400" /></div>
@@ -640,6 +677,7 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                                   <>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Camera size={14} /><span className="text-xs font-medium">Client</span></div><span className="text-xs font-bold text-gray-900">{project.clientName}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email Client</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail}>{project.clientEmail || '—'}</span></div>
+                                      {project.clientEmail2 && <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Mail size={14} /><span className="text-xs font-medium">Email 2</span></div><span className="text-xs font-bold text-gray-900 break-all text-right" title={project.clientEmail2}>{project.clientEmail2}</span></div>}
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div><span className="text-xs font-bold text-gray-900">{project.date}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><Flag size={14} /><span className="text-xs font-medium">Rendu Espéré</span></div><span className="text-xs font-bold text-gray-900">{project.expectedDeliveryDate || '—'}</span></div>
                                       <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-gray-500"><MapPin size={14} /><span className="text-xs font-medium">Lieu</span></div><span className="text-xs font-bold text-gray-900">{project.location}</span></div>
@@ -708,16 +746,22 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       {notifyStep === 'preview' && notificationEmail && (
                           <div className="animate-fade-in space-y-6">
                               <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                                  <div className="px-5 py-4 bg-white border-b border-gray-100 flex items-center gap-4"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Destinataire</label><div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">{project.clientEmail}</div></div>
+                                  <div className="px-5 py-4 bg-white border-b border-gray-100 flex items-center gap-4 flex-wrap">
+                                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16 shrink-0">Destinataire</label>
+                                      <div className="flex flex-wrap gap-2">
+                                          <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">{project.clientEmail}</div>
+                                          {project.clientEmail2 && <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">{project.clientEmail2}</div>}
+                                      </div>
+                                  </div>
                                   <div className="px-5 py-4 bg-white border-b border-gray-100 flex items-center gap-4 group"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest w-16">Objet</label><input type="text" value={notificationEmail.subject} onChange={(e) => handleUpdateEmail('subject', e.target.value)} className="flex-1 bg-transparent text-xs font-bold text-gray-900 outline-none focus:text-indigo-600 transition-colors" /></div>
                                   <div className="p-5 bg-white min-h-[250px] flex flex-col"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 block">Message</label><textarea value={notificationEmail.body} onChange={(e) => handleUpdateEmail('body', e.target.value)} className="flex-1 w-full bg-transparent text-sm text-gray-700 leading-relaxed font-medium outline-none resize-none focus:text-gray-900 transition-colors" placeholder="Écrivez votre message ici..." /></div>
                               </div>
-                              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-start gap-3"><Sparkles size={16} className="text-indigo-600 shrink-0 mt-0.5" /><p className="text-[11px] text-indigo-700 leading-normal font-medium">Relisez et modifiez le message si besoin. Peekit ouvrira votre messagerie pour envoyer l'email vers <b>{project.clientEmail}</b>.</p></div>
+                              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-start gap-3"><Sparkles size={16} className="text-indigo-600 shrink-0 mt-0.5" /><p className="text-[11px] text-indigo-700 leading-normal font-medium">Relisez et modifiez le message si besoin. L'email sera envoyé à <b>{project.clientEmail}{project.clientEmail2 ? ` et ${project.clientEmail2}` : ''}</b>.</p></div>
                               <div className="flex gap-3"><Button variant="outline" fullWidth onClick={() => setNotifyStep('choice')}>Changer de type</Button><Button variant="black" fullWidth onClick={sendNotification} isLoading={isSendingNotification} className="gap-2">Confirmer et Envoyer <Send size={14}/></Button></div>
                           </div>
                       )}
                       {notifyStep === 'success' && (
-                          <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in"><div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6"><Check size={32} strokeWidth={3}/></div><h3 className="text-xl font-bold text-gray-900 mb-2">Email prêt !</h3><p className="text-sm text-gray-500 font-medium">Le brouillon a été transmis à votre messagerie pour {project.clientEmail}.</p></div>
+                          <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in"><div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6"><Check size={32} strokeWidth={3}/></div><h3 className="text-xl font-bold text-gray-900 mb-2">Email envoyé !</h3><p className="text-sm text-gray-500 font-medium">La notification a été envoyée à {project.clientEmail}{project.clientEmail2 ? ` et ${project.clientEmail2}` : ''}.</p></div>
                       )}
                   </div>
               </div>
@@ -737,19 +781,64 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                           Cette action est irréversible. Toutes les images et vidéos de ce projet seront définitivement effacées.
                       </p>
                       <div className="flex gap-3 w-full">
-                          <button 
-                              onClick={() => setIsDeleteAllModalOpen(false)} 
+                          <button
+                              onClick={() => setIsDeleteAllModalOpen(false)}
                               className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                               Annuler
                           </button>
-                          <button 
-                              onClick={confirmDeleteAll} 
+                          <button
+                              onClick={confirmDeleteAll}
                               className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 shadow-sm transition-colors flex items-center justify-center gap-2"
                           >
                               <Trash2 size={16} /> Supprimer
                           </button>
                       </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* ✅ MODALE D'AJUSTEMENT DU FOCUS DE L'IMAGE */}
+      {isFocusModalOpen && displayImage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                      <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Settings size={16} /></div>
+                          <div><h3 className="font-bold text-gray-900 text-sm">Ajuster le cadrage</h3><p className="text-[10px] text-gray-500">Cliquez pour définir le point focal</p></div>
+                      </div>
+                      <button onClick={() => setIsFocusModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
+                  </div>
+                  <div className="p-6">
+                      <div
+                        className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden cursor-crosshair border-2 border-dashed border-gray-300 hover:border-indigo-400 transition-colors"
+                        onClick={handleFocusClick}
+                      >
+                          <img
+                            src={displayImage}
+                            className="w-full h-full object-cover transition-all"
+                            style={{ objectPosition: `${localFocusX}% ${localFocusY}%` }}
+                            alt="Preview"
+                          />
+                          {/* Point focal indicator */}
+                          <div
+                            className="absolute w-6 h-6 -ml-3 -mt-3 pointer-events-none"
+                            style={{ left: `${localFocusX}%`, top: `${localFocusY}%` }}
+                          >
+                              <div className="w-full h-full rounded-full border-2 border-white shadow-lg bg-indigo-500/50 animate-pulse"></div>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-white shadow"></div>
+                              </div>
+                          </div>
+                      </div>
+                      <p className="text-xs text-gray-500 text-center mt-3">
+                          Position actuelle : <span className="font-mono font-bold text-gray-900">{localFocusX}% / {localFocusY}%</span>
+                      </p>
+                  </div>
+                  <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+                      <Button variant="outline" fullWidth onClick={() => setIsFocusModalOpen(false)}>Annuler</Button>
+                      <Button variant="black" fullWidth onClick={handleSaveFocus}>Enregistrer</Button>
                   </div>
               </div>
           </div>
