@@ -192,7 +192,7 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     setIsSendingContact(true);
     try {
       await emailjs.send(
-        'service_peekit',
+        'service_vlelgtd',
         'template_lfbsx2p',
         {
           to_email: project.prestataireEmail, // ✅ Email du prestataire, pas peekitapp
