@@ -1024,11 +1024,13 @@ function App() {
       />;
   }
 
+  // ✅ MVP - Landing page simplifiée (Hero + Navbar uniquement)
   return (
     <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white font-sans">
       <StickyHeader onAuthClick={handleAuthNavigation} />
       <main>
         <Hero onAuthClick={handleAuthNavigation} />
+        {/* MVP: Sections masquées pour les testeurs
         <SectionDivider />
         <Solution />
         <SectionDivider />
@@ -1037,8 +1039,11 @@ function App() {
         <Pricing onSelectPlan={(plan) => { setSelectedPlan(plan); setCurrentPage('checkout'); }} onAuthClick={handleAuthNavigation} />
         <SectionDivider />
         <FAQ />
+        */}
       </main>
+      {/* MVP: Footer masqué
       <Footer onAuthClick={handleAuthNavigation} />
+      */}
     </div>
   );
 }
