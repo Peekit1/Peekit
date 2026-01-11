@@ -179,9 +179,15 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     setSelectedFileIds([]);
   };
 
-  // ✅ Handler pour envoyer un message de contact
+  // ✅ Handler pour envoyer un message de contact au prestataire
   const handleSendContact = async () => {
     if (!contactSubject.trim() || !contactMessage.trim()) return;
+
+    // ✅ Vérifier que l'email du prestataire existe
+    if (!project.prestataireEmail) {
+      alert('Impossible de contacter le prestataire. Email non disponible.');
+      return;
+    }
 
     setIsSendingContact(true);
     try {
@@ -189,14 +195,14 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
         'service_peekit',
         'template_lfbsx2p',
         {
-          to_email: 'peekitapp@gmail.com',
+          to_email: project.prestataireEmail, // ✅ Email du prestataire, pas peekitapp
           from_name: project.clientName,
           from_email: project.clientEmail,
           project_name: project.clientName,
           subject: contactSubject,
           message: contactMessage,
         },
-        'fCD8o-m96qY-CKlpy'
+        'LID03t9hLNmez1qy_'
       );
       setContactSent(true);
     } catch (error) {

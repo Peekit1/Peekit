@@ -836,15 +836,16 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <button onClick={() => setIsFocusModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
                   </div>
                   <div className="p-6">
-                      {/* Zone de sélection du focus - image complète */}
+                      {/* Zone de sélection du focus - image avec object-cover pour tracking précis */}
                       <div
                         ref={focusContainerRef}
-                        className="relative w-full bg-gray-900 rounded-xl overflow-hidden cursor-crosshair border-2 border-gray-200 hover:border-indigo-400 transition-colors select-none"
+                        className="relative w-full h-64 bg-gray-900 rounded-xl overflow-hidden cursor-crosshair border-2 border-gray-200 hover:border-indigo-400 transition-colors select-none"
                         onMouseDown={handleFocusMouseDown}
                       >
                           <img
                             src={displayImage}
-                            className="w-full h-auto max-h-80 object-contain pointer-events-none mx-auto"
+                            className="w-full h-full object-cover pointer-events-none"
+                            style={{ objectPosition: `${localFocusX}% ${localFocusY}%` }}
                             alt="Image complète"
                             draggable={false}
                           />
