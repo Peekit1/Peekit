@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Activity, Clock, Loader2, Video, 
+import {
+  ArrowLeft, Activity, Clock, Loader2, Video,
   ArrowDownToLine, MapPin, Calendar, Check, FileText, Download,
-  Info, X, MessageSquare, ArrowRight, BookOpen, ChevronDown, ChevronUp, Sparkles
+  Info, X, MessageSquare, ArrowRight, BookOpen, ChevronDown, ChevronUp, Sparkles, Send, Mail
 } from 'lucide-react';
 import { ClientTrackingPageProps } from '../types';
 import { Button } from './Button';
+import emailjs from '@emailjs/browser';
 
 export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project, onBack, stageConfig, showBackButton }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -14,6 +15,13 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
   const [hasReadNote, setHasReadNote] = useState(false);
   
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+
+  // ✅ États pour la popup de contact
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [contactSubject, setContactSubject] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [isSendingContact, setIsSendingContact] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
 
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
@@ -169,6 +177,41 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
     }
     setIsDownloadingAll(false);
     setSelectedFileIds([]);
+  };
+
+  // ✅ Handler pour envoyer un message de contact
+  const handleSendContact = async () => {
+    if (!contactSubject.trim() || !contactMessage.trim()) return;
+
+    setIsSendingContact(true);
+    try {
+      await emailjs.send(
+        'service_peekit',
+        'template_lfbsx2p',
+        {
+          to_email: 'peekitapp@gmail.com',
+          from_name: project.clientName,
+          from_email: project.clientEmail,
+          project_name: project.clientName,
+          subject: contactSubject,
+          message: contactMessage,
+        },
+        'fCD8o-m96qY-CKlpy'
+      );
+      setContactSent(true);
+    } catch (error) {
+      console.error('Erreur envoi contact:', error);
+      alert('Erreur lors de l\'envoi. Veuillez réessayer.');
+    } finally {
+      setIsSendingContact(false);
+    }
+  };
+
+  const handleOpenContactModal = () => {
+    setContactSubject('');
+    setContactMessage('');
+    setContactSent(false);
+    setIsContactModalOpen(true);
   };
 
   return (
@@ -381,9 +424,9 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="bg-white rounded-xl border border-gray-200 p-5 text-center shadow-sm">
                       <h3 className="text-xs font-bold text-gray-900 mb-1">Une question ?</h3>
                       <p className="text-[10px] text-gray-500 mb-3">Contactez votre prestataire directement.</p>
-                      <a href={`mailto:${project.prestataireEmail || ''}`}>
-                        <Button variant="outline" size="sm" fullWidth className="text-xs">Envoyer un email</Button>
-                      </a>
+                      <Button variant="outline" size="sm" fullWidth className="text-xs" onClick={handleOpenContactModal}>
+                        <Mail size={14} className="mr-2" /> Envoyer un message
+                      </Button>
                   </div>
               </div>
           </div>
@@ -424,6 +467,82 @@ export const ClientTrackingPage: React.FC<ClientTrackingPageProps> = ({ project,
                   <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
                       <Button variant="black" size="sm" onClick={() => setIsInfoModalOpen(false)}>J'ai compris</Button>
                   </div>
+              </div>
+          </div>
+      )}
+
+      {/* ✅ MODALE DE CONTACT */}
+      {isContactModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                      <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                              <Mail size={16} />
+                          </div>
+                          <div>
+                              <h3 className="font-bold text-gray-900 text-sm">Contacter le prestataire</h3>
+                              <p className="text-[10px] text-gray-500 font-medium">Envoyez un message directement</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setIsContactModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors">
+                          <X size={18} />
+                      </button>
+                  </div>
+
+                  {!contactSent ? (
+                      <div className="p-6 space-y-4">
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
+                                  Sujet
+                              </label>
+                              <input
+                                  type="text"
+                                  value={contactSubject}
+                                  onChange={(e) => setContactSubject(e.target.value)}
+                                  placeholder="Ex: Question sur mon projet"
+                                  className="w-full h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:bg-white focus:border-indigo-500 outline-none transition-colors"
+                              />
+                          </div>
+                          <div>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1.5">
+                                  Message
+                              </label>
+                              <textarea
+                                  value={contactMessage}
+                                  onChange={(e) => setContactMessage(e.target.value)}
+                                  placeholder="Écrivez votre message ici..."
+                                  rows={5}
+                                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:bg-white focus:border-indigo-500 outline-none transition-colors resize-none"
+                              />
+                          </div>
+                          <div className="flex gap-3 pt-2">
+                              <Button variant="outline" fullWidth onClick={() => setIsContactModalOpen(false)}>
+                                  Annuler
+                              </Button>
+                              <Button
+                                  variant="black"
+                                  fullWidth
+                                  onClick={handleSendContact}
+                                  isLoading={isSendingContact}
+                                  disabled={!contactSubject.trim() || !contactMessage.trim()}
+                              >
+                                  <Send size={14} className="mr-2" /> Envoyer
+                              </Button>
+                          </div>
+                      </div>
+                  ) : (
+                      <div className="p-8 text-center">
+                          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <Check size={32} strokeWidth={3} />
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-2">Message envoyé !</h3>
+                          <p className="text-sm text-gray-500 mb-6">Votre prestataire vous répondra dans les meilleurs délais.</p>
+                          <Button variant="black" fullWidth onClick={() => setIsContactModalOpen(false)}>
+                              Fermer
+                          </Button>
+                      </div>
+                  )}
               </div>
           </div>
       )}

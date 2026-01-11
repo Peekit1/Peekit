@@ -383,8 +383,8 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
     setIsSendingNotification(true);
 
     try {
-        const baseUrl = window.location.href.split('#')[0];
-        const clientLink = `${baseUrl}#/v/${project.id}`;
+        // ✅ Lien sans domaine - juste le chemin hash
+        const clientLink = `#/v/${project.id}`;
         
         // ✅ Envoyer aux deux emails si clientEmail2 existe
         const recipientEmails = project.clientEmail2
@@ -836,31 +836,52 @@ export const ProjectDetails: React.FC<ExtendedProjectDetailsProps> = ({
                       <button onClick={() => setIsFocusModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"><X size={18} /></button>
                   </div>
                   <div className="p-6">
+                      {/* Zone de sélection du focus - image complète */}
                       <div
                         ref={focusContainerRef}
-                        className="relative w-full h-64 bg-gray-100 rounded-xl overflow-hidden cursor-crosshair border-2 border-dashed border-gray-300 hover:border-indigo-400 transition-colors select-none"
+                        className="relative w-full bg-gray-900 rounded-xl overflow-hidden cursor-crosshair border-2 border-gray-200 hover:border-indigo-400 transition-colors select-none"
                         onMouseDown={handleFocusMouseDown}
                       >
                           <img
                             src={displayImage}
-                            className="w-full h-full object-cover transition-all pointer-events-none"
-                            style={{ objectPosition: `${localFocusX}% ${localFocusY}%` }}
-                            alt="Preview"
+                            className="w-full h-auto max-h-80 object-contain pointer-events-none mx-auto"
+                            alt="Image complète"
                             draggable={false}
                           />
                           {/* Point focal indicator - draggable */}
                           <div
-                            className={`absolute w-8 h-8 -ml-4 -mt-4 cursor-grab ${isDraggingFocus ? 'cursor-grabbing scale-110' : ''} transition-transform`}
+                            className={`absolute w-8 h-8 -ml-4 -mt-4 cursor-grab ${isDraggingFocus ? 'cursor-grabbing scale-125' : ''} transition-transform z-10`}
                             style={{ left: `${localFocusX}%`, top: `${localFocusY}%` }}
                           >
-                              <div className={`w-full h-full rounded-full border-3 border-white shadow-xl bg-indigo-500 flex items-center justify-center ${isDraggingFocus ? '' : 'animate-pulse'}`}>
+                              <div className={`w-full h-full rounded-full border-2 border-white shadow-xl bg-indigo-500 flex items-center justify-center ${isDraggingFocus ? '' : 'animate-pulse'}`}>
                                   <div className="w-2 h-2 rounded-full bg-white"></div>
                               </div>
                           </div>
+                          {/* Crosshair guides */}
+                          <div className="absolute inset-0 pointer-events-none">
+                              <div className="absolute bg-white/30" style={{ left: `${localFocusX}%`, top: 0, bottom: 0, width: '1px' }}></div>
+                              <div className="absolute bg-white/30" style={{ top: `${localFocusY}%`, left: 0, right: 0, height: '1px' }}></div>
+                          </div>
                       </div>
-                      <p className="text-xs text-gray-500 text-center mt-3">
-                          Glissez le point pour définir le focus • <span className="font-mono font-bold text-gray-900">{localFocusX}% / {localFocusY}%</span>
-                      </p>
+
+                      {/* Aperçu du rendu final */}
+                      <div className="mt-4 flex items-center gap-4">
+                          <div className="flex-1">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Aperçu du cadrage</p>
+                              <div className="h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                                  <img
+                                    src={displayImage}
+                                    className="w-full h-full object-cover"
+                                    style={{ objectPosition: `${localFocusX}% ${localFocusY}%` }}
+                                    alt="Aperçu"
+                                  />
+                              </div>
+                          </div>
+                          <div className="text-center">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Position</p>
+                              <p className="font-mono font-bold text-gray-900 text-sm">{localFocusX}% / {localFocusY}%</p>
+                          </div>
+                      </div>
                   </div>
                   <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
                       <Button variant="outline" fullWidth onClick={() => setIsFocusModalOpen(false)}>Annuler</Button>
